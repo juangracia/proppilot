@@ -1,0 +1,51 @@
+{
+	"folders": {},
+	"connections": {
+		"postgres-jdbc-18c0c0b9b1e-4b8e8f8e8f8e8f8e": {
+			"provider": "postgresql",
+			"driver": "postgres-jdbc",
+			"name": "PropPilot PostgreSQL",
+			"save-password": true,
+			"configuration": {
+				"host": "localhost",
+				"port": "5432",
+				"database": "proppilot",
+				"url": "jdbc:postgresql://localhost:5432/proppilot",
+				"configurationType": "MANUAL",
+				"type": "dev",
+				"closeIdleConnection": true,
+				"properties": {
+					"connectTimeout": "20",
+					"loginTimeout": "20",
+					"escapeSyntaxCallMode": "callIfNoReturn"
+				},
+				"provider-properties": {
+					"@dbeaver-show-non-default-db@": "false",
+					"@dbeaver-show-template-db@": "false",
+					"@dbeaver-show-unavailable-db@": "false",
+					"@dbeaver-sid-service@": "SID"
+				},
+				"auth-model": "native",
+				"auth-properties": {
+					"user": "proppilot",
+					"password": "proppilot123"
+				},
+				"handlers": {}
+			}
+		}
+	},
+	"connection-types": {
+		"dev": {
+			"name": "Development",
+			"color": "255,255,255",
+			"description": "Regular development database",
+			"auto-commit": true,
+			"confirm-execute": false,
+			"confirm-data-change": false,
+			"smart-commit": false,
+			"smart-commit-recover": false,
+			"auto-close-transactions": true,
+			"close-transactions-period": 1800
+		}
+	}
+}

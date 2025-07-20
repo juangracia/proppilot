@@ -1,0 +1,8 @@
+{
+	"resources": {
+		"Scripts/PropPilot-Sample-Queries.sql": {
+			"sql-editor-data-source-id": "postgres-jdbc-18c0c0b9b1e-4b8e8f8e8f8e8f8e",
+			"default-schema": "public"
+		}
+	}
+}

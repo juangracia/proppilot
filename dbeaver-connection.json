@@ -1,0 +1,75 @@
+{
+  "projects": [
+    {
+      "id": "proppilot-project",
+      "name": "PropPilot",
+      "description": "PropPilot Rental Property Management System",
+      "create-date": "2025-07-20T02:03:10.000Z",
+      "connections": ["proppilot-postgres"]
+    }
+  ],
+  "connections": [
+    {
+      "id": "proppilot-postgres",
+      "provider": "postgresql",
+      "driver": "postgresql",
+      "name": "PropPilot PostgreSQL",
+      "save-password": true,
+      "project": "proppilot-project",
+      "configuration": {
+        "host": "localhost",
+        "port": "5432",
+        "database": "proppilot",
+        "url": "jdbc:postgresql://localhost:5432/proppilot",
+        "configurationType": "MANUAL",
+        "type": "dev",
+        "properties": {
+          "connectTimeout": "20",
+          "loginTimeout": "20",
+          "enabledTLSProtocols": "TLSv1.2,TLSv1.3"
+        },
+        "provider-properties": {
+          "@dbeaver-show-non-default-db@": "false",
+          "@dbeaver-show-template-db@": "false",
+          "@dbeaver-show-unavailable-db@": "false",
+          "@dbeaver-read-all-data-types-db@": "false",
+          "@dbeaver-use-prepared-statements-db@": "false",
+          "@dbeaver-postgresql-show-non-default-db@": "false",
+          "@dbeaver-postgresql-show-template-db@": "false",
+          "@dbeaver-postgresql-show-unavailable-db@": "false",
+          "@dbeaver-postgresql-read-all-data-types-db@": "false",
+          "@dbeaver-postgresql-use-prepared-statements-db@": "false"
+        },
+        "auth-model": "native",
+        "handlers": {}
+      },
+      "custom-properties": {},
+      "network-handlers": {},
+      "auth-properties": {
+        "user": "proppilot",
+        "password": "proppilot"
+      },
+      "bootstrap": {
+        "autocommit": true,
+        "default-catalog": "proppilot",
+        "default-schema": "public"
+      }
+    }
+  ],
+  "bookmarks": [
+    {
+      "id": "proppilot-tables",
+      "name": "PropPilot Tables",
+      "description": "Main application tables",
+      "connection": "proppilot-postgres",
+      "sql": "SELECT table_name, table_type FROM information_schema.tables WHERE table_schema = 'public' AND table_name IN ('tenants', 'property_units', 'payments') ORDER BY table_name;"
+    },
+    {
+      "id": "proppilot-overview",
+      "name": "Database Overview",
+      "description": "Quick overview of PropPilot data",
+      "connection": "proppilot-postgres",
+      "sql": "SELECT \n  'tenants' as table_name, COUNT(*) as record_count FROM tenants\nUNION ALL\nSELECT \n  'property_units' as table_name, COUNT(*) as record_count FROM property_units\nUNION ALL\nSELECT \n  'payments' as table_name, COUNT(*) as record_count FROM payments;"
+    }
+  ]
+}
