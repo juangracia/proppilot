@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TenantController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">PropPilot Backend</a> &gt; <a href="index.source.html" class="el_package">com.prop_pilot.controller</a> &gt; <span class="el_source">TenantController.java</span></div><h1>TenantController.java</h1><pre class="source lang-java linenums">package com.prop_pilot.controller;
+
+import com.prop_pilot.entity.Tenant;
+import com.prop_pilot.service.TenantService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Optional;
+
+@RestController
+@RequestMapping(&quot;/api/tenants&quot;)
+@Tag(name = &quot;Tenants&quot;, description = &quot;API for managing tenants&quot;)
+<span class="fc" id="L22">public class TenantController {</span>
+
+    @Autowired
+    private TenantService tenantService;
+
+    @PostMapping
+    @Operation(summary = &quot;Create a new tenant&quot;, description = &quot;Creates a new tenant in the system&quot;)
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = &quot;201&quot;, description = &quot;Tenant created successfully&quot;),
+        @ApiResponse(responseCode = &quot;400&quot;, description = &quot;Invalid input data or duplicate national ID/email&quot;)
+    })
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+        description = &quot;Tenant data&quot;,
+        content = @io.swagger.v3.oas.annotations.media.Content(
+            mediaType = &quot;application/json&quot;,
+            examples = @io.swagger.v3.oas.annotations.media.ExampleObject(
+                name = &quot;New Tenant&quot;,
+                value = &quot;{\&quot;fullName\&quot;: \&quot;Juan Pérez\&quot;, \&quot;nationalId\&quot;: \&quot;12345678\&quot;, \&quot;email\&quot;: \&quot;juan.perez@email.com\&quot;, \&quot;phone\&quot;: \&quot;+54 9 11 1234-5678\&quot;}&quot;
+            )
+        )
+    )
+    public ResponseEntity&lt;Tenant&gt; createTenant(@Valid @RequestBody Tenant tenant) {
+        try {
+<span class="fc" id="L45">            Tenant createdTenant = tenantService.createTenant(tenant);</span>
+<span class="fc" id="L46">            return new ResponseEntity&lt;&gt;(createdTenant, HttpStatus.CREATED);</span>
+<span class="fc" id="L47">        } catch (IllegalArgumentException e) {</span>
+<span class="fc" id="L48">            return ResponseEntity.badRequest().build();</span>
+        }
+    }
+
+    @GetMapping
+    @Operation(summary = &quot;Get all tenants&quot;, description = &quot;Retrieves a list of all tenants&quot;)
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Tenants retrieved successfully&quot;)
+    })
+    public ResponseEntity&lt;List&lt;Tenant&gt;&gt; getAllTenants() {
+<span class="fc" id="L58">        List&lt;Tenant&gt; tenants = tenantService.getAllTenants();</span>
+<span class="fc" id="L59">        return new ResponseEntity&lt;&gt;(tenants, HttpStatus.OK);</span>
+    }
+
+    @GetMapping(&quot;/{id}&quot;)
+    @Operation(summary = &quot;Get a tenant by ID&quot;, description = &quot;Retrieves a tenant by its ID&quot;)
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Tenant retrieved successfully&quot;),
+        @ApiResponse(responseCode = &quot;404&quot;, description = &quot;Tenant not found&quot;)
+    })
+    public ResponseEntity&lt;Tenant&gt; getTenantById(
+            @Parameter(description = &quot;Tenant ID&quot;, required = true)
+            @PathVariable Long id) {
+<span class="fc" id="L71">        Optional&lt;Tenant&gt; tenant = tenantService.getTenantById(id);</span>
+<span class="fc" id="L72">        return tenant.map(t -&gt; new ResponseEntity&lt;&gt;(t, HttpStatus.OK))</span>
+<span class="fc" id="L73">                    .orElse(new ResponseEntity&lt;&gt;(HttpStatus.NOT_FOUND));</span>
+    }
+
+    @PutMapping(&quot;/{id}&quot;)
+    @Operation(summary = &quot;Update a tenant&quot;, description = &quot;Updates an existing tenant&quot;)
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Tenant updated successfully&quot;),
+        @ApiResponse(responseCode = &quot;400&quot;, description = &quot;Invalid input data or duplicate national ID/email&quot;),
+        @ApiResponse(responseCode = &quot;404&quot;, description = &quot;Tenant not found&quot;)
+    })
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+        description = &quot;Updated tenant data&quot;,
+        content = @io.swagger.v3.oas.annotations.media.Content(
+            mediaType = &quot;application/json&quot;,
+            examples = @io.swagger.v3.oas.annotations.media.ExampleObject(
+                name = &quot;Updated Tenant&quot;,
+                value = &quot;{\&quot;fullName\&quot;: \&quot;Juan Carlos Pérez\&quot;, \&quot;nationalId\&quot;: \&quot;12345678\&quot;, \&quot;email\&quot;: \&quot;juan.carlos@email.com\&quot;, \&quot;phone\&quot;: \&quot;+54 9 11 8765-4321\&quot;}&quot;
+            )
+        )
+    )
+    public ResponseEntity&lt;Tenant&gt; updateTenant(
+            @Parameter(description = &quot;Tenant ID&quot;, required = true)
+            @PathVariable Long id,
+            @Valid @RequestBody Tenant tenant) {
+        try {
+<span class="fc" id="L98">            Tenant updatedTenant = tenantService.updateTenant(id, tenant);</span>
+<span class="fc" id="L99">            return new ResponseEntity&lt;&gt;(updatedTenant, HttpStatus.OK);</span>
+<span class="nc" id="L100">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L101">            return ResponseEntity.badRequest().build();</span>
+<span class="fc" id="L102">        } catch (Exception e) {</span>
+<span class="fc" id="L103">            return ResponseEntity.notFound().build();</span>
+        }
+    }
+
+    @DeleteMapping(&quot;/{id}&quot;)
+    @Operation(summary = &quot;Delete a tenant&quot;, description = &quot;Deletes a tenant by ID&quot;)
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = &quot;204&quot;, description = &quot;Tenant deleted successfully&quot;),
+        @ApiResponse(responseCode = &quot;404&quot;, description = &quot;Tenant not found&quot;)
+    })
+    public ResponseEntity&lt;Void&gt; deleteTenant(
+            @Parameter(description = &quot;Tenant ID&quot;, required = true)
+            @PathVariable Long id) {
+        try {
+<span class="fc" id="L117">            tenantService.deleteTenant(id);</span>
+<span class="fc" id="L118">            return new ResponseEntity&lt;&gt;(HttpStatus.NO_CONTENT);</span>
+<span class="fc" id="L119">        } catch (Exception e) {</span>
+<span class="fc" id="L120">            return new ResponseEntity&lt;&gt;(HttpStatus.NOT_FOUND);</span>
+        }
+    }
+
+    @GetMapping(&quot;/search/national-id/{nationalId}&quot;)
+    @Operation(summary = &quot;Find tenant by national ID&quot;, description = &quot;Retrieves a tenant by their national ID&quot;)
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Tenant found&quot;),
+        @ApiResponse(responseCode = &quot;404&quot;, description = &quot;Tenant not found&quot;)
+    })
+    public ResponseEntity&lt;Tenant&gt; getTenantByNationalId(
+            @Parameter(description = &quot;National ID&quot;, required = true)
+            @PathVariable String nationalId) {
+<span class="fc" id="L133">        Optional&lt;Tenant&gt; tenant = tenantService.getTenantByNationalId(nationalId);</span>
+<span class="fc" id="L134">        return tenant.map(t -&gt; new ResponseEntity&lt;&gt;(t, HttpStatus.OK))</span>
+<span class="fc" id="L135">                    .orElse(new ResponseEntity&lt;&gt;(HttpStatus.NOT_FOUND));</span>
+    }
+
+    @GetMapping(&quot;/search/email/{email}&quot;)
+    @Operation(summary = &quot;Find tenant by email&quot;, description = &quot;Retrieves a tenant by their email&quot;)
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Tenant found&quot;),
+        @ApiResponse(responseCode = &quot;404&quot;, description = &quot;Tenant not found&quot;)
+    })
+    public ResponseEntity&lt;Tenant&gt; getTenantByEmail(
+            @Parameter(description = &quot;Email&quot;, required = true)
+            @PathVariable String email) {
+<span class="fc" id="L147">        Optional&lt;Tenant&gt; tenant = tenantService.getTenantByEmail(email);</span>
+<span class="fc" id="L148">        return tenant.map(t -&gt; new ResponseEntity&lt;&gt;(t, HttpStatus.OK))</span>
+<span class="fc" id="L149">                    .orElse(new ResponseEntity&lt;&gt;(HttpStatus.NOT_FOUND));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

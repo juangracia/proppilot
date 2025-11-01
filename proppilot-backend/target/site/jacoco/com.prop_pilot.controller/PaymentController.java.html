@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PaymentController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">PropPilot Backend</a> &gt; <a href="index.source.html" class="el_package">com.prop_pilot.controller</a> &gt; <span class="el_source">PaymentController.java</span></div><h1>PaymentController.java</h1><pre class="source lang-java linenums">package com.prop_pilot.controller;
+
+import com.prop_pilot.entity.Payment;
+import com.prop_pilot.service.PaymentService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+
+@RestController
+@RequestMapping(&quot;/api/payments&quot;)
+@Tag(name = &quot;Payments&quot;, description = &quot;API for managing rental payments and calculations&quot;)
+<span class="fc" id="L24">public class PaymentController {</span>
+
+    @Autowired
+    private PaymentService paymentService;
+
+    @PostMapping
+    @Operation(summary = &quot;Create a new payment&quot;, description = &quot;Registers a new payment for a property unit&quot;)
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = &quot;201&quot;, description = &quot;Payment created successfully&quot;),
+        @ApiResponse(responseCode = &quot;400&quot;, description = &quot;Invalid payment data&quot;)
+    })
+    public ResponseEntity&lt;Payment&gt; createPayment(@Valid @RequestBody Payment payment) {
+<span class="fc" id="L36">        Payment createdPayment = paymentService.createPayment(payment);</span>
+<span class="fc" id="L37">        return new ResponseEntity&lt;&gt;(createdPayment, HttpStatus.CREATED);</span>
+    }
+
+    @GetMapping(&quot;/{id}&quot;)
+    @Operation(summary = &quot;Get payment by ID&quot;, description = &quot;Retrieves a specific payment by its ID&quot;)
+    @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Payment retrieved successfully&quot;)
+    public ResponseEntity&lt;Payment&gt; getPaymentById(@PathVariable Long id) {
+<span class="fc" id="L44">        Payment payment = paymentService.getPaymentById(id);</span>
+<span class="fc" id="L45">        return ResponseEntity.ok(payment);</span>
+    }
+
+    @GetMapping
+    @Operation(summary = &quot;Get all payments&quot;, description = &quot;Retrieves a list of all payments in the system&quot;)
+    @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Successfully retrieved all payments&quot;)
+    public ResponseEntity&lt;List&lt;Payment&gt;&gt; getAllPayments() {
+<span class="fc" id="L52">        List&lt;Payment&gt; payments = paymentService.getAllPayments();</span>
+<span class="fc" id="L53">        return ResponseEntity.ok(payments);</span>
+    }
+
+    @GetMapping(&quot;/property-unit/{propertyUnitId}&quot;)
+    @Operation(summary = &quot;Get payments by property unit&quot;, description = &quot;Retrieves all payments for a specific property unit&quot;)
+    @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Successfully retrieved payments for property unit&quot;)
+    public ResponseEntity&lt;List&lt;Payment&gt;&gt; getPaymentsByPropertyUnit(@PathVariable Long propertyUnitId) {
+<span class="fc" id="L60">        List&lt;Payment&gt; payments = paymentService.getPaymentsByPropertyUnit(propertyUnitId);</span>
+<span class="fc" id="L61">        return ResponseEntity.ok(payments);</span>
+    }
+
+    @PutMapping(&quot;/{id}&quot;)
+    @Operation(summary = &quot;Update payment&quot;, description = &quot;Updates an existing payment&quot;)
+    @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Payment updated successfully&quot;)
+    public ResponseEntity&lt;Payment&gt; updatePayment(@PathVariable Long id, @RequestBody Payment payment) {
+<span class="fc" id="L68">        Payment updatedPayment = paymentService.updatePayment(id, payment);</span>
+<span class="fc" id="L69">        return ResponseEntity.ok(updatedPayment);</span>
+    }
+
+    @DeleteMapping(&quot;/{id}&quot;)
+    @Operation(summary = &quot;Delete payment&quot;, description = &quot;Deletes a payment by ID&quot;)
+    @ApiResponse(responseCode = &quot;204&quot;, description = &quot;Payment deleted successfully&quot;)
+    public ResponseEntity&lt;Void&gt; deletePayment(@PathVariable Long id) {
+<span class="fc" id="L76">        paymentService.deletePayment(id);</span>
+<span class="fc" id="L77">        return ResponseEntity.noContent().build();</span>
+    }
+
+    // Advanced rent calculation endpoints
+
+    @GetMapping(&quot;/property-unit/{propertyUnitId}/adjusted-rent&quot;)
+    @Operation(summary = &quot;Calculate adjusted rent&quot;, description = &quot;Calculates the adjusted rent for a property unit based on lease terms and time elapsed&quot;)
+    @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Adjusted rent calculated successfully&quot;)
+    public ResponseEntity&lt;BigDecimal&gt; calculateAdjustedRent(
+            @Parameter(description = &quot;Property unit ID&quot;) @PathVariable Long propertyUnitId,
+            @Parameter(description = &quot;Effective date for calculation (defaults to current date)&quot;) 
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate effectiveDate) {
+        
+<span class="fc bfc" id="L90" title="All 2 branches covered.">        LocalDate calculationDate = effectiveDate != null ? effectiveDate : LocalDate.now();</span>
+<span class="fc" id="L91">        BigDecimal adjustedRent = paymentService.calculateAdjustedRent(propertyUnitId, calculationDate);</span>
+<span class="fc" id="L92">        return ResponseEntity.ok(adjustedRent);</span>
+    }
+
+    @GetMapping(&quot;/property-unit/{propertyUnitId}/outstanding&quot;)
+    @Operation(summary = &quot;Get outstanding payments&quot;, description = &quot;Retrieves all outstanding (pending) payments for a property unit&quot;)
+    @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Outstanding payments retrieved successfully&quot;)
+    public ResponseEntity&lt;List&lt;Payment&gt;&gt; getOutstandingPayments(@PathVariable Long propertyUnitId) {
+<span class="fc" id="L99">        List&lt;Payment&gt; outstandingPayments = paymentService.getOutstandingPayments(propertyUnitId);</span>
+<span class="fc" id="L100">        return ResponseEntity.ok(outstandingPayments);</span>
+    }
+
+    @GetMapping(&quot;/property-unit/{propertyUnitId}/outstanding-amount&quot;)
+    @Operation(summary = &quot;Calculate outstanding amount&quot;, description = &quot;Calculates the total outstanding rent amount for a property unit&quot;)
+    @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Outstanding amount calculated successfully&quot;)
+    public ResponseEntity&lt;BigDecimal&gt; calculateOutstandingAmount(
+            @Parameter(description = &quot;Property unit ID&quot;) @PathVariable Long propertyUnitId,
+            @Parameter(description = &quot;As of date for calculation (defaults to current date)&quot;)
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate asOfDate) {
+        
+<span class="pc bpc" id="L111" title="1 of 2 branches missed.">        LocalDate calculationDate = asOfDate != null ? asOfDate : LocalDate.now();</span>
+<span class="fc" id="L112">        BigDecimal outstandingAmount = paymentService.calculateOutstandingAmount(propertyUnitId, calculationDate);</span>
+<span class="fc" id="L113">        return ResponseEntity.ok(outstandingAmount);</span>
+    }
+
+    @GetMapping(&quot;/property-unit/{propertyUnitId}/total-paid&quot;)
+    @Operation(summary = &quot;Get total paid amount by payment type&quot;, description = &quot;Calculates total amount paid for a specific payment type&quot;)
+    @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Total paid amount calculated successfully&quot;)
+    public ResponseEntity&lt;BigDecimal&gt; getTotalPaidAmount(
+            @Parameter(description = &quot;Property unit ID&quot;) @PathVariable Long propertyUnitId,
+            @Parameter(description = &quot;Payment type&quot;) @RequestParam Payment.PaymentType paymentType) {
+        
+<span class="fc" id="L123">        BigDecimal totalPaid = paymentService.getTotalPaidAmount(propertyUnitId, paymentType);</span>
+<span class="fc" id="L124">        return ResponseEntity.ok(totalPaid);</span>
+    }
+
+    @GetMapping(&quot;/property-unit/{propertyUnitId}/history&quot;)
+    @Operation(summary = &quot;Get payment history&quot;, description = &quot;Retrieves payment history for a property unit within a date range&quot;)
+    @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Payment history retrieved successfully&quot;)
+    public ResponseEntity&lt;List&lt;Payment&gt;&gt; getPaymentHistory(
+            @Parameter(description = &quot;Property unit ID&quot;) @PathVariable Long propertyUnitId,
+            @Parameter(description = &quot;Start date&quot;) @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @Parameter(description = &quot;End date&quot;) @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        
+<span class="fc" id="L135">        List&lt;Payment&gt; paymentHistory = paymentService.getPaymentHistory(propertyUnitId, startDate, endDate);</span>
+<span class="fc" id="L136">        return ResponseEntity.ok(paymentHistory);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

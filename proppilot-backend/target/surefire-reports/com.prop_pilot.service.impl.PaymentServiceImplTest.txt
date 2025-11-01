@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.prop_pilot.service.impl.PaymentServiceImplTest
+-------------------------------------------------------------------------------
+Tests run: 15, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.139 s -- in com.prop_pilot.service.impl.PaymentServiceImplTest

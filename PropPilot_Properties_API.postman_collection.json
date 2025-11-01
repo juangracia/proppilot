@@ -1,0 +1,247 @@
+{
+  "info": {
+    "name": "PropPilot - Properties API",
+    "description": "Collection for testing PropPilot property management endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "proppilot-properties-api",
+    "version": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    }
+  },
+  "item": [
+    {
+      "name": "Get All Properties",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/property-units",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "property-units"
+          ]
+        },
+        "description": "Retrieve all property units in the system"
+      },
+      "response": []
+    },
+    {
+      "name": "Get Property by ID",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/property-units/{{property_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "property-units",
+            "{{property_id}}"
+          ]
+        },
+        "description": "Retrieve a specific property unit by its ID"
+      },
+      "response": []
+    },
+    {
+      "name": "Create New Property",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"address\": \"Av. Corrientes 1234, CABA\",\n  \"type\": \"Apartment\",\n  \"baseRentAmount\": 120000,\n  \"leaseStartDate\": \"2024-01-15\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/property-units",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "property-units"
+          ]
+        },
+        "description": "Create a new property unit in the system"
+      },
+      "response": []
+    },
+    {
+      "name": "Update Property",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"address\": \"Av. Corrientes 1234, CABA - Updated\",\n  \"type\": \"Apartment\",\n  \"baseRentAmount\": 135000,\n  \"leaseStartDate\": \"2024-01-15\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/property-units/{{property_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "property-units",
+            "{{property_id}}"
+          ]
+        },
+        "description": "Update an existing property unit"
+      },
+      "response": []
+    },
+    {
+      "name": "Delete Property",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/property-units/{{property_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "property-units",
+            "{{property_id}}"
+          ]
+        },
+        "description": "Delete a property unit from the system. This action cannot be undone."
+      },
+      "response": []
+    },
+    {
+      "name": "Search Properties by Address",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/property-units/search?address={{search_term}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "property-units",
+            "search"
+          ],
+          "query": [
+            {
+              "key": "address",
+              "value": "{{search_term}}"
+            }
+          ]
+        },
+        "description": "Search for property units by address"
+      },
+      "response": []
+    },
+    {
+      "name": "Get Properties by Tenant",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/property-units/tenant/{{tenant_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "property-units",
+            "tenant",
+            "{{tenant_id}}"
+          ]
+        },
+        "description": "Get all property units associated with a specific tenant"
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "description": "Base URL for the PropPilot API"
+    },
+    {
+      "key": "property_id",
+      "value": "1",
+      "description": "ID of the property to test with"
+    },
+    {
+      "key": "tenant_id",
+      "value": "1",
+      "description": "ID of the tenant to test with"
+    },
+    {
+      "key": "search_term",
+      "value": "Corrientes",
+      "description": "Search term for address search"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Pre-request script for the collection",
+          "// You can add common setup logic here"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Test script for the collection",
+          "// Common test assertions can be added here"
+        ]
+      }
+    }
+  ]
+}

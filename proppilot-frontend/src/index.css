@@ -1,0 +1,37 @@
+/* Base Styles - Keep minimal to avoid conflicts with MUI */
+:root {
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Prevent layout shifts and ensure consistent width */
+#root {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+/* Responsive typography base */
+html {
+  font-size: 16px;
+}
+
+@media (max-width: 600px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+@media (min-width: 1200px) {
+  html {
+    font-size: 17px;
+  }
+}

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PropertyUnitController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">PropPilot Backend</a> &gt; <a href="index.source.html" class="el_package">com.prop_pilot.controller</a> &gt; <span class="el_source">PropertyUnitController.java</span></div><h1>PropertyUnitController.java</h1><pre class="source lang-java linenums">package com.prop_pilot.controller;
+
+import com.prop_pilot.entity.PropertyUnit;
+import com.prop_pilot.service.PropertyUnitService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import java.util.List;
+
+@RestController
+@RequestMapping(&quot;/api/property-units&quot;)
+@Tag(name = &quot;Property Units&quot;, description = &quot;API for managing rental property units&quot;)
+<span class="fc" id="L20">public class PropertyUnitController {</span>
+
+    @Autowired
+    private PropertyUnitService propertyUnitService;
+
+    @PostMapping
+    @Operation(summary = &quot;Create a new property unit&quot;, description = &quot;Creates a new rental property unit in the system&quot;)
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = &quot;201&quot;, description = &quot;Property unit created successfully&quot;),
+        @ApiResponse(responseCode = &quot;400&quot;, description = &quot;Invalid input data&quot;)
+    })
+    public ResponseEntity&lt;PropertyUnit&gt; createPropertyUnit(@Valid @RequestBody PropertyUnit propertyUnit) {
+<span class="fc" id="L32">        PropertyUnit createdPropertyUnit = propertyUnitService.createPropertyUnit(propertyUnit);</span>
+<span class="fc" id="L33">        return new ResponseEntity&lt;&gt;(createdPropertyUnit, HttpStatus.CREATED);</span>
+    }
+
+    @GetMapping(&quot;/{id}&quot;)
+    @Operation(summary = &quot;Get a property unit by ID&quot;, description = &quot;Retrieves a property unit by its ID&quot;)
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Property unit retrieved successfully&quot;),
+        @ApiResponse(responseCode = &quot;404&quot;, description = &quot;Property unit not found&quot;)
+    })
+    public ResponseEntity&lt;PropertyUnit&gt; getPropertyUnitById(@PathVariable Long id) {
+<span class="fc" id="L43">        PropertyUnit propertyUnit = propertyUnitService.getPropertyUnitById(id);</span>
+<span class="fc" id="L44">        return ResponseEntity.ok(propertyUnit);</span>
+    }
+
+    @GetMapping
+    @Operation(summary = &quot;Get all property units&quot;, description = &quot;Retrieves a list of all property units in the system&quot;)
+    @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Successfully retrieved all property units&quot;)
+    public ResponseEntity&lt;List&lt;PropertyUnit&gt;&gt; getAllPropertyUnits() {
+<span class="fc" id="L51">        List&lt;PropertyUnit&gt; propertyUnits = propertyUnitService.getAllPropertyUnits();</span>
+<span class="fc" id="L52">        return ResponseEntity.ok(propertyUnits);</span>
+    }
+
+    @GetMapping(&quot;/tenant/{tenantId}&quot;)
+    public ResponseEntity&lt;List&lt;PropertyUnit&gt;&gt; getPropertyUnitsByTenant(@PathVariable Long tenantId) {
+<span class="fc" id="L57">        List&lt;PropertyUnit&gt; propertyUnits = propertyUnitService.getPropertyUnitsByTenant(tenantId);</span>
+<span class="fc" id="L58">        return ResponseEntity.ok(propertyUnits);</span>
+    }
+
+    @GetMapping(&quot;/search&quot;)
+    @Operation(summary = &quot;Search property units by address&quot;, description = &quot;Search for property units by address&quot;)
+    @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Successfully retrieved matching property units&quot;)
+    public ResponseEntity&lt;List&lt;PropertyUnit&gt;&gt; searchPropertyUnits(
+            @Parameter(description = &quot;Address to search for&quot;) @RequestParam String address) {
+<span class="fc" id="L66">        List&lt;PropertyUnit&gt; propertyUnits = propertyUnitService.searchPropertyUnits(address);</span>
+<span class="fc" id="L67">        return ResponseEntity.ok(propertyUnits);</span>
+    }
+
+    @PutMapping(&quot;/{id}&quot;)
+    public ResponseEntity&lt;PropertyUnit&gt; updatePropertyUnit(@PathVariable Long id, @Valid @RequestBody PropertyUnit propertyUnit) {
+<span class="fc" id="L72">        PropertyUnit updatedPropertyUnit = propertyUnitService.updatePropertyUnit(id, propertyUnit);</span>
+<span class="fc" id="L73">        return ResponseEntity.ok(updatedPropertyUnit);</span>
+    }
+
+    @DeleteMapping(&quot;/{id}&quot;)
+    public ResponseEntity&lt;Void&gt; deletePropertyUnit(@PathVariable Long id) {
+<span class="fc" id="L78">        propertyUnitService.deletePropertyUnit(id);</span>
+<span class="fc" id="L79">        return ResponseEntity.noContent().build();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>
