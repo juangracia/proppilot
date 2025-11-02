@@ -26,7 +26,7 @@ import {
 import { Add, Edit, Delete } from '@mui/icons-material'
 import { useLanguage } from '../contexts/LanguageContext'
 
-const API_BASE_URL = 'http://localhost:8080/api'
+const API_BASE_URL = '/api'
 
 const TenantsList = () => {
   const { t } = useLanguage()
@@ -104,11 +104,21 @@ const TenantsList = () => {
   }
 
   const handleInputChange = (field, value) => {
-    setFormData({ ...formData, [field]: value })
+    setFormData(prev => ({ ...prev, [field]: value }))
     // Clear error when user starts typing
-    if (formErrors[field]) {
-      setFormErrors({ ...formErrors, [field]: '' })
-    }
+    setFormErrors(prev => {
+      if (prev[field]) {
+        return { ...prev, [field]: '' }
+      }
+      return prev
+    })
+  }
+
+  // Handle input events for better browser automation support
+  const handleInput = (field, e) => {
+    // This handles both onChange and onInput events
+    const value = e.target.value
+    handleInputChange(field, value)
   }
 
   const validateForm = () => {
@@ -434,6 +444,9 @@ const TenantsList = () => {
               placeholder={t('fullNamePlaceholder')}
               value={formData.fullName}
               onChange={(e) => handleInputChange('fullName', e.target.value)}
+              inputProps={{
+                onInput: (e) => handleInput('fullName', e)
+              }}
               error={!!formErrors.fullName}
               helperText={formErrors.fullName}
               margin="normal"
@@ -444,6 +457,9 @@ const TenantsList = () => {
               placeholder={t('nationalIdPlaceholder')}
               value={formData.nationalId}
               onChange={(e) => handleInputChange('nationalId', e.target.value)}
+              inputProps={{
+                onInput: (e) => handleInput('nationalId', e)
+              }}
               error={!!formErrors.nationalId}
               helperText={formErrors.nationalId}
               margin="normal"
@@ -455,6 +471,9 @@ const TenantsList = () => {
               type="email"
               value={formData.email}
               onChange={(e) => handleInputChange('email', e.target.value)}
+              inputProps={{
+                onInput: (e) => handleInput('email', e)
+              }}
               error={!!formErrors.email}
               helperText={formErrors.email}
               margin="normal"
@@ -465,6 +484,9 @@ const TenantsList = () => {
               placeholder={t('phonePlaceholder')}
               value={formData.phone}
               onChange={(e) => handleInputChange('phone', e.target.value)}
+              inputProps={{
+                onInput: (e) => handleInput('phone', e)
+              }}
               error={!!formErrors.phone}
               helperText={formErrors.phone}
               margin="normal"

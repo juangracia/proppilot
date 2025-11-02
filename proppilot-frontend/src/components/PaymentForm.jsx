@@ -5,7 +5,6 @@ import {
   Typography,
   TextField,
   Button,
-  Grid,
   Alert,
   CircularProgress,
   FormControl,
@@ -13,6 +12,7 @@ import {
   Select,
   MenuItem
 } from '@mui/material'
+import Grid from '@mui/material/Grid'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
@@ -204,12 +204,12 @@ function PaymentForm() {
         ) : (
           <Box component="form" onSubmit={handleSubmit}>
             <Grid container spacing={{ xs: 2, sm: 3 }}>
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <FormControl fullWidth required error={!!validationErrors.propertyUnitId}>
                   <InputLabel>{t('propertyUnitLabel')}</InputLabel>
                   <Select
                     value={formData.propertyUnitId}
-                    onChange={(e) => setFormData({ ...formData, propertyUnitId: e.target.value })}
+                    onChange={(e) => setFormData(prev => ({ ...prev, propertyUnitId: e.target.value }))}
                     label={t('propertyUnitLabel')}
                   >
                     {propertyUnits.map((unit) => (
@@ -226,12 +226,12 @@ function PaymentForm() {
                 </FormControl>
               </Grid>
 
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <TextField
                   label={t('paymentAmountLabel')}
                   type="number"
                   value={formData.amount}
-                  onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                  onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
                   fullWidth
                   required
                   error={!!validationErrors.amount}
@@ -243,11 +243,11 @@ function PaymentForm() {
                 />
               </Grid>
 
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <DatePicker
                   label={t('paymentDateLabel')}
                   value={formData.paymentDate}
-                  onChange={(date) => setFormData({ ...formData, paymentDate: date })}
+                  onChange={(date) => setFormData(prev => ({ ...prev, paymentDate: date }))}
                   maxDate={new Date()}
                   slotProps={{
                     textField: {
@@ -260,12 +260,12 @@ function PaymentForm() {
                 />
               </Grid>
 
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <TextField
                   select
                   label={t('paymentTypeLabel')}
                   value={formData.paymentType}
-                  onChange={(e) => setFormData({ ...formData, paymentType: e.target.value })}
+                  onChange={(e) => setFormData(prev => ({ ...prev, paymentType: e.target.value }))}
                   fullWidth
                   required
                 >
@@ -277,11 +277,11 @@ function PaymentForm() {
                 </TextField>
               </Grid>
 
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <TextField
                   label={t('descriptionLabel')}
                   value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                   fullWidth
                   multiline
                   rows={3}
@@ -292,7 +292,7 @@ function PaymentForm() {
               </Grid>
 
               {selectedPropertyUnit && (
-                <Grid item xs={12}>
+                <Grid size={{ xs: 12 }}>
                   <Box sx={{ 
                     p: { xs: 1.5, sm: 2 }, 
                     border: 1, 
@@ -340,7 +340,7 @@ function PaymentForm() {
                 </Grid>
               )}
 
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <Box sx={{ 
                   display: 'flex', 
                   gap: { xs: 1.5, sm: 2 }, 
@@ -357,7 +357,7 @@ function PaymentForm() {
                       setFormData({
                         propertyUnitId: '',
                         amount: '',
-                        paymentDate: new Date(),
+                        paymentDate: null,
                         paymentType: 'RENT',
                         description: ''
                       })

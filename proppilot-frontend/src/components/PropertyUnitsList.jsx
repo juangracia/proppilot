@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState } from 'react'
 import {
   Paper,
   Typography,
@@ -13,19 +13,16 @@ import {
   DialogContent,
   DialogActions,
   MenuItem,
-  Grid,
-  IconButton,
-  Tooltip,
   Card,
   CardContent,
   Chip,
   Avatar,
   Divider
 } from '@mui/material'
+import Grid from '@mui/material/Grid'
 import {
   Search as SearchIcon,
   Add as AddIcon,
-  Delete as DeleteIcon,
   Home,
   Business,
   Person,
@@ -35,7 +32,8 @@ import {
   Visibility
 } from '@mui/icons-material'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
-import axios from 'axios'
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
 import { useLanguage } from '../contexts/LanguageContext'
 
 const API_BASE_URL = '/api'
@@ -94,6 +92,17 @@ function PropertyUnitsList() {
     leaseStartDate: null
   })
   const [addLoading, setAddLoading] = useState(false)
+  const [selectedProperty, setSelectedProperty] = useState(null)
+  const [openViewDialog, setOpenViewDialog] = useState(false)
+  const [editingProperty, setEditingProperty] = useState(null)
+  const [openEditDialog, setOpenEditDialog] = useState(false)
+  const [editFormData, setEditFormData] = useState({
+    address: '',
+    type: '',
+    baseRentAmount: '',
+    leaseStartDate: null
+  })
+  const [editLoading, setEditLoading] = useState(false)
 
   const filteredProperties = propertyUnits.filter(property =>
     property.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -139,7 +148,7 @@ function PropertyUnitsList() {
         monthlyRent: parseFloat(newProperty.baseRentAmount),
         leaseStart: newProperty.leaseStartDate ? newProperty.leaseStartDate.toLocaleDateString() : null
       }
-      setPropertyUnits([...propertyUnits, property])
+      setPropertyUnits(prev => [...prev, property])
       setOpenAddDialog(false)
       setNewProperty({
         address: '',
@@ -148,6 +157,62 @@ function PropertyUnitsList() {
         leaseStartDate: null
       })
       setAddLoading(false)
+    }, 1000)
+  }
+
+  const handleViewDetails = (property) => {
+    setSelectedProperty(property)
+    setOpenViewDialog(true)
+  }
+
+  const handleCloseViewDialog = () => {
+    setOpenViewDialog(false)
+    setSelectedProperty(null)
+  }
+
+  const handleEdit = (property) => {
+    setEditingProperty(property)
+    setEditFormData({
+      address: property.address,
+      type: property.type,
+      baseRentAmount: property.monthlyRent.toString(),
+      leaseStartDate: property.leaseStart ? new Date(property.leaseStart) : null
+    })
+    setOpenEditDialog(true)
+  }
+
+  const handleCloseEditDialog = () => {
+    setOpenEditDialog(false)
+    setEditingProperty(null)
+    setEditFormData({
+      address: '',
+      type: '',
+      baseRentAmount: '',
+      leaseStartDate: null
+    })
+  }
+
+  const handleUpdateProperty = () => {
+    if (!editFormData.address || !editFormData.type || !editFormData.baseRentAmount) {
+      return
+    }
+
+    setEditLoading(true)
+    // Simulate API call
+    setTimeout(() => {
+      setPropertyUnits(prev => prev.map(p => 
+        p.id === editingProperty.id 
+          ? {
+              ...p,
+              address: editFormData.address,
+              type: editFormData.type,
+              monthlyRent: parseFloat(editFormData.baseRentAmount),
+              leaseStart: editFormData.leaseStartDate ? editFormData.leaseStartDate.toLocaleDateString() : p.leaseStart
+            }
+          : p
+      ))
+      handleCloseEditDialog()
+      setEditLoading(false)
     }, 1000)
   }
 
@@ -160,9 +225,10 @@ function PropertyUnitsList() {
   }
 
   return (
-    <Box>
-      {/* Header */}
-      <Box sx={{ mb: { xs: 3, sm: 4 } }}>
+    <LocalizationProvider dateAdapter={AdapterDateFns}>
+      <Box>
+        {/* Header */}
+        <Box sx={{ mb: { xs: 3, sm: 4 } }}>
         <Typography 
           variant="h4" 
           sx={{ 
@@ -231,7 +297,7 @@ function PropertyUnitsList() {
       {/* Properties Grid */}
       <Grid container spacing={{ xs: 2, sm: 3 }}>
         {filteredProperties.map((property) => (
-          <Grid item xs={12} sm={6} md={4} key={property.id}>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }} key={property.id}>
             <Card 
               sx={{ 
                 height: '100%',
@@ -358,6 +424,7 @@ function PropertyUnitsList() {
                     variant="outlined"
                     size="small"
                     startIcon={<Visibility />}
+                    onClick={() => handleViewDetails(property)}
                     sx={{ 
                       textTransform: 'none', 
                       flex: 1,
@@ -370,6 +437,7 @@ function PropertyUnitsList() {
                     variant="outlined"
                     size="small"
                     startIcon={<Edit />}
+                    onClick={() => handleEdit(property)}
                     sx={{ 
                       textTransform: 'none', 
                       flex: 1,
@@ -404,7 +472,7 @@ function PropertyUnitsList() {
             <TextField
               label="Property Address"
               value={newProperty.address}
-              onChange={(e) => setNewProperty({ ...newProperty, address: e.target.value })}
+              onChange={(e) => setNewProperty(prev => ({ ...prev, address: e.target.value }))}
               fullWidth
               required
             />
@@ -412,7 +480,7 @@ function PropertyUnitsList() {
               select
               label="Property Type"
               value={newProperty.type}
-              onChange={(e) => setNewProperty({ ...newProperty, type: e.target.value })}
+              onChange={(e) => setNewProperty(prev => ({ ...prev, type: e.target.value }))}
               fullWidth
               required
             >
@@ -424,7 +492,7 @@ function PropertyUnitsList() {
               label="Base Rent Amount"
               type="number"
               value={newProperty.baseRentAmount}
-              onChange={(e) => setNewProperty({ ...newProperty, baseRentAmount: e.target.value })}
+              onChange={(e) => setNewProperty(prev => ({ ...prev, baseRentAmount: e.target.value }))}
               fullWidth
               required
               InputProps={{
@@ -434,8 +502,12 @@ function PropertyUnitsList() {
             <DatePicker
               label="Lease Start Date"
               value={newProperty.leaseStartDate}
-              onChange={(date) => setNewProperty({ ...newProperty, leaseStartDate: date })}
-              renderInput={(params) => <TextField {...params} fullWidth />}
+              onChange={(date) => setNewProperty(prev => ({ ...prev, leaseStartDate: date }))}
+              slotProps={{
+                textField: {
+                  fullWidth: true
+                }
+              }}
             />
           </Box>
         </DialogContent>
@@ -450,7 +522,144 @@ function PropertyUnitsList() {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+
+      {/* View Details Dialog */}
+      <Dialog 
+        open={openViewDialog} 
+        onClose={handleCloseViewDialog} 
+        maxWidth="sm" 
+        fullWidth
+        PaperProps={{
+          sx: {
+            m: { xs: 1, sm: 2 },
+            maxHeight: { xs: '95vh', sm: '90vh' }
+          }
+        }}
+      >
+        <DialogTitle>Property Details</DialogTitle>
+        <DialogContent>
+          {selectedProperty && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Address</Typography>
+                <Typography variant="body1" sx={{ fontWeight: 500, mt: 0.5 }}>
+                  {selectedProperty.address}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Type</Typography>
+                <Typography variant="body1" sx={{ fontWeight: 500, mt: 0.5 }}>
+                  {selectedProperty.type}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Status</Typography>
+                <Chip 
+                  label={selectedProperty.status} 
+                  color={getStatusColor(selectedProperty.status)}
+                  size="small"
+                  sx={{ mt: 0.5 }}
+                />
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Tenant</Typography>
+                <Typography variant="body1" sx={{ fontWeight: 500, mt: 0.5 }}>
+                  {selectedProperty.tenant}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Monthly Rent</Typography>
+                <Typography variant="body1" sx={{ fontWeight: 500, mt: 0.5 }}>
+                  ${selectedProperty.monthlyRent.toLocaleString()}
+                </Typography>
+              </Box>
+              {selectedProperty.leaseStart && (
+                <Box>
+                  <Typography variant="caption" color="text.secondary">Lease Start Date</Typography>
+                  <Typography variant="body1" sx={{ fontWeight: 500, mt: 0.5 }}>
+                    {selectedProperty.leaseStart}
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseViewDialog}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit Property Dialog */}
+      <Dialog 
+        open={openEditDialog} 
+        onClose={handleCloseEditDialog} 
+        maxWidth="sm" 
+        fullWidth
+        PaperProps={{
+          sx: {
+            m: { xs: 1, sm: 2 },
+            maxHeight: { xs: '95vh', sm: '90vh' }
+          }
+        }}
+      >
+        <DialogTitle>Edit Property</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+            <TextField
+              label="Property Address"
+              value={editFormData.address}
+              onChange={(e) => setEditFormData(prev => ({ ...prev, address: e.target.value }))}
+              fullWidth
+              required
+            />
+            <TextField
+              select
+              label="Property Type"
+              value={editFormData.type}
+              onChange={(e) => setEditFormData(prev => ({ ...prev, type: e.target.value }))}
+              fullWidth
+              required
+            >
+              <MenuItem value="Apartment">Apartment</MenuItem>
+              <MenuItem value="House">House</MenuItem>
+              <MenuItem value="Commercial">Commercial</MenuItem>
+            </TextField>
+            <TextField
+              label="Base Rent Amount"
+              type="number"
+              value={editFormData.baseRentAmount}
+              onChange={(e) => setEditFormData(prev => ({ ...prev, baseRentAmount: e.target.value }))}
+              fullWidth
+              required
+              InputProps={{
+                startAdornment: <InputAdornment position="start">$</InputAdornment>,
+              }}
+            />
+            <DatePicker
+              label="Lease Start Date"
+              value={editFormData.leaseStartDate}
+              onChange={(date) => setEditFormData(prev => ({ ...prev, leaseStartDate: date }))}
+              slotProps={{
+                textField: {
+                  fullWidth: true
+                }
+              }}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseEditDialog}>Cancel</Button>
+          <Button 
+            onClick={handleUpdateProperty} 
+            variant="contained"
+            disabled={editLoading || !editFormData.address || !editFormData.type || !editFormData.baseRentAmount}
+          >
+            {editLoading ? <CircularProgress size={20} /> : 'Save Changes'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      </Box>
+    </LocalizationProvider>
   )
 }
 

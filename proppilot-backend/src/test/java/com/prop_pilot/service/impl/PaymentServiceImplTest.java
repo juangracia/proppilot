@@ -300,7 +300,6 @@ class PaymentServiceImplTest {
         // Given
         Long propertyUnitId = 1L;
         LocalDate asOfDate = LocalDate.of(2024, 3, 1);
-        BigDecimal adjustedRent = new BigDecimal("1545.00");
 
         when(propertyUnitRepository.findById(propertyUnitId)).thenReturn(Optional.of(testPropertyUnit));
         when(paymentRepository.sumAmountByPropertyUnitIdAndPaymentType(propertyUnitId, Payment.PaymentType.RENT))

@@ -195,7 +195,7 @@ function AppContent() {
       <List>
         {menuItems.map((item) => (
           <ListItem
-            button
+            component="button"
             key={item.text}
             onClick={() => handleMenuClick(item.value)}
             selected={selectedView === item.value}
@@ -222,10 +222,14 @@ function AppContent() {
     </div>
   )
 
+  const handleNavigate = (viewIndex) => {
+    setSelectedView(viewIndex)
+  }
+
   const renderContent = () => {
     switch (selectedView) {
       case 0:
-        return <DashboardView />
+        return <DashboardView onNavigate={handleNavigate} />
       case 1:
         return <PropertyUnitsList />
       case 2:
@@ -233,7 +237,7 @@ function AppContent() {
       case 3:
         return <PaymentForm />
       default:
-        return <DashboardView />
+        return <DashboardView onNavigate={handleNavigate} />
     }
   }
 
@@ -261,16 +265,18 @@ function AppContent() {
                 <Menu />
               </IconButton>
               <Typography 
-                variant="h6" 
+                variant="h4" 
                 noWrap 
                 component="div" 
                 sx={{ 
                   flexGrow: 1,
-                  fontSize: { xs: '0.875rem', sm: '1.25rem' },
-                  fontWeight: 500
+                  fontSize: { xs: '1.5rem', sm: '2rem' },
+                  fontWeight: 700,
+                  letterSpacing: '0.02em',
+                  fontFamily: 'inherit'
                 }}
               >
-                Professional Rental Management
+                PropPilot
               </Typography>
               <LanguageCurrencySelector />
               <IconButton

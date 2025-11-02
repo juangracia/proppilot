@@ -56,8 +56,8 @@ fi
 
 # Check and start Frontend (React/Vite)
 echo -e "${BLUE}🎨 Checking Frontend (React)...${NC}"
-if check_port 5173; then
-    echo -e "${GREEN}✅ Frontend is already running on port 5173${NC}"
+if check_port 3000; then
+    echo -e "${GREEN}✅ Frontend is already running on port 3000${NC}"
 else
     echo -e "${YELLOW}🔄 Starting Frontend (React)...${NC}"
     # Start frontend in background
@@ -66,7 +66,7 @@ else
     echo $FRONTEND_PID > frontend.pid
     
     # Wait for frontend to be ready
-    if wait_for_service "http://localhost:5173" "Frontend"; then
+    if wait_for_service "http://localhost:3000" "Frontend"; then
         echo -e "${GREEN}✅ Frontend started successfully (PID: $FRONTEND_PID)${NC}"
     else
         echo -e "${YELLOW}⚠️  Frontend may still be starting up. Check frontend.log for details.${NC}"
@@ -77,7 +77,7 @@ echo ""
 echo -e "${GREEN}🎉 PropPilot Frontend is ready!${NC}"
 echo ""
 echo "📱 Services:"
-echo "   • Frontend:  http://localhost:5173 (React App)"
+echo "   • Frontend:  http://localhost:3000 (React App)"
 echo ""
 echo "📋 Useful commands:"
 echo "   • View frontend logs: tail -f frontend.log"

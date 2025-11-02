@@ -3,7 +3,6 @@ import {
   Box,
   Typography,
   Paper,
-  Grid,
   Card,
   CardContent,
   Button,
@@ -13,6 +12,7 @@ import {
   IconButton,
   Divider
 } from '@mui/material'
+import Grid from '@mui/material/Grid'
 import {
   Home,
   People,
@@ -24,35 +24,39 @@ import {
   TrendingUp
 } from '@mui/icons-material'
 
-const DashboardView = () => {
+const DashboardView = ({ onNavigate }) => {
   const stats = [
     {
       title: 'Total Properties',
       value: '24',
       change: '+2 this month',
       icon: <Home sx={{ fontSize: 40, color: '#2196F3' }} />,
-      color: '#2196F3'
+      color: '#2196F3',
+      navigateTo: 1 // Properties page
     },
     {
       title: 'Active Tenants',
       value: '18',
       change: '+1 this week',
       icon: <People sx={{ fontSize: 40, color: '#4CAF50' }} />,
-      color: '#4CAF50'
+      color: '#4CAF50',
+      navigateTo: 2 // Tenants page
     },
     {
       title: 'Monthly Revenue',
       value: '$24,500',
       change: '+8% from last month',
       icon: <AttachMoney sx={{ fontSize: 40, color: '#FF9800' }} />,
-      color: '#FF9800'
+      color: '#FF9800',
+      navigateTo: 3 // Payments page
     },
     {
       title: 'Outstanding Payments',
       value: '3',
       change: '2 overdue',
       icon: <Warning sx={{ fontSize: 40, color: '#F44336' }} />,
-      color: '#F44336'
+      color: '#F44336',
+      navigateTo: 3 // Payments page
     }
   ]
 
@@ -112,10 +116,12 @@ const DashboardView = () => {
       {/* Stats Cards */}
       <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ mb: { xs: 3, sm: 4 } }}>
         {stats.map((stat, index) => (
-          <Grid item xs={12} sm={6} md={3} key={index}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }} key={index}>
             <Card 
+              onClick={() => onNavigate && onNavigate(stat.navigateTo)}
               sx={{ 
                 height: '100%',
+                cursor: 'pointer',
                 transition: 'transform 0.2s, box-shadow 0.2s',
                 '&:hover': {
                   transform: { xs: 'none', sm: 'translateY(-4px)' },
@@ -169,7 +175,7 @@ const DashboardView = () => {
 
       <Grid container spacing={{ xs: 2, sm: 3 }}>
         {/* Recent Payments */}
-        <Grid item xs={12} md={8}>
+        <Grid size={{ xs: 12, md: 8 }}>
           <Paper sx={{ p: { xs: 2, sm: 3 }, height: 'fit-content' }}>
             <Typography 
               variant="h6" 
@@ -260,7 +266,7 @@ const DashboardView = () => {
         </Grid>
 
         {/* Quick Actions */}
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Paper sx={{ p: { xs: 2, sm: 3 }, height: 'fit-content' }}>
             <Typography 
               variant="h6" 
