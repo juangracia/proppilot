@@ -1,18 +1,21 @@
 # PropPilot Backend
 
-Spring Boot API for the PropPilot property management system.
+Spring Boot REST API for the PropPilot property management system.
 
 ## Overview
 
-This is the backend service for PropPilot, providing REST APIs for property management, tenant management, and payment processing.
+This is the backend service for PropPilot, providing comprehensive REST APIs for property management, tenant management, and payment processing. The backend uses Spring Boot with PostgreSQL for data persistence and includes advanced features like rent calculations, payment history tracking, and outstanding balance management.
 
 ## Tech Stack
 
-- **Java 17+**
-- **Spring Boot 3.x**
-- **PostgreSQL** - Primary database
-- **Maven** - Build tool
-- **Docker** - Database containerization
+- **Java 17+** - Programming language
+- **Spring Boot 3.x** - Application framework
+- **Spring Data JPA** - Data persistence
+- **PostgreSQL** - Relational database
+- **Maven** - Build tool and dependency management
+- **Docker & Docker Compose** - Database containerization
+- **Swagger/OpenAPI** - API documentation
+- **SpringDoc** - OpenAPI documentation
 
 ## Prerequisites
 
@@ -23,21 +26,30 @@ This is the backend service for PropPilot, providing REST APIs for property mana
 
 ## Quick Start
 
-1. **Clone the repository:**
+1. **Navigate to backend directory:**
    ```bash
-   git clone https://gitlab.com/juan.gracia2/proppilot-backend.git
    cd proppilot-backend
    ```
 
-2. **Start the backend and database:**
+2. **Start the database:**
+   ```bash
+   docker-compose up -d
+   ```
+
+3. **Start the backend:**
    ```bash
    ./start-backend.sh
    ```
+   The API will be available at: http://localhost:8080
 
-3. **Populate the database with sample data (optional):**
+4. **Populate the database with sample data (optional):**
    ```bash
    ./populate_database.sh
    ```
+
+5. **Access API documentation:**
+   - Swagger UI: http://localhost:8080/swagger-ui.html
+   - API Docs: http://localhost:8080/api-docs
 
 ## Manual Setup
 
@@ -66,12 +78,39 @@ This is the backend service for PropPilot, providing REST APIs for property mana
 
 ## API Endpoints
 
-The backend provides REST APIs for:
+The backend provides comprehensive REST APIs:
 
-- **Properties** - CRUD operations for property management
-- **Tenants** - Tenant information and management
-- **Payments** - Payment processing and history
-- **Health Check** - Available at `/actuator/health`
+### Property Units
+- `GET /api/property-units` - List all property units
+- `GET /api/property-units/{id}` - Get property unit by ID
+- `POST /api/property-units` - Create new property unit
+- `PUT /api/property-units/{id}` - Update property unit
+- `DELETE /api/property-units/{id}` - Delete property unit
+- `GET /api/property-units/search?address={address}` - Search by address
+- `GET /api/property-units/tenant/{tenantId}` - Get properties by tenant
+
+### Tenants
+- `GET /api/tenants` - List all tenants
+- `GET /api/tenants/{id}` - Get tenant by ID
+- `POST /api/tenants` - Create new tenant
+- `PUT /api/tenants/{id}` - Update tenant
+- `DELETE /api/tenants/{id}` - Delete tenant
+
+### Payments
+- `GET /api/payments` - List all payments
+- `GET /api/payments/{id}` - Get payment by ID
+- `POST /api/payments` - Create new payment
+- `PUT /api/payments/{id}` - Update payment
+- `DELETE /api/payments/{id}` - Delete payment
+- `GET /api/payments/property-unit/{id}` - Get payments by property unit
+- `GET /api/payments/property-unit/{id}/outstanding` - Get outstanding payments
+- `GET /api/payments/property-unit/{id}/outstanding-amount` - Calculate outstanding amount
+- `GET /api/payments/property-unit/{id}/adjusted-rent` - Calculate adjusted rent
+- `GET /api/payments/property-unit/{id}/total-paid` - Get total paid by payment type
+- `GET /api/payments/property-unit/{id}/history` - Get payment history
+
+### Health Check
+- `GET /actuator/health` - Application health status
 
 ## Development
 
@@ -81,16 +120,17 @@ The backend provides REST APIs for:
 src/
 ├── main/
 │   ├── java/
-│   │   └── com/proppilot/
+│   │   └── com/prop_pilot/
 │   │       ├── controller/     # REST controllers
-│   │       ├── service/        # Business logic
-│   │       ├── repository/     # Data access layer
-│   │       ├── model/          # Entity models
-│   │       └── config/         # Configuration classes
+│   │       ├── service/        # Business logic layer
+│   │       │   └── impl/       # Service implementations
+│   │       ├── repository/     # Data access layer (JPA repositories)
+│   │       ├── entity/         # JPA entities (PropertyUnit, Tenant, Payment)
+│   │       ├── exception/      # Custom exceptions and error handling
+│   │       └── config/         # Configuration classes (CORS, OpenAPI)
 │   └── resources/
-│       ├── application.yml     # Application configuration
-│       └── data.sql           # Initial data (if any)
-└── test/                      # Unit and integration tests
+│       └── application.yml     # Application configuration
+└── test/                       # Unit and integration tests
 ```
 
 ### Useful Commands
@@ -110,8 +150,17 @@ src/
 ## Frontend Integration
 
 This backend is designed to work with the PropPilot frontend application:
-- **Frontend Repository:** https://gitlab.com/juan.gracia2/proppilot-frontend
+- **CORS Configuration:** Configured to allow requests from `http://localhost:3000`
 - **API Base URL:** http://localhost:8080
+- **API Proxy:** Frontend uses `/api` proxy that routes to `http://localhost:8080/api`
+
+### CORS Configuration
+
+The backend is configured to accept requests from the frontend:
+- **Allowed Origins:** http://localhost:3000
+- **Allowed Methods:** GET, POST, PUT, DELETE, OPTIONS
+- **Allowed Headers:** *
+- **Credentials:** Enabled
 
 ## Troubleshooting
 
