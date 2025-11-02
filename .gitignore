@@ -1,1 +1,79 @@
+# Backend (Spring Boot/Maven)
+proppilot-backend/target/
+proppilot-backend/*.pid
+proppilot-backend/*.log
+proppilot-backend/*.jar
+proppilot-backend/*.war
+proppilot-backend/*.class
+proppilot-backend/.mvn/
+proppilot-backend/mvnw
+proppilot-backend/mvnw.cmd
+
+# Frontend (React/Vite)
+proppilot-frontend/node_modules/
+proppilot-frontend/dist/
+proppilot-frontend/*.pid
+proppilot-frontend/*.log
+proppilot-frontend/.vite/
+proppilot-frontend/.env
+proppilot-frontend/.env.local
+proppilot-frontend/.env.production
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+.classpath
+.project
+.settings/
+bin/
+.DS_Store
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*~
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Test coverage
+**/jacoco.exec
+**/site/jacoco/
+**/surefire-reports/
+**/test-results/
+**/coverage/
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*.swo
+*~
+
+# Build artifacts
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Claude MCP config (already in gitignore)
 proppilot-backend/.claude_mcp_config.json
