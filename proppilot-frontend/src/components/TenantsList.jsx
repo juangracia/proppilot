@@ -123,25 +123,25 @@ const TenantsList = () => {
 
   const validateForm = () => {
     const errors = {}
-    
+
     if (!formData.fullName.trim()) {
-      errors.fullName = 'El nombre completo es requerido'
+      errors.fullName = t('fullNameRequired')
     }
-    
+
     if (!formData.nationalId.trim()) {
-      errors.nationalId = 'El DNI/CUIT es requerido'
+      errors.nationalId = t('nationalIdRequired')
     }
-    
+
     if (!formData.email.trim()) {
-      errors.email = 'El email es requerido'
+      errors.email = t('emailRequired')
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      errors.email = 'El formato del email no es válido'
+      errors.email = t('emailInvalid')
     }
-    
+
     if (!formData.phone.trim()) {
-      errors.phone = 'El teléfono es requerido'
+      errors.phone = t('phoneRequired')
     }
-    
+
     setFormErrors(errors)
     return Object.keys(errors).length === 0
   }
@@ -152,12 +152,12 @@ const TenantsList = () => {
     }
 
     try {
-      const url = editingTenant 
+      const url = editingTenant
         ? `${API_BASE_URL}/tenants/${editingTenant.id}`
         : `${API_BASE_URL}/tenants`
-      
+
       const method = editingTenant ? 'PUT' : 'POST'
-      
+
       const response = await fetch(url, {
         method,
         headers: {
@@ -184,14 +184,14 @@ const TenantsList = () => {
         }
       } else {
         showSnackbar(
-          editingTenant ? t('failedToUpdateTenant') : t('failedToCreateTenant'), 
+          editingTenant ? t('failedToUpdateTenant') : t('failedToCreateTenant'),
           'error'
         )
       }
     } catch (error) {
       console.error('Error saving tenant:', error)
       showSnackbar(
-        editingTenant ? t('failedToUpdateTenant') : t('failedToCreateTenant'), 
+        editingTenant ? t('failedToUpdateTenant') : t('failedToCreateTenant'),
         'error'
       )
     }
@@ -248,19 +248,19 @@ const TenantsList = () => {
 
   return (
     <Box>
-      <Box 
-        display="flex" 
-        justifyContent="space-between" 
+      <Box
+        display="flex"
+        justifyContent="space-between"
         alignItems={{ xs: 'flex-start', sm: 'center' }}
         mb={3}
         flexDirection={{ xs: 'column', sm: 'row' }}
         gap={{ xs: 2, sm: 0 }}
       >
-        <Typography 
-          variant="h4" 
-          component="h1" 
+        <Typography
+          variant="h4"
+          component="h1"
           gutterBottom
-          sx={{ 
+          sx={{
             fontSize: { xs: '1.5rem', sm: '2.125rem' },
             mb: { xs: 0, sm: 1 }
           }}
@@ -271,7 +271,7 @@ const TenantsList = () => {
           variant="contained"
           startIcon={<Add />}
           onClick={openAddDialog}
-          sx={{ 
+          sx={{
             fontWeight: 'bold',
             fontSize: { xs: '0.875rem', sm: '1rem' },
             width: { xs: '100%', sm: 'auto' }
@@ -281,9 +281,9 @@ const TenantsList = () => {
         </Button>
       </Box>
 
-      <Typography 
-        variant="body2" 
-        color="text.secondary" 
+      <Typography
+        variant="body2"
+        color="text.secondary"
         gutterBottom
         sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' }, mb: 2 }}
       >
@@ -341,9 +341,9 @@ const TenantsList = () => {
           <Card key={tenant.id} sx={{ mb: 2, p: 2 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
               <Box sx={{ flex: 1 }}>
-                <Typography 
-                  variant="subtitle1" 
-                  sx={{ 
+                <Typography
+                  variant="subtitle1"
+                  sx={{
                     fontWeight: 600,
                     fontSize: '1rem',
                     mb: 0.5
@@ -351,8 +351,8 @@ const TenantsList = () => {
                 >
                   {tenant.fullName}
                 </Typography>
-                <Typography 
-                  variant="body2" 
+                <Typography
+                  variant="body2"
                   color="text.secondary"
                   sx={{ fontSize: '0.8125rem' }}
                 >
@@ -379,8 +379,8 @@ const TenantsList = () => {
             <Divider sx={{ my: 1.5 }} />
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               <Box>
-                <Typography 
-                  variant="caption" 
+                <Typography
+                  variant="caption"
                   color="text.secondary"
                   sx={{ fontSize: '0.75rem', display: 'block', mb: 0.25 }}
                 >
@@ -391,8 +391,8 @@ const TenantsList = () => {
                 </Typography>
               </Box>
               <Box>
-                <Typography 
-                  variant="caption" 
+                <Typography
+                  variant="caption"
                   color="text.secondary"
                   sx={{ fontSize: '0.75rem', display: 'block', mb: 0.25 }}
                 >
@@ -403,8 +403,8 @@ const TenantsList = () => {
                 </Typography>
               </Box>
               <Box>
-                <Typography 
-                  variant="caption" 
+                <Typography
+                  variant="caption"
                   color="text.secondary"
                   sx={{ fontSize: '0.75rem', display: 'block', mb: 0.25 }}
                 >
@@ -420,10 +420,10 @@ const TenantsList = () => {
       </Box>
 
       {/* Add/Edit Dialog */}
-      <Dialog 
-        open={dialogOpen} 
-        onClose={handleCloseDialog} 
-        maxWidth="sm" 
+      <Dialog
+        open={dialogOpen}
+        onClose={handleCloseDialog}
+        maxWidth="sm"
         fullWidth
         fullScreen={isMobile}
         PaperProps={{
@@ -504,8 +504,8 @@ const TenantsList = () => {
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog 
-        open={deleteDialogOpen} 
+      <Dialog
+        open={deleteDialogOpen}
         onClose={handleCloseDeleteDialog}
         fullScreen={isMobile}
         PaperProps={{

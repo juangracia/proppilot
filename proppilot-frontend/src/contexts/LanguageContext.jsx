@@ -19,26 +19,27 @@ export const LanguageProvider = ({ children }) => {
       // Header
       appTitle: 'PropPilot',
       appSubtitle: 'Gestión de Propiedades de Alquiler',
-      
+
       // Tabs
       propertyUnits: 'UNIDADES DE PROPIEDAD',
       registerPayment: 'REGISTRAR PAGO',
       tenants: 'INQUILINOS',
-      
+
       // Property List
       propertyUnitsTitle: 'Unidades de Propiedad',
       addProperty: 'AGREGAR PROPIEDAD',
       searchPlaceholder: 'Buscar por dirección...',
-      
+
       // Table Headers
       id: 'ID',
       address: 'Dirección',
       type: 'Tipo',
       baseRent: 'Alquiler Base',
+      monthlyRent: 'Alquiler Mensual',
       leaseStart: 'Inicio Contrato',
       tenant: 'Inquilino',
       noTenant: 'Sin Inquilino',
-      
+
       // Property Types
       apartment: 'Departamento',
       house: 'Casa',
@@ -47,7 +48,7 @@ export const LanguageProvider = ({ children }) => {
       studio: 'Estudio',
       loft: 'Loft',
       townhouse: 'Casa Adosada',
-      
+
       // Add Property Dialog
       addNewProperty: 'Agregar Nueva Propiedad',
       addressLabel: 'Dirección',
@@ -60,16 +61,16 @@ export const LanguageProvider = ({ children }) => {
       baseRentHelper: 'Monto mensual',
       leaseStartLabel: 'Fecha de Inicio del Contrato',
       leaseStartHelper: 'Fecha de inicio del contrato de alquiler',
-      
+
       // Dialog Actions
       cancel: 'CANCELAR',
       addPropertyAction: 'AGREGAR PROPIEDAD',
-      
+
       // Messages
       totalUnits: 'Total: {count} unidade{plural} de propiedad',
       loading: 'Cargando...',
       errorOccurred: 'Ocurrió un error',
-      
+
       // Tenant Management
       tenantsTitle: 'Inquilinos',
       addTenant: 'AGREGAR INQUILINO',
@@ -104,14 +105,14 @@ export const LanguageProvider = ({ children }) => {
       duplicateNationalId: 'Ya existe un inquilino con este DNI/CUIT',
       duplicateEmail: 'Ya existe un inquilino con este email',
       totalTenants: 'Total: {count} inquilino{plural}',
-      
+
       // Property Management
       deleteProperty: 'ELIMINAR PROPIEDAD',
       confirmDeleteProperty: '¿Estás seguro de que deseas eliminar esta propiedad?',
       confirmDeletePropertyMessage: 'Esta acción no se puede deshacer.',
       propertyDeletedSuccess: '¡Propiedad eliminada exitosamente!',
       failedToDeleteProperty: 'Error al eliminar la propiedad',
-      
+
       // Payment Form
       registerPaymentTitle: 'Registrar Pago',
       propertyUnitLabel: 'Unidad de Propiedad',
@@ -126,14 +127,39 @@ export const LanguageProvider = ({ children }) => {
       failedToRegisterPayment: 'Error al registrar el pago',
       fixValidationErrors: 'Por favor corrige los errores de validación',
       charactersCount: '{count}/500 caracteres',
-      
+
+      // Validation Errors
+      fullNameRequired: 'El nombre completo es requerido',
+      nationalIdRequired: 'El DNI/CUIT es requerido',
+      emailRequired: 'El email es requerido',
+      emailInvalid: 'El formato del email no es válido',
+      phoneRequired: 'El teléfono es requerido',
+      propertyUnitRequired: 'La unidad de propiedad es requerida',
+      amountRequired: 'El monto del pago es requerido',
+      amountPositive: 'El monto del pago debe ser mayor a 0',
+      amountExceeded: 'El monto del pago no puede exceder 999,999.99',
+      dateRequired: 'La fecha de pago es requerida',
+      dateFuture: 'La fecha de pago no puede ser futura',
+      descriptionLength: 'La descripción no puede exceder 500 caracteres',
+      failedToLoadProperties: 'Error al cargar las unidades de propiedad. Por favor asegúrese de que el servidor backend esté funcionando.',
+
+      // Selectors
+      language: 'Idioma',
+      currency: 'Moneda',
+
+      // Menu Items
+      dashboardMenu: 'Panel',
+      propertiesMenu: 'Propiedades',
+      tenantsMenu: 'Inquilinos',
+      paymentsMenu: 'Pagos',
+
       // Payment Types
       rentPayment: 'Pago de Alquiler',
       depositPayment: 'Depósito',
       maintenancePayment: 'Mantenimiento',
       utilityPayment: 'Servicios',
       otherPayment: 'Otro',
-      
+
       // Currencies
       currencySymbol: {
         ARS: '$',
@@ -142,32 +168,59 @@ export const LanguageProvider = ({ children }) => {
       currencyName: {
         ARS: 'Pesos Argentinos',
         USD: 'Dólares Estadounidenses'
-      }
+      },
+      // Dashboard
+      dashboardTitle: 'Panel de Control',
+      dashboardSubtitle: '¡Bienvenido de nuevo! Aquí está el resumen de sus propiedades.',
+      totalProperties: 'Total de Propiedades',
+      activeTenants: 'Inquilinos Activos',
+      monthlyRevenue: 'Ingresos Mensuales',
+      outstandingPayments: 'Pagos Pendientes',
+      recentPayments: 'Pagos Recientes',
+      quickActions: 'Acciones Rápidas',
+      viewOutstanding: 'Ver Pendientes',
+      thisMonth: 'este mes',
+      thisWeek: 'esta semana',
+      fromLastMonth: 'desde el mes pasado',
+      overdue: 'vencidos',
+      paid: 'Pagado',
+
+      // Common
+      viewDetails: 'Ver Detalles',
+      close: 'Cerrar',
+      saveChanges: 'Guardar Cambios',
+      propertyDetails: 'Detalles de la Propiedad',
+      editProperty: 'Editar Propiedad',
+      status: 'Estado',
+      occupied: 'Ocupado',
+      vacant: 'Vacante',
+      commercial: 'Comercial',
     },
     en: {
       // Header
       appTitle: 'PropPilot',
       appSubtitle: 'Rental Property Management',
-      
+
       // Tabs
       propertyUnits: 'PROPERTY UNITS',
       registerPayment: 'REGISTER PAYMENT',
       tenants: 'TENANTS',
-      
+
       // Property List
       propertyUnitsTitle: 'Property Units',
       addProperty: 'ADD PROPERTY',
       searchPlaceholder: 'Search by address...',
-      
+
       // Table Headers
       id: 'ID',
       address: 'Address',
       type: 'Type',
       baseRent: 'Base Rent',
+      monthlyRent: 'Monthly Rent',
       leaseStart: 'Lease Start',
       tenant: 'Tenant',
       noTenant: 'No Tenant',
-      
+
       // Property Types
       apartment: 'Apartment',
       house: 'House',
@@ -176,7 +229,7 @@ export const LanguageProvider = ({ children }) => {
       studio: 'Studio',
       loft: 'Loft',
       townhouse: 'Townhouse',
-      
+
       // Add Property Dialog
       addNewProperty: 'Add New Property',
       addressLabel: 'Address',
@@ -189,16 +242,16 @@ export const LanguageProvider = ({ children }) => {
       baseRentHelper: 'Monthly amount',
       leaseStartLabel: 'Lease Start Date',
       leaseStartHelper: 'Lease contract start date',
-      
+
       // Dialog Actions
       cancel: 'CANCEL',
       addPropertyAction: 'ADD PROPERTY',
-      
+
       // Messages
       totalUnits: 'Total: {count} property unit{plural}',
       loading: 'Loading...',
       errorOccurred: 'An error occurred',
-      
+
       // Tenant Management
       tenantsTitle: 'Tenants',
       addTenant: 'ADD TENANT',
@@ -233,14 +286,14 @@ export const LanguageProvider = ({ children }) => {
       duplicateNationalId: 'A tenant with this National ID already exists',
       duplicateEmail: 'A tenant with this email already exists',
       totalTenants: 'Total: {count} tenant{plural}',
-      
+
       // Property Management
       deleteProperty: 'DELETE PROPERTY',
       confirmDeleteProperty: 'Are you sure you want to delete this property?',
       confirmDeletePropertyMessage: 'This action cannot be undone.',
       propertyDeletedSuccess: 'Property deleted successfully!',
       failedToDeleteProperty: 'Failed to delete property',
-      
+
       // Payment Form
       registerPaymentTitle: 'Register Payment',
       propertyUnitLabel: 'Property Unit',
@@ -255,14 +308,39 @@ export const LanguageProvider = ({ children }) => {
       failedToRegisterPayment: 'Failed to register payment',
       fixValidationErrors: 'Please fix the validation errors below',
       charactersCount: '{count}/500 characters',
-      
+
+      // Validation Errors
+      fullNameRequired: 'Full name is required',
+      nationalIdRequired: 'National ID is required',
+      emailRequired: 'Email is required',
+      emailInvalid: 'Email format is invalid',
+      phoneRequired: 'Phone is required',
+      propertyUnitRequired: 'Property unit is required',
+      amountRequired: 'Payment amount is required',
+      amountPositive: 'Payment amount must be greater than 0',
+      amountExceeded: 'Payment amount cannot exceed 999,999.99',
+      dateRequired: 'Payment date is required',
+      dateFuture: 'Payment date cannot be in the future',
+      descriptionLength: 'Description cannot exceed 500 characters',
+      failedToLoadProperties: 'Failed to load property units. Please make sure the backend server is running.',
+
+      // Selectors
+      language: 'Language',
+      currency: 'Currency',
+
+      // Menu Items
+      dashboardMenu: 'Dashboard',
+      propertiesMenu: 'Properties',
+      tenantsMenu: 'Tenants',
+      paymentsMenu: 'Payments',
+
       // Payment Types
       rentPayment: 'Rent Payment',
       depositPayment: 'Deposit',
       maintenancePayment: 'Maintenance',
       utilityPayment: 'Utility',
       otherPayment: 'Other',
-      
+
       // Currencies
       currencySymbol: {
         ARS: 'AR$',
@@ -271,22 +349,48 @@ export const LanguageProvider = ({ children }) => {
       currencyName: {
         ARS: 'Argentine Pesos',
         USD: 'US Dollars'
-      }
+      },
+      // Dashboard
+      dashboardTitle: 'Dashboard',
+      dashboardSubtitle: 'Welcome back! Here\'s your property overview.',
+      totalProperties: 'Total Properties',
+      activeTenants: 'Active Tenants',
+      monthlyRevenue: 'Monthly Revenue',
+      outstandingPayments: 'Outstanding Payments',
+      recentPayments: 'Recent Payments',
+      quickActions: 'Quick Actions',
+      viewOutstanding: 'View Outstanding',
+      thisMonth: 'this month',
+      thisWeek: 'this week',
+      fromLastMonth: 'from last month',
+      overdue: 'overdue',
+      paid: 'Paid',
+
+      // Common
+      viewDetails: 'View Details',
+      close: 'Close',
+      saveChanges: 'Save Changes',
+      propertyDetails: 'Property Details',
+      editProperty: 'Edit Property',
+      status: 'Status',
+      occupied: 'Occupied',
+      vacant: 'Vacant',
+      commercial: 'Commercial',
     }
   }
 
   const t = (key, params = {}) => {
     const keys = key.split('.')
     let value = translations[language]
-    
+
     for (const k of keys) {
       value = value?.[k]
     }
-    
+
     if (typeof value === 'string' && params) {
       return value.replace(/\{(\w+)\}/g, (match, paramKey) => params[paramKey] || match)
     }
-    
+
     return value || key
   }
 

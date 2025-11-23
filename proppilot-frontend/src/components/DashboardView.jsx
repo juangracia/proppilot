@@ -23,37 +23,39 @@ import {
   Visibility,
   TrendingUp
 } from '@mui/icons-material'
+import { useLanguage } from '../contexts/LanguageContext'
 
 const DashboardView = ({ onNavigate }) => {
+  const { t } = useLanguage()
   const stats = [
     {
-      title: 'Total Properties',
+      title: t('totalProperties'),
       value: '24',
-      change: '+2 this month',
+      change: `+2 ${t('thisMonth')}`,
       icon: <Home sx={{ fontSize: 40, color: '#2196F3' }} />,
       color: '#2196F3',
       navigateTo: 1 // Properties page
     },
     {
-      title: 'Active Tenants',
+      title: t('activeTenants'),
       value: '18',
-      change: '+1 this week',
+      change: `+1 ${t('thisWeek')}`,
       icon: <People sx={{ fontSize: 40, color: '#4CAF50' }} />,
       color: '#4CAF50',
       navigateTo: 2 // Tenants page
     },
     {
-      title: 'Monthly Revenue',
+      title: t('monthlyRevenue'),
       value: '$24,500',
-      change: '+8% from last month',
+      change: `+8% ${t('fromLastMonth')}`,
       icon: <AttachMoney sx={{ fontSize: 40, color: '#FF9800' }} />,
       color: '#FF9800',
       navigateTo: 3 // Payments page
     },
     {
-      title: 'Outstanding Payments',
+      title: t('outstandingPayments'),
       value: '3',
-      change: '2 overdue',
+      change: `2 ${t('overdue')}`,
       icon: <Warning sx={{ fontSize: 40, color: '#F44336' }} />,
       color: '#F44336',
       navigateTo: 3 // Payments page
@@ -66,50 +68,50 @@ const DashboardView = ({ onNavigate }) => {
       property: 'Oak Street Apt 2B',
       amount: '$1,200',
       date: 'Jan 15',
-      status: 'Paid'
+      status: t('paid')
     },
     {
       tenant: 'Mike Chen',
       property: 'Pine Ave House',
       amount: '$2,100',
       date: 'Jan 14',
-      status: 'Paid'
+      status: t('paid')
     },
     {
       tenant: 'Emma Davis',
       property: 'Maple Court Unit 5A',
       amount: '$950',
       date: 'Jan 13',
-      status: 'Paid'
+      status: t('paid')
     }
   ]
 
   const quickActions = [
-    { title: 'Add New Tenant', icon: <Add />, color: 'primary' },
-    { title: 'Record Payment', icon: <Payment />, color: 'secondary' },
-    { title: 'Add Property', icon: <Home />, color: 'primary' },
-    { title: 'View Outstanding', icon: <Warning />, color: 'error' }
+    { title: t('addNewTenant'), icon: <Add />, color: 'primary' },
+    { title: t('registerPayment'), icon: <Payment />, color: 'secondary' },
+    { title: t('addProperty'), icon: <Home />, color: 'primary' },
+    { title: t('viewOutstanding'), icon: <Warning />, color: 'error' }
   ]
 
   return (
     <Box>
       <Box sx={{ mb: { xs: 3, sm: 4 } }}>
-        <Typography 
-          variant="h4" 
-          sx={{ 
-            fontWeight: 600, 
+        <Typography
+          variant="h4"
+          sx={{
+            fontWeight: 600,
             mb: { xs: 0.75, sm: 1 },
             fontSize: { xs: '1.5rem', sm: '2.125rem' }
           }}
         >
-          Dashboard
+          {t('dashboardTitle')}
         </Typography>
-        <Typography 
-          variant="body1" 
+        <Typography
+          variant="body1"
           color="text.secondary"
           sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
         >
-          Welcome back! Here's your property overview.
+          {t('dashboardSubtitle')}
         </Typography>
       </Box>
 
@@ -117,9 +119,9 @@ const DashboardView = ({ onNavigate }) => {
       <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ mb: { xs: 3, sm: 4 } }}>
         {stats.map((stat, index) => (
           <Grid size={{ xs: 12, sm: 6, md: 3 }} key={index}>
-            <Card 
+            <Card
               onClick={() => onNavigate && onNavigate(stat.navigateTo)}
-              sx={{ 
+              sx={{
                 height: '100%',
                 cursor: 'pointer',
                 transition: 'transform 0.2s, box-shadow 0.2s',
@@ -135,10 +137,10 @@ const DashboardView = ({ onNavigate }) => {
                     {React.cloneElement(stat.icon, { sx: { fontSize: { xs: 32, sm: 40 }, color: stat.color } })}
                   </Box>
                   <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                    <Typography 
-                      variant="h4" 
-                      sx={{ 
-                        fontWeight: 700, 
+                    <Typography
+                      variant="h4"
+                      sx={{
+                        fontWeight: 700,
                         mb: 0.5,
                         fontSize: { xs: '1.5rem', sm: '2.125rem' },
                         lineHeight: 1.2
@@ -146,8 +148,8 @@ const DashboardView = ({ onNavigate }) => {
                     >
                       {stat.value}
                     </Typography>
-                    <Typography 
-                      variant="body2" 
+                    <Typography
+                      variant="body2"
                       color="text.secondary"
                       sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
                     >
@@ -157,9 +159,9 @@ const DashboardView = ({ onNavigate }) => {
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
                   <TrendingUp sx={{ fontSize: { xs: 14, sm: 16 }, color: '#4CAF50', mr: 0.5 }} />
-                  <Typography 
-                    variant="body2" 
-                    sx={{ 
+                  <Typography
+                    variant="body2"
+                    sx={{
                       color: '#4CAF50',
                       fontSize: { xs: '0.75rem', sm: '0.875rem' }
                     }}
@@ -177,22 +179,22 @@ const DashboardView = ({ onNavigate }) => {
         {/* Recent Payments */}
         <Grid size={{ xs: 12, md: 8 }}>
           <Paper sx={{ p: { xs: 2, sm: 3 }, height: 'fit-content' }}>
-            <Typography 
-              variant="h6" 
-              sx={{ 
-                fontWeight: 600, 
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 600,
                 mb: { xs: 1.5, sm: 2 },
                 fontSize: { xs: '1rem', sm: '1.25rem' }
               }}
             >
-              Recent Payments
+              {t('recentPayments')}
             </Typography>
             <List>
               {recentPayments.map((payment, index) => (
                 <React.Fragment key={index}>
-                  <ListItem 
-                    sx={{ 
-                      px: 0, 
+                  <ListItem
+                    sx={{
+                      px: 0,
                       py: { xs: 1.5, sm: 2 },
                       display: 'flex',
                       flexDirection: { xs: 'column', sm: 'row' },
@@ -202,55 +204,55 @@ const DashboardView = ({ onNavigate }) => {
                     }}
                   >
                     <Box sx={{ flex: 1, minWidth: 0, width: '100%' }}>
-                      <Box sx={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        mb: 0.5, 
+                      <Box sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        mb: 0.5,
                         gap: 1,
                         flexWrap: 'wrap'
                       }}>
-                        <Typography 
-                          variant="subtitle1" 
-                          sx={{ 
+                        <Typography
+                          variant="subtitle1"
+                          sx={{
                             fontWeight: 500,
                             fontSize: { xs: '0.875rem', sm: '1rem' }
                           }}
                         >
                           {payment.tenant}
                         </Typography>
-                        <Chip 
-                          label={payment.status} 
-                          size="small" 
+                        <Chip
+                          label={payment.status}
+                          size="small"
                           color="success"
                           sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' }, height: { xs: 20, sm: 24 } }}
                         />
                       </Box>
-                      <Typography 
-                        variant="body2" 
+                      <Typography
+                        variant="body2"
                         color="text.secondary"
                         sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
                       >
                         {payment.property}
                       </Typography>
                     </Box>
-                    <Box sx={{ 
-                      textAlign: { xs: 'left', sm: 'right' }, 
+                    <Box sx={{
+                      textAlign: { xs: 'left', sm: 'right' },
                       ml: { xs: 0, sm: 2 },
                       flexShrink: 0,
                       width: { xs: '100%', sm: 'auto' }
                     }}>
-                      <Typography 
-                        variant="h6" 
-                        sx={{ 
-                          fontWeight: 600, 
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          fontWeight: 600,
                           mb: 0.5,
                           fontSize: { xs: '1rem', sm: '1.25rem' }
                         }}
                       >
                         {payment.amount}
                       </Typography>
-                      <Typography 
-                        variant="body2" 
+                      <Typography
+                        variant="body2"
                         color="text.secondary"
                         sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
                       >
@@ -268,15 +270,15 @@ const DashboardView = ({ onNavigate }) => {
         {/* Quick Actions */}
         <Grid size={{ xs: 12, md: 4 }}>
           <Paper sx={{ p: { xs: 2, sm: 3 }, height: 'fit-content' }}>
-            <Typography 
-              variant="h6" 
-              sx={{ 
-                fontWeight: 600, 
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 600,
                 mb: { xs: 1.5, sm: 2 },
                 fontSize: { xs: '1rem', sm: '1.25rem' }
               }}
             >
-              Quick Actions
+              {t('quickActions')}
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               {quickActions.map((action, index) => (

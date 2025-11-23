@@ -17,9 +17,9 @@ import {
   Divider,
   Container
 } from '@mui/material'
-import { 
-  Brightness4, 
-  Brightness7, 
+import {
+  Brightness4,
+  Brightness7,
   Dashboard,
   Home,
   Payment,
@@ -35,21 +35,22 @@ import TenantsList from './components/TenantsList'
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext'
 import LanguageCurrencySelector from './components/LanguageCurrencySelector'
 import './App.css'
+import Logo from './assets/logo.svg'
 
 const drawerWidth = 240
-
-const menuItems = [
-  { text: 'Dashboard', icon: <Dashboard />, value: 0 },
-  { text: 'Properties', icon: <Home />, value: 1 },
-  { text: 'Tenants', icon: <People />, value: 2 },
-  { text: 'Payments', icon: <Payment />, value: 3 }
-]
 
 function AppContent() {
   const [selectedView, setSelectedView] = useState(0)
   const [darkMode, setDarkMode] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const { t } = useLanguage()
+
+  const menuItems = [
+    { text: t('dashboardMenu'), icon: <Dashboard />, value: 0 },
+    { text: t('propertiesMenu'), icon: <Home />, value: 1 },
+    { text: t('tenantsMenu'), icon: <People />, value: 2 },
+    { text: t('paymentsMenu'), icon: <Payment />, value: 3 }
+  ]
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen)
@@ -184,11 +185,17 @@ function AppContent() {
   const drawer = (
     <div>
       <Toolbar>
-        <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-          <Home sx={{ mr: 1, color: 'primary.main' }} />
-          <Typography variant="h6" sx={{ fontWeight: 600, color: 'primary.main' }}>
-            PropPilot
-          </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', py: 1 }}>
+          <Box
+            component="img"
+            src={Logo}
+            alt="PropPilot Logo"
+            sx={{
+              height: 'auto',
+              width: '160px',
+              maxWidth: '90%'
+            }}
+          />
         </Box>
       </Toolbar>
       <Divider />
@@ -264,11 +271,11 @@ function AppContent() {
               >
                 <Menu />
               </IconButton>
-              <Typography 
-                variant="h4" 
-                noWrap 
-                component="div" 
-                sx={{ 
+              <Typography
+                variant="h4"
+                noWrap
+                component="div"
+                sx={{
                   flexGrow: 1,
                   fontSize: { xs: '1.5rem', sm: '2rem' },
                   fontWeight: 700,
