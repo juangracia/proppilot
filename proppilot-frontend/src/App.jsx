@@ -148,14 +148,6 @@ function AppContent() {
           },
         },
         components: {
-          MuiDrawer: {
-            styleOverrides: {
-              paper: ({ theme }) => ({
-                backgroundColor: theme.palette.background.paper,
-                borderRight: `1px solid ${theme.palette.divider}`,
-              }),
-            },
-          },
           MuiAppBar: {
             styleOverrides: {
               root: {
