@@ -150,10 +150,10 @@ function AppContent() {
         components: {
           MuiDrawer: {
             styleOverrides: {
-              paper: {
-                backgroundColor: darkMode ? '#1e1e1e' : '#ffffff',
-                borderRight: `1px solid ${darkMode ? '#333' : '#e0e0e0'}`,
-              },
+              paper: ({ theme }) => ({
+                backgroundColor: theme.palette.background.paper,
+                borderRight: `1px solid ${theme.palette.divider}`,
+              }),
             },
           },
           MuiAppBar: {
@@ -183,7 +183,7 @@ function AppContent() {
   )
 
   const drawer = (
-    <div>
+    <Box sx={{ height: '100%', bgcolor: 'background.paper', color: 'text.primary' }}>
       <Toolbar>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', py: 1 }}>
           <Box
@@ -217,16 +217,19 @@ function AppContent() {
                   backgroundColor: 'primary.dark',
                 },
               },
+              '&:hover': {
+                backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
+              },
             }}
           >
-            <ListItemIcon sx={{ color: selectedView === item.value ? 'white' : 'inherit' }}>
+            <ListItemIcon sx={{ color: selectedView === item.value ? 'white' : 'text.primary' }}>
               {item.icon}
             </ListItemIcon>
-            <ListItemText primary={item.text} />
+            <ListItemText primary={item.text} sx={{ color: 'inherit' }} />
           </ListItem>
         ))}
       </List>
-    </div>
+    </Box>
   )
 
   const handleNavigate = (viewIndex) => {

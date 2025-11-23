@@ -553,12 +553,11 @@ function PropertyUnitsList() {
                   </Typography>
                 </Box>
                 <Box>
-                  <Typography variant="caption" color="text.secondary">{t('status')}</Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>{t('status')}</Typography>
                   <Chip
                     label={t(selectedProperty.status.toLowerCase())}
                     color={getStatusColor(selectedProperty.status)}
                     size="small"
-                    sx={{ mt: 0.5 }}
                   />
                 </Box>
                 <Box>
