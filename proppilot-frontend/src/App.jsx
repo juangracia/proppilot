@@ -150,13 +150,18 @@ function AppContent() {
         components: {
           MuiAppBar: {
             styleOverrides: {
-              root: {
+              root: ({ theme }) => ({
+                backgroundColor: theme.palette.background.default,
+                color: theme.palette.text.primary,
+                boxShadow: 'none',
+                borderBottom: '1px solid',
+                borderColor: theme.palette.divider,
                 '@media (max-width:600px)': {
                   '& .MuiTypography-h6': {
                     fontSize: '0.875rem',
                   },
                 },
-              },
+              }),
             },
           },
           MuiContainer: {
@@ -169,6 +174,22 @@ function AppContent() {
               },
             },
           },
+          MuiDrawer: {
+            styleOverrides: {
+              paper: ({ theme }) => ({
+                backgroundColor: theme.palette.background.paper,
+                color: theme.palette.text.primary,
+              }),
+            },
+          },
+          MuiListItemIcon: {
+            styleOverrides: {
+              root: {
+                color: 'inherit',
+                minWidth: 40,
+              },
+            },
+          },
         },
       }),
     [darkMode]
@@ -177,20 +198,69 @@ function AppContent() {
   const drawer = (
     <Box sx={{ height: '100%', bgcolor: 'background.paper', color: 'text.primary' }}>
       <Toolbar>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', py: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', py: 1, color: 'text.primary' }}>
           <Box
-            component="img"
-            src={Logo}
-            alt="PropPilot Logo"
-            sx={{
+            component="svg"
+            viewBox="0 0 300 80"
+            sx={(theme) => ({
               height: 'auto',
               width: '160px',
-              maxWidth: '90%'
-            }}
-          />
+              maxWidth: '90%',
+              fill: 'none',
+              color: 'text.primary',
+              '& rect:first-of-type': {
+                fill: theme.palette.mode === 'dark' ? 'currentColor' : 'white',
+                stroke: theme.palette.mode === 'dark' ? 'currentColor' : '#45B8C1',
+              },
+              '& rect:last-of-type': {
+                fill: theme.palette.mode === 'dark' ? 'currentColor' : 'white',
+              },
+              '& path': {
+                fill: theme.palette.mode === 'dark' ? 'currentColor' : 'white',
+              },
+              '& text': {
+                fill: 'currentColor',
+              },
+            })}
+          >
+            <defs>
+              <linearGradient id="circleGrad" x1="20%" y1="20%" x2="80%" y2="80%">
+                <stop offset="0%" style={{ stopColor: '#45B8C1', stopOpacity: 1 }} />
+                <stop offset="100%" style={{ stopColor: '#1B7A8C', stopOpacity: 1 }} />
+              </linearGradient>
+            </defs>
+            <rect 
+              x="10" 
+              y="10" 
+              width="60" 
+              height="60" 
+              rx="14"
+              strokeWidth="3.5"
+            />
+            <circle cx="40" cy="40" r="20" fill="url(#circleGrad)"/>
+            <path d="M40 28 L50 36 L30 36 Z"/>
+            <rect x="32" y="36" width="16" height="14"/>
+            <path 
+              d="M35 32 L35 50 L38 50 L38 42 L42 42 C44.2 42 46 40.2 46 38 C46 35.8 44.2 34 42 34 L35 32 Z M38 35 L42 35 C42.8 35 43.5 35.7 43.5 38 C43.5 40.3 42.8 41 42 41 L38 41 L38 35 Z" 
+              fillRule="evenodd"
+            />
+            <text 
+              x="85" 
+              y="50" 
+              style={{
+                fontFamily: "system-ui, -apple-system, 'Segoe UI', 'Roboto', sans-serif",
+                fontSize: '34px',
+                fontWeight: 700,
+                fill: 'currentColor',
+                letterSpacing: '-1px'
+              }}
+            >
+              PropPilot
+            </text>
+          </Box>
         </Box>
       </Toolbar>
-      <Divider />
+      <Divider sx={{ borderColor: 'divider' }} />
       <List>
         {menuItems.map((item) => (
           <ListItem
@@ -205,19 +275,67 @@ function AppContent() {
                 '& .MuiListItemIcon-root': {
                   color: 'white',
                 },
+                '& .MuiListItemText-primary': {
+                  color: 'white',
+                },
                 '&:hover': {
                   backgroundColor: 'primary.dark',
                 },
               },
-              '&:hover': {
-                backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
+              '&:not(.Mui-selected)': {
+                color: (theme) => theme.palette.mode === 'dark' 
+                  ? 'rgba(255, 255, 255, 0.7)' 
+                  : 'text.primary',
+                '& .MuiListItemIcon-root': {
+                  color: (theme) => theme.palette.mode === 'dark' 
+                    ? 'rgba(255, 255, 255, 0.7)' 
+                    : 'text.secondary',
+                },
+                '& .MuiListItemText-primary': {
+                  color: (theme) => theme.palette.mode === 'dark' 
+                    ? 'rgba(255, 255, 255, 0.7)' 
+                    : 'text.primary',
+                },
+                '&:hover': {
+                  backgroundColor: 'action.hover',
+                  color: (theme) => theme.palette.mode === 'dark' 
+                    ? 'rgba(255, 255, 255, 0.9)' 
+                    : 'text.primary',
+                  '& .MuiListItemIcon-root': {
+                    color: (theme) => theme.palette.mode === 'dark' 
+                      ? 'rgba(255, 255, 255, 0.9)' 
+                      : 'text.primary',
+                  },
+                  '& .MuiListItemText-primary': {
+                    color: (theme) => theme.palette.mode === 'dark' 
+                      ? 'rgba(255, 255, 255, 0.9)' 
+                      : 'text.primary',
+                  },
+                },
               },
             }}
           >
-            <ListItemIcon sx={{ color: selectedView === item.value ? 'white' : 'text.primary' }}>
+            <ListItemIcon 
+              sx={{ 
+                color: selectedView === item.value 
+                  ? 'white' 
+                  : (theme) => theme.palette.mode === 'dark' 
+                    ? 'rgba(255, 255, 255, 0.7)' 
+                    : 'text.secondary',
+                minWidth: 40,
+              }}
+            >
               {item.icon}
             </ListItemIcon>
-            <ListItemText primary={item.text} sx={{ color: 'inherit' }} />
+            <ListItemText 
+              primary={item.text} 
+              sx={{ 
+                '& .MuiListItemText-primary': {
+                  color: 'inherit',
+                  fontWeight: selectedView === item.value ? 600 : 400
+                }
+              }} 
+            />
           </ListItem>
         ))}
       </List>
@@ -226,6 +344,36 @@ function AppContent() {
 
   const handleNavigate = (viewIndex) => {
     setSelectedView(viewIndex)
+  }
+
+  const getCurrentViewTitle = () => {
+    switch (selectedView) {
+      case 0:
+        return t('dashboardTitle')
+      case 1:
+        return t('propertyUnitsTitle')
+      case 2:
+        return t('tenantsTitle')
+      case 3:
+        return t('registerPaymentTitle')
+      default:
+        return t('dashboardTitle')
+    }
+  }
+
+  const getCurrentViewSubtitle = () => {
+    switch (selectedView) {
+      case 0:
+        return t('dashboardSubtitle')
+      case 1:
+        return ''
+      case 2:
+        return ''
+      case 3:
+        return ''
+      default:
+        return t('dashboardSubtitle')
+    }
   }
 
   const renderContent = () => {
@@ -243,6 +391,11 @@ function AppContent() {
     }
   }
 
+  // Update body theme attribute for CSS-based styling
+  React.useEffect(() => {
+    document.body.setAttribute('data-theme', darkMode ? 'dark' : 'light')
+  }, [darkMode])
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -254,6 +407,8 @@ function AppContent() {
               width: { sm: `calc(100% - ${drawerWidth}px)` },
               ml: { sm: `${drawerWidth}px` },
               zIndex: (theme) => theme.zIndex.drawer + 1,
+              backgroundColor: 'background.default',
+              color: 'text.primary',
             }}
           >
             <Toolbar sx={{ minHeight: { xs: '56px', sm: '64px' }, px: { xs: 1, sm: 2 } }}>
@@ -262,29 +417,62 @@ function AppContent() {
                 aria-label="open drawer"
                 edge="start"
                 onClick={handleDrawerToggle}
-                sx={{ mr: 2, display: { sm: 'none' } }}
+                sx={{ 
+                  mr: 2, 
+                  display: { sm: 'none' },
+                  color: 'text.primary'
+                }}
               >
                 <Menu />
               </IconButton>
-              <Typography
-                variant="h4"
-                noWrap
-                component="div"
+              <Box
                 sx={{
                   flexGrow: 1,
-                  fontSize: { xs: '1.5rem', sm: '2rem' },
-                  fontWeight: 700,
-                  letterSpacing: '0.02em',
-                  fontFamily: 'inherit'
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center'
                 }}
               >
-                PropPilot
-              </Typography>
+                <Typography
+                  variant="h4"
+                  noWrap
+                  component="div"
+                  sx={{
+                    fontSize: { xs: '1.5rem', sm: '2rem' },
+                    fontWeight: 700,
+                    letterSpacing: '0.02em',
+                    fontFamily: 'inherit',
+                    color: 'text.primary',
+                    lineHeight: 1.2
+                  }}
+                >
+                  {getCurrentViewTitle()}
+                </Typography>
+                {getCurrentViewSubtitle() && (
+                  <Typography
+                    variant="body2"
+                    component="div"
+                    sx={{
+                      fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                      fontWeight: 400,
+                      fontFamily: 'inherit',
+                      color: 'text.secondary',
+                      mt: 0.25,
+                      display: { xs: 'none', sm: 'block' }
+                    }}
+                  >
+                    {getCurrentViewSubtitle()}
+                  </Typography>
+                )}
+              </Box>
               <LanguageCurrencySelector />
               <IconButton
                 color="inherit"
                 onClick={() => setDarkMode(!darkMode)}
-                sx={{ ml: 1 }}
+                sx={{ 
+                  ml: 1,
+                  color: 'text.primary'
+                }}
               >
                 {darkMode ? <Brightness7 /> : <Brightness4 />}
               </IconButton>
@@ -304,7 +492,12 @@ function AppContent() {
               }}
               sx={{
                 display: { xs: 'block', sm: 'none' },
-                '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+                '& .MuiDrawer-paper': { 
+                  boxSizing: 'border-box', 
+                  width: drawerWidth,
+                  bgcolor: 'background.paper',
+                  color: 'text.primary',
+                },
               }}
             >
               {drawer}
@@ -313,7 +506,14 @@ function AppContent() {
               variant="permanent"
               sx={{
                 display: { xs: 'none', sm: 'block' },
-                '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+                '& .MuiDrawer-paper': { 
+                  boxSizing: 'border-box', 
+                  width: drawerWidth,
+                  bgcolor: 'background.paper',
+                  color: 'text.primary',
+                  borderRight: '1px solid',
+                  borderColor: 'divider',
+                },
               }}
               open
             >
