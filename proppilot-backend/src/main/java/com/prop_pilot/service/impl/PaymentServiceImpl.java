@@ -7,7 +7,7 @@ import com.prop_pilot.exception.BusinessLogicException;
 import com.prop_pilot.repository.PaymentRepository;
 import com.prop_pilot.repository.PropertyUnitRepository;
 import com.prop_pilot.service.PaymentService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -19,19 +19,24 @@ import java.util.List;
 @Service
 public class PaymentServiceImpl implements PaymentService {
 
-    @Autowired
-    private PaymentRepository paymentRepository;
+    private final PaymentRepository paymentRepository;
+    private final PropertyUnitRepository propertyUnitRepository;
 
-    @Autowired
-    private PropertyUnitRepository propertyUnitRepository;
+    public PaymentServiceImpl(PaymentRepository paymentRepository, PropertyUnitRepository propertyUnitRepository) {
+        this.paymentRepository = paymentRepository;
+        this.propertyUnitRepository = propertyUnitRepository;
+    }
 
     @Override
-    public Payment createPayment(Payment payment) {
+    public Payment createPayment(@NonNull Payment payment) {
         // Validate property unit exists
         if (payment.getPropertyUnit() != null && payment.getPropertyUnit().getId() != null) {
-            PropertyUnit propertyUnit = propertyUnitRepository.findById(payment.getPropertyUnit().getId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Property unit not found with id: " + payment.getPropertyUnit().getId()));
-            payment.setPropertyUnit(propertyUnit);
+            Long propertyUnitId = payment.getPropertyUnit().getId();
+            if (propertyUnitId != null) {
+                PropertyUnit propertyUnit = propertyUnitRepository.findById(propertyUnitId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Property unit not found with id: " + propertyUnitId));
+                payment.setPropertyUnit(propertyUnit);
+            }
         }
         
         // Business rule: Payment amount should not exceed 3 months of rent for a single payment
@@ -46,7 +51,7 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    public Payment getPaymentById(Long id) {
+    public Payment getPaymentById(@NonNull Long id) {
         return paymentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Payment not found with id: " + id));
     }
@@ -62,7 +67,7 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    public Payment updatePayment(Long id, Payment payment) {
+    public Payment updatePayment(@NonNull Long id, Payment payment) {
         Payment existingPayment = getPaymentById(id);
         existingPayment.setAmount(payment.getAmount());
         existingPayment.setPaymentDate(payment.getPaymentDate());
@@ -73,15 +78,16 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    public void deletePayment(Long id) {
+    @SuppressWarnings("null")
+    public void deletePayment(@NonNull Long id) {
         Payment payment = getPaymentById(id);
         paymentRepository.delete(payment);
     }
 
     @Override
-    public BigDecimal calculateAdjustedRent(Long propertyUnitId, LocalDate effectiveDate) {
+    public BigDecimal calculateAdjustedRent(@NonNull Long propertyUnitId, LocalDate effectiveDate) {
         PropertyUnit propertyUnit = propertyUnitRepository.findById(propertyUnitId)
-                .orElseThrow(() -> new RuntimeException("Property unit not found with id: " + propertyUnitId));
+                .orElseThrow(() -> new ResourceNotFoundException("Property unit not found with id: " + propertyUnitId));
 
         BigDecimal baseRent = propertyUnit.getBaseRentAmount();
         LocalDate leaseStartDate = propertyUnit.getLeaseStartDate();
@@ -117,9 +123,9 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    public BigDecimal calculateOutstandingAmount(Long propertyUnitId, LocalDate asOfDate) {
+    public BigDecimal calculateOutstandingAmount(@NonNull Long propertyUnitId, LocalDate asOfDate) {
         PropertyUnit propertyUnit = propertyUnitRepository.findById(propertyUnitId)
-                .orElseThrow(() -> new RuntimeException("Property unit not found with id: " + propertyUnitId));
+                .orElseThrow(() -> new ResourceNotFoundException("Property unit not found with id: " + propertyUnitId));
 
         // Calculate expected rent from lease start to asOfDate
         LocalDate leaseStartDate = propertyUnit.getLeaseStartDate();

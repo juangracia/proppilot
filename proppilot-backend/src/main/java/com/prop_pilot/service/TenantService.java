@@ -1,6 +1,7 @@
 package com.prop_pilot.service;
 
 import com.prop_pilot.entity.Tenant;
+import org.springframework.lang.NonNull;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,7 +25,7 @@ public interface TenantService {
      * @param id the tenant ID
      * @return the tenant if found
      */
-    Optional<Tenant> getTenantById(Long id);
+    Optional<Tenant> getTenantById(@NonNull Long id);
     
     /**
      * Updates an existing tenant
@@ -32,13 +33,13 @@ public interface TenantService {
      * @param tenant the updated tenant data
      * @return the updated tenant
      */
-    Tenant updateTenant(Long id, Tenant tenant);
+    Tenant updateTenant(@NonNull Long id, @NonNull Tenant tenant);
     
     /**
      * Deletes a tenant by ID
      * @param id the tenant ID
      */
-    void deleteTenant(Long id);
+    void deleteTenant(@NonNull Long id);
     
     /**
      * Finds a tenant by national ID

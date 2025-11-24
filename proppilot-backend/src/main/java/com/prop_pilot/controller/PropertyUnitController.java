@@ -8,9 +8,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -19,8 +19,11 @@ import java.util.List;
 @Tag(name = "Property Units", description = "API for managing rental property units")
 public class PropertyUnitController {
 
-    @Autowired
-    private PropertyUnitService propertyUnitService;
+    private final PropertyUnitService propertyUnitService;
+
+    public PropertyUnitController(PropertyUnitService propertyUnitService) {
+        this.propertyUnitService = propertyUnitService;
+    }
 
     @PostMapping
     @Operation(summary = "Create a new property unit", description = "Creates a new rental property unit in the system")
@@ -28,7 +31,7 @@ public class PropertyUnitController {
         @ApiResponse(responseCode = "201", description = "Property unit created successfully"),
         @ApiResponse(responseCode = "400", description = "Invalid input data")
     })
-    public ResponseEntity<PropertyUnit> createPropertyUnit(@Valid @RequestBody PropertyUnit propertyUnit) {
+    public ResponseEntity<PropertyUnit> createPropertyUnit(@Valid @RequestBody @NonNull PropertyUnit propertyUnit) {
         PropertyUnit createdPropertyUnit = propertyUnitService.createPropertyUnit(propertyUnit);
         return new ResponseEntity<>(createdPropertyUnit, HttpStatus.CREATED);
     }
@@ -39,7 +42,7 @@ public class PropertyUnitController {
         @ApiResponse(responseCode = "200", description = "Property unit retrieved successfully"),
         @ApiResponse(responseCode = "404", description = "Property unit not found")
     })
-    public ResponseEntity<PropertyUnit> getPropertyUnitById(@PathVariable Long id) {
+    public ResponseEntity<PropertyUnit> getPropertyUnitById(@PathVariable @NonNull Long id) {
         PropertyUnit propertyUnit = propertyUnitService.getPropertyUnitById(id);
         return ResponseEntity.ok(propertyUnit);
     }
@@ -68,13 +71,13 @@ public class PropertyUnitController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<PropertyUnit> updatePropertyUnit(@PathVariable Long id, @Valid @RequestBody PropertyUnit propertyUnit) {
+    public ResponseEntity<PropertyUnit> updatePropertyUnit(@PathVariable @NonNull Long id, @Valid @RequestBody PropertyUnit propertyUnit) {
         PropertyUnit updatedPropertyUnit = propertyUnitService.updatePropertyUnit(id, propertyUnit);
         return ResponseEntity.ok(updatedPropertyUnit);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletePropertyUnit(@PathVariable Long id) {
+    public ResponseEntity<Void> deletePropertyUnit(@PathVariable @NonNull Long id) {
         propertyUnitService.deletePropertyUnit(id);
         return ResponseEntity.noContent().build();
     }

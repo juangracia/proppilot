@@ -5,23 +5,26 @@ import com.prop_pilot.exception.ResourceNotFoundException;
 import com.prop_pilot.exception.ValidationException;
 import com.prop_pilot.repository.PropertyUnitRepository;
 import com.prop_pilot.service.PropertyUnitService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
 public class PropertyUnitServiceImpl implements PropertyUnitService {
 
-    @Autowired
-    private PropertyUnitRepository propertyUnitRepository;
+    private final PropertyUnitRepository propertyUnitRepository;
+
+    public PropertyUnitServiceImpl(PropertyUnitRepository propertyUnitRepository) {
+        this.propertyUnitRepository = propertyUnitRepository;
+    }
 
     @Override
-    public PropertyUnit createPropertyUnit(PropertyUnit propertyUnit) {
+    public PropertyUnit createPropertyUnit(@NonNull PropertyUnit propertyUnit) {
         return propertyUnitRepository.save(propertyUnit);
     }
 
     @Override
-    public PropertyUnit getPropertyUnitById(Long id) {
+    public PropertyUnit getPropertyUnitById(@NonNull Long id) {
         return propertyUnitRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Property unit not found with id: " + id));
     }
@@ -37,7 +40,7 @@ public class PropertyUnitServiceImpl implements PropertyUnitService {
     }
 
     @Override
-    public PropertyUnit updatePropertyUnit(Long id, PropertyUnit propertyUnit) {
+    public PropertyUnit updatePropertyUnit(@NonNull Long id, PropertyUnit propertyUnit) {
         PropertyUnit existingPropertyUnit = getPropertyUnitById(id);
         
         // Validate business rules
@@ -54,7 +57,8 @@ public class PropertyUnitServiceImpl implements PropertyUnitService {
     }
 
     @Override
-    public void deletePropertyUnit(Long id) {
+    @SuppressWarnings("null")
+    public void deletePropertyUnit(@NonNull Long id) {
         PropertyUnit propertyUnit = getPropertyUnitById(id);
         propertyUnitRepository.delete(propertyUnit);
     }

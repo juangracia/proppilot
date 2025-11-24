@@ -95,25 +95,6 @@ const DashboardView = ({ onNavigate }) => {
 
   return (
     <Box>
-      <Box sx={{ mb: { xs: 3, sm: 4 } }}>
-        <Typography
-          variant="h4"
-          sx={{
-            fontWeight: 600,
-            mb: { xs: 0.75, sm: 1 },
-            fontSize: { xs: '1.5rem', sm: '2.125rem' }
-          }}
-        >
-          {t('dashboardTitle')}
-        </Typography>
-        <Typography
-          variant="body1"
-          color="text.secondary"
-          sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
-        >
-          {t('dashboardSubtitle')}
-        </Typography>
-      </Box>
 
       {/* Stats Cards */}
       <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ mb: { xs: 3, sm: 4 } }}>

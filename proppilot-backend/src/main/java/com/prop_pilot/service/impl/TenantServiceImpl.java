@@ -4,7 +4,7 @@ import com.prop_pilot.entity.Tenant;
 import com.prop_pilot.repository.TenantRepository;
 import com.prop_pilot.service.TenantService;
 import com.prop_pilot.exception.ResourceNotFoundException;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
@@ -12,8 +12,11 @@ import java.util.Optional;
 @Service
 public class TenantServiceImpl implements TenantService {
 
-    @Autowired
-    private TenantRepository tenantRepository;
+    private final TenantRepository tenantRepository;
+
+    public TenantServiceImpl(TenantRepository tenantRepository) {
+        this.tenantRepository = tenantRepository;
+    }
 
     @Override
     public Tenant createTenant(Tenant tenant) {
@@ -33,12 +36,12 @@ public class TenantServiceImpl implements TenantService {
     }
 
     @Override
-    public Optional<Tenant> getTenantById(Long id) {
+    public Optional<Tenant> getTenantById(@NonNull Long id) {
         return tenantRepository.findById(id);
     }
 
     @Override
-    public Tenant updateTenant(Long id, Tenant tenant) {
+    public Tenant updateTenant(@NonNull Long id, @NonNull Tenant tenant) {
         return tenantRepository.findById(id)
                 .map(existingTenant -> {
                     // Check if national ID is being changed and if it's unique
@@ -69,7 +72,7 @@ public class TenantServiceImpl implements TenantService {
     }
 
     @Override
-    public void deleteTenant(Long id) {
+    public void deleteTenant(@NonNull Long id) {
         if (!tenantRepository.existsById(id)) {
             throw new ResourceNotFoundException("Tenant not found with id: " + id);
         }

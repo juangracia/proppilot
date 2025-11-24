@@ -8,9 +8,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,8 +21,11 @@ import java.util.Optional;
 @Tag(name = "Tenants", description = "API for managing tenants")
 public class TenantController {
 
-    @Autowired
-    private TenantService tenantService;
+    private final TenantService tenantService;
+
+    public TenantController(TenantService tenantService) {
+        this.tenantService = tenantService;
+    }
 
     @PostMapping
     @Operation(summary = "Create a new tenant", description = "Creates a new tenant in the system")
@@ -67,7 +70,7 @@ public class TenantController {
     })
     public ResponseEntity<Tenant> getTenantById(
             @Parameter(description = "Tenant ID", required = true)
-            @PathVariable Long id) {
+            @PathVariable @NonNull Long id) {
         Optional<Tenant> tenant = tenantService.getTenantById(id);
         return tenant.map(t -> new ResponseEntity<>(t, HttpStatus.OK))
                     .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
@@ -92,8 +95,8 @@ public class TenantController {
     )
     public ResponseEntity<Tenant> updateTenant(
             @Parameter(description = "Tenant ID", required = true)
-            @PathVariable Long id,
-            @Valid @RequestBody Tenant tenant) {
+            @PathVariable @NonNull Long id,
+            @Valid @RequestBody @NonNull Tenant tenant) {
         try {
             Tenant updatedTenant = tenantService.updateTenant(id, tenant);
             return new ResponseEntity<>(updatedTenant, HttpStatus.OK);
@@ -112,7 +115,7 @@ public class TenantController {
     })
     public ResponseEntity<Void> deleteTenant(
             @Parameter(description = "Tenant ID", required = true)
-            @PathVariable Long id) {
+            @PathVariable @NonNull Long id) {
         try {
             tenantService.deleteTenant(id);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
