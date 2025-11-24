@@ -12,6 +12,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings("null")
 class GlobalExceptionHandlerTest {
 
     private GlobalExceptionHandler handler = new GlobalExceptionHandler();

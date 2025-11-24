@@ -26,6 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(PropertyUnitController.class)
 @Import(GlobalExceptionHandler.class)
+@SuppressWarnings("null")
 class PropertyUnitControllerTest {
 
     @Autowired

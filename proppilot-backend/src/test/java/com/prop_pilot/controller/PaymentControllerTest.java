@@ -29,6 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(PaymentController.class)
 @Import(GlobalExceptionHandler.class)
+@SuppressWarnings("null")
 class PaymentControllerTest {
 
     @Autowired
