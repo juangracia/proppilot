@@ -22,12 +22,12 @@ export const LanguageProvider = ({ children }) => {
 
       // Tabs
       propertyUnits: 'UNIDADES DE PROPIEDAD',
-      registerPayment: 'REGISTRAR PAGO',
+      registerPayment: 'Registrar Pago',
       tenants: 'INQUILINOS',
 
       // Property List
       propertyUnitsTitle: 'Unidades de Propiedad',
-      addProperty: 'AGREGAR PROPIEDAD',
+      addProperty: 'Agregar Propiedad',
       searchPlaceholder: 'Buscar por dirección...',
 
       // Table Headers
@@ -203,12 +203,12 @@ export const LanguageProvider = ({ children }) => {
 
       // Tabs
       propertyUnits: 'PROPERTY UNITS',
-      registerPayment: 'REGISTER PAYMENT',
+      registerPayment: 'Register Payment',
       tenants: 'TENANTS',
 
       // Property List
       propertyUnitsTitle: 'Property Units',
-      addProperty: 'ADD PROPERTY',
+      addProperty: 'Add Property',
       searchPlaceholder: 'Search by address...',
 
       // Table Headers
@@ -388,7 +388,9 @@ export const LanguageProvider = ({ children }) => {
     }
 
     if (typeof value === 'string' && params) {
-      return value.replace(/\{(\w+)\}/g, (match, paramKey) => params[paramKey] || match)
+      return value.replace(/\{(\w+)\}/g, (match, paramKey) =>
+        params[paramKey] !== undefined ? params[paramKey] : match
+      )
     }
 
     return value || key

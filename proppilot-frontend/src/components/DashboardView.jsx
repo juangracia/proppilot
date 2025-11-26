@@ -99,7 +99,7 @@ const DashboardView = ({ onNavigate }) => {
       {/* Stats Cards */}
       <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ mb: { xs: 3, sm: 4 } }}>
         {stats.map((stat, index) => (
-          <Grid size={{ xs: 12, sm: 6, md: 3 }} key={index}>
+          <Grid size={{ xs: 12, sm: 6, lg: 3 }} key={index}>
             <Card
               onClick={() => onNavigate && onNavigate(stat.navigateTo)}
               sx={{
@@ -112,19 +112,19 @@ const DashboardView = ({ onNavigate }) => {
                 }
               }}
             >
-              <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: { xs: 1.5, sm: 2 } }}>
-                  <Box sx={{ mr: { xs: 1.5, sm: 2 } }}>
-                    {React.cloneElement(stat.icon, { sx: { fontSize: { xs: 32, sm: 40 }, color: stat.color } })}
+              <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 1.5 }}>
+                  <Box sx={{ mr: 1.5, pt: 0.25, flexShrink: 0 }}>
+                    {React.cloneElement(stat.icon, { sx: { fontSize: { xs: 28, sm: 32, md: 36 }, color: stat.color } })}
                   </Box>
-                  <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                  <Box sx={{ flexGrow: 1, minWidth: 0, overflow: 'hidden' }}>
                     <Typography
                       variant="h4"
                       sx={{
                         fontWeight: 700,
-                        mb: 0.5,
-                        fontSize: { xs: '1.5rem', sm: '2.125rem' },
-                        lineHeight: 1.2
+                        fontSize: { xs: '1.25rem', sm: '1.5rem', md: '1.75rem', lg: '2rem' },
+                        lineHeight: 1.1,
+                        whiteSpace: 'nowrap'
                       }}
                     >
                       {stat.value}
@@ -132,19 +132,20 @@ const DashboardView = ({ onNavigate }) => {
                     <Typography
                       variant="body2"
                       color="text.secondary"
-                      sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                      sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.8rem' }, mt: 0.5, lineHeight: 1.3 }}
                     >
                       {stat.title}
                     </Typography>
                   </Box>
                 </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
-                  <TrendingUp sx={{ fontSize: { xs: 14, sm: 16 }, color: '#4CAF50', mr: 0.5 }} />
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <TrendingUp sx={{ fontSize: { xs: 14, sm: 16 }, color: '#4CAF50', mr: 0.5, flexShrink: 0 }} />
                   <Typography
                     variant="body2"
                     sx={{
                       color: '#4CAF50',
-                      fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                      fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.8rem' },
+                      lineHeight: 1.3
                     }}
                   >
                     {stat.change}

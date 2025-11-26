@@ -269,6 +269,11 @@ function AppContent() {
             onClick={() => handleMenuClick(item.value)}
             selected={selectedView === item.value}
             sx={{
+              border: 'none',
+              width: '100%',
+              textAlign: 'left',
+              cursor: 'pointer',
+              bgcolor: 'transparent',
               '&.Mui-selected': {
                 backgroundColor: 'primary.main',
                 color: 'white',
@@ -283,58 +288,42 @@ function AppContent() {
                 },
               },
               '&:not(.Mui-selected)': {
-                color: (theme) => theme.palette.mode === 'dark' 
-                  ? 'rgba(255, 255, 255, 0.7)' 
-                  : 'text.primary',
+                color: 'text.primary',
                 '& .MuiListItemIcon-root': {
-                  color: (theme) => theme.palette.mode === 'dark' 
-                    ? 'rgba(255, 255, 255, 0.7)' 
-                    : 'text.secondary',
+                  color: 'text.secondary',
                 },
                 '& .MuiListItemText-primary': {
-                  color: (theme) => theme.palette.mode === 'dark' 
-                    ? 'rgba(255, 255, 255, 0.7)' 
-                    : 'text.primary',
+                  color: 'text.primary',
                 },
                 '&:hover': {
                   backgroundColor: 'action.hover',
-                  color: (theme) => theme.palette.mode === 'dark' 
-                    ? 'rgba(255, 255, 255, 0.9)' 
-                    : 'text.primary',
+                  color: 'text.primary',
                   '& .MuiListItemIcon-root': {
-                    color: (theme) => theme.palette.mode === 'dark' 
-                      ? 'rgba(255, 255, 255, 0.9)' 
-                      : 'text.primary',
+                    color: 'text.primary',
                   },
                   '& .MuiListItemText-primary': {
-                    color: (theme) => theme.palette.mode === 'dark' 
-                      ? 'rgba(255, 255, 255, 0.9)' 
-                      : 'text.primary',
+                    color: 'text.primary',
                   },
                 },
               },
             }}
           >
-            <ListItemIcon 
-              sx={{ 
-                color: selectedView === item.value 
-                  ? 'white' 
-                  : (theme) => theme.palette.mode === 'dark' 
-                    ? 'rgba(255, 255, 255, 0.7)' 
-                    : 'text.secondary',
+            <ListItemIcon
+              sx={{
+                color: selectedView === item.value ? 'white' : 'text.secondary',
                 minWidth: 40,
               }}
             >
               {item.icon}
             </ListItemIcon>
-            <ListItemText 
-              primary={item.text} 
-              sx={{ 
+            <ListItemText
+              primary={item.text}
+              sx={{
                 '& .MuiListItemText-primary': {
                   color: 'inherit',
                   fontWeight: selectedView === item.value ? 600 : 400
                 }
-              }} 
+              }}
             />
           </ListItem>
         ))}
