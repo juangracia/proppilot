@@ -58,7 +58,7 @@ const DashboardView = ({ onNavigate }) => {
       change: `2 ${t('overdue')}`,
       icon: <Warning sx={{ fontSize: 40, color: '#F44336' }} />,
       color: '#F44336',
-      navigateTo: 3 // Payments page
+      navigateTo: 1 // Properties page - to see which properties have outstanding payments
     }
   ]
 
@@ -87,10 +87,10 @@ const DashboardView = ({ onNavigate }) => {
   ]
 
   const quickActions = [
-    { title: t('addNewTenant'), icon: <Add />, color: 'primary' },
-    { title: t('registerPayment'), icon: <Payment />, color: 'secondary' },
-    { title: t('addProperty'), icon: <Home />, color: 'primary' },
-    { title: t('viewOutstanding'), icon: <Warning />, color: 'error' }
+    { title: t('addNewTenant'), icon: <Add />, color: 'primary', navigateTo: 2 },
+    { title: t('registerPayment'), icon: <Payment />, color: 'secondary', navigateTo: 3 },
+    { title: t('addProperty'), icon: <Home />, color: 'primary', navigateTo: 1 },
+    { title: t('viewOutstanding'), icon: <Warning />, color: 'error', navigateTo: 1 }
   ]
 
   return (
@@ -122,7 +122,7 @@ const DashboardView = ({ onNavigate }) => {
                       variant="h4"
                       sx={{
                         fontWeight: 700,
-                        fontSize: { xs: '1.25rem', sm: '1.5rem', md: '1.75rem', lg: '2rem' },
+                        fontSize: 'clamp(1.25rem, 2vw, 2rem)',
                         lineHeight: 1.1,
                         whiteSpace: 'nowrap'
                       }}
@@ -269,6 +269,7 @@ const DashboardView = ({ onNavigate }) => {
                   variant="outlined"
                   startIcon={action.icon}
                   color={action.color}
+                  onClick={() => onNavigate && onNavigate(action.navigateTo)}
                   sx={{
                     justifyContent: 'flex-start',
                     py: { xs: 1.25, sm: 1.5 },
