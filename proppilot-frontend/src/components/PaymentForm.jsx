@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo, useCallback, memo } from 'react'
 import {
   Box,
   Paper,
@@ -10,27 +10,71 @@ import {
   FormControl,
   InputLabel,
   Select,
-  MenuItem
+  MenuItem,
+  Tabs,
+  Tab,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Chip,
+  FormControlLabel,
+  Checkbox,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Avatar,
+  IconButton,
+  Card,
+  Divider
 } from '@mui/material'
 import Grid from '@mui/material/Grid'
+import {
+  CheckCircle,
+  Schedule,
+  Payment as PaymentIcon,
+  Close,
+  Home,
+  Person,
+  Receipt,
+  CalendarToday,
+  Notes,
+  CreditCard
+} from '@mui/icons-material'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
 import { format } from 'date-fns'
 import axios from 'axios'
 import { useLanguage } from '../contexts/LanguageContext'
+import { mockPayments, mockProperties as sharedMockProperties, getTenantById } from '../data/mockData'
 
 const API_BASE_URL = '/api'
 
-function PaymentForm() {
-  const { t } = useLanguage()
+// Create property units list from shared data
+const mockPropertyUnits = sharedMockProperties.map(p => ({
+  id: p.id,
+  address: p.address,
+  type: p.type,
+  baseRentAmount: p.monthlyRent,
+  tenant: p.tenant,
+  tenantId: p.tenantId
+}))
+
+const PaymentForm = memo(function PaymentForm() {
+  const { t, formatCurrency, currency } = useLanguage()
+  const [activeTab, setActiveTab] = useState(0)
 
   const [formData, setFormData] = useState({
     propertyUnitId: '',
     amount: '',
     paymentDate: null,
     paymentType: 'RENT',
-    description: ''
+    description: '',
+    isPartialPayment: false
   })
 
   const [validationErrors, setValidationErrors] = useState({})
@@ -38,41 +82,39 @@ function PaymentForm() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false)
+  const [selectedPayment, setSelectedPayment] = useState(null)
 
-  const paymentTypes = [
+  const paymentTypes = useMemo(() => [
     { value: 'RENT', label: t('rentPayment') },
     { value: 'DEPOSIT', label: t('depositPayment') },
     { value: 'MAINTENANCE', label: t('maintenancePayment') },
     { value: 'UTILITY', label: t('utilityPayment') },
     { value: 'OTHER', label: t('otherPayment') }
-  ]
+  ], [t])
 
   useEffect(() => {
-    fetchPropertyUnits()
+    // Use mock data instead of API call
+    setPropertyUnits(mockPropertyUnits)
   }, [])
 
-  const fetchPropertyUnits = async () => {
-    try {
-      setLoading(true)
-      const response = await axios.get(`${API_BASE_URL}/property-units`)
-      setPropertyUnits(response.data)
-    } catch (err) {
-      console.error('Error fetching property units:', err)
-      setError(t('failedToLoadProperties'))
-    } finally {
-      setLoading(false)
-    }
-  }
+  // Auto-fill rent amount when property is selected
+  const handlePropertyChange = useCallback((propertyId) => {
+    const selectedUnit = mockPropertyUnits.find(u => u.id === parseInt(propertyId))
+    setFormData(prev => ({
+      ...prev,
+      propertyUnitId: propertyId,
+      amount: selectedUnit && !prev.isPartialPayment ? selectedUnit.baseRentAmount.toString() : prev.amount
+    }))
+  }, [])
 
-  const validateForm = () => {
+  const validateForm = useCallback(() => {
     const errors = {}
 
-    // Property unit validation
     if (!formData.propertyUnitId) {
       errors.propertyUnitId = t('propertyUnitRequired')
     }
 
-    // Amount validation
     if (!formData.amount) {
       errors.amount = t('amountRequired')
     } else {
@@ -84,21 +126,19 @@ function PaymentForm() {
       }
     }
 
-    // Date validation
     if (!formData.paymentDate) {
       errors.paymentDate = t('dateRequired')
     } else if (formData.paymentDate > new Date()) {
       errors.paymentDate = t('dateFuture')
     }
 
-    // Description validation
     if (formData.description && formData.description.length > 500) {
       errors.description = t('descriptionLength')
     }
 
     setValidationErrors(errors)
     return Object.keys(errors).length === 0
-  }
+  }, [formData, t])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -167,41 +207,48 @@ function PaymentForm() {
     }))
   }
 
-  const selectedPropertyUnit = propertyUnits.find(unit => unit.id === parseInt(formData.propertyUnitId))
+  const selectedPropertyUnit = useMemo(() =>
+    propertyUnits.find(unit => unit.id === parseInt(formData.propertyUnitId))
+  , [propertyUnits, formData.propertyUnitId])
+
+  const handleTabChange = useCallback((e, newValue) => {
+    setActiveTab(newValue)
+  }, [])
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box sx={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
         <Paper sx={{ p: { xs: 2, sm: 3 }, mx: 0 }}>
-          <Typography
-            variant="h5"
-            component="h2"
-            gutterBottom
-            sx={{
-              fontSize: { xs: '1.25rem', sm: '1.5rem' },
-              mb: { xs: 2, sm: 2.5 }
-            }}
+          {/* Tabs */}
+          <Tabs
+            value={activeTab}
+            onChange={handleTabChange}
+            sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}
           >
-            {t('registerPaymentTitle')}
-          </Typography>
+            <Tab label={t('registerPaymentTitle')} sx={{ textTransform: 'none' }} />
+            <Tab label={t('paymentHistory')} sx={{ textTransform: 'none' }} />
+          </Tabs>
 
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
+          {/* Tab 0: Register Payment */}
+          {activeTab === 0 && (
+            <>
+              {error && (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                  {error}
+                </Alert>
+              )}
 
-          {success && (
-            <Alert severity="success" sx={{ mb: 2 }}>
-              {success}
-            </Alert>
-          )}
+              {success && (
+                <Alert severity="success" sx={{ mb: 2 }}>
+                  {success}
+                </Alert>
+              )}
 
-          {loading ? (
-            <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
-              <CircularProgress />
-            </Box>
-          ) : (
+              {loading ? (
+                <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+                  <CircularProgress />
+                </Box>
+              ) : (
             <Box component="form" onSubmit={handleSubmit}>
               <Grid container spacing={{ xs: 2, sm: 3 }}>
                 <Grid size={{ xs: 12, md: 6 }}>
@@ -209,12 +256,12 @@ function PaymentForm() {
                     <InputLabel>{t('propertyUnitLabel')}</InputLabel>
                     <Select
                       value={formData.propertyUnitId}
-                      onChange={(e) => setFormData(prev => ({ ...prev, propertyUnitId: e.target.value }))}
+                      onChange={(e) => handlePropertyChange(e.target.value)}
                       label={t('propertyUnitLabel')}
                     >
                       {propertyUnits.map((unit) => (
                         <MenuItem key={unit.id} value={unit.id}>
-                          {unit.address} ({unit.type})
+                          {unit.address} ({unit.type}) - {formatCurrency(unit.baseRentAmount)}
                         </MenuItem>
                       ))}
                     </Select>
@@ -238,8 +285,23 @@ function PaymentForm() {
                     helperText={validationErrors.amount}
                     inputProps={{ step: '0.01', min: '0.01', max: '999999.99' }}
                     InputProps={{
-                      startAdornment: <Typography sx={{ mr: 1 }}>$</Typography>
+                      startAdornment: <Typography sx={{ mr: 1 }}>{t(`currencySymbol.${currency}`)}</Typography>
                     }}
+                  />
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={formData.isPartialPayment}
+                        onChange={(e) => setFormData(prev => ({ ...prev, isPartialPayment: e.target.checked }))}
+                        size="small"
+                      />
+                    }
+                    label={
+                      <Typography variant="body2" sx={{ fontSize: '0.875rem' }}>
+                        {t('partialPayment')}
+                      </Typography>
+                    }
+                    sx={{ mt: 1 }}
                   />
                 </Grid>
 
@@ -325,7 +387,7 @@ function PaymentForm() {
                           variant="body2"
                           sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
                         >
-                          <strong>{t('baseRentLabel')}:</strong> ${selectedPropertyUnit.baseRentAmount?.toFixed(2)}
+                          <strong>{t('baseRentLabel')}:</strong> {formatCurrency(selectedPropertyUnit.baseRentAmount)}
                         </Typography>
                         {selectedPropertyUnit.tenant && (
                           <Typography
@@ -359,7 +421,8 @@ function PaymentForm() {
                           amount: '',
                           paymentDate: null,
                           paymentType: 'RENT',
-                          description: ''
+                          description: '',
+                          isPartialPayment: false
                         })
                         setError('')
                         setSuccess('')
@@ -386,12 +449,254 @@ function PaymentForm() {
                   </Box>
                 </Grid>
               </Grid>
+              </Box>
+              )}
+            </>
+          )}
+
+          {/* Tab 1: Payment History */}
+          {activeTab === 1 && (
+            <Box>
+              {/* Empty State */}
+              {mockPayments.length === 0 && (
+                <Paper
+                  sx={{
+                    p: 4,
+                    textAlign: 'center',
+                    bgcolor: 'background.default',
+                    border: '2px dashed',
+                    borderColor: 'divider'
+                  }}
+                >
+                  <PaymentIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
+                  <Typography variant="h6" color="text.secondary" gutterBottom>
+                    {t('noPayments') || 'No payments found'}
+                  </Typography>
+                  <Typography variant="body2" color="text.disabled">
+                    {t('noPaymentsDesc') || 'Payment history will appear here once payments are registered'}
+                  </Typography>
+                </Paper>
+              )}
+
+              {/* Desktop/Tablet Table View */}
+              {mockPayments.length > 0 && (
+              <>
+              <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+                <TableContainer>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>{t('propertiesMenu')}</TableCell>
+                        <TableCell>{t('tenant')}</TableCell>
+                        <TableCell>{t('paymentAmountLabel')}</TableCell>
+                        <TableCell>{t('paymentDateLabel')}</TableCell>
+                        <TableCell>{t('status')}</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {mockPayments.map((payment) => (
+                        <TableRow
+                          key={payment.id}
+                          hover
+                          onClick={() => { setSelectedPayment(payment); setDetailDialogOpen(true) }}
+                          sx={{ cursor: 'pointer' }}
+                        >
+                          <TableCell sx={{ fontSize: '0.875rem' }}>
+                            {payment.property}
+                          </TableCell>
+                          <TableCell sx={{ fontSize: '0.875rem' }}>
+                            {payment.tenant}
+                          </TableCell>
+                          <TableCell sx={{ fontSize: '0.875rem', fontWeight: 500 }}>
+                            {formatCurrency(payment.amount)}
+                          </TableCell>
+                          <TableCell sx={{ fontSize: '0.875rem' }}>
+                            {payment.date}
+                          </TableCell>
+                          <TableCell>
+                            <Chip
+                              icon={payment.status === 'completed' ? <CheckCircle /> : <Schedule />}
+                              label={payment.status === 'completed' ? t('paid') : t('partialPayment')}
+                              size="small"
+                              color={payment.status === 'completed' ? 'success' : 'warning'}
+                              sx={{ '& .MuiChip-icon': { fontSize: 16 } }}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Box>
+
+              {/* Mobile Card View */}
+              <Box sx={{ display: { xs: 'block', sm: 'none' } }}>
+                {mockPayments.map((payment) => (
+                  <Paper
+                    key={payment.id}
+                    variant="outlined"
+                    onClick={() => { setSelectedPayment(payment); setDetailDialogOpen(true) }}
+                    sx={{
+                      p: 2,
+                      mb: 2,
+                      cursor: 'pointer',
+                      transition: 'box-shadow 0.2s',
+                      '&:hover': { boxShadow: 2 },
+                      '&:last-child': { mb: 0 }
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.875rem' }}>
+                        {payment.property}
+                      </Typography>
+                      <Chip
+                        icon={payment.status === 'completed' ? <CheckCircle /> : <Schedule />}
+                        label={payment.status === 'completed' ? t('paid') : t('partialPayment')}
+                        size="small"
+                        color={payment.status === 'completed' ? 'success' : 'warning'}
+                        sx={{ '& .MuiChip-icon': { fontSize: 14 }, ml: 1, flexShrink: 0 }}
+                      />
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8125rem', mb: 1 }}>
+                      {payment.tenant}
+                    </Typography>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Typography variant="body1" sx={{ fontWeight: 600, color: 'primary.main' }}>
+                        {formatCurrency(payment.amount)}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8125rem' }}>
+                        {payment.date}
+                      </Typography>
+                    </Box>
+                  </Paper>
+                ))}
+              </Box>
+              </>
+              )}
             </Box>
           )}
         </Paper>
+
+        {/* Payment Detail Dialog */}
+        <Dialog
+          open={detailDialogOpen}
+          onClose={() => setDetailDialogOpen(false)}
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{
+            sx: {
+              m: { xs: 1, sm: 2 },
+              maxHeight: { xs: '95vh', sm: '90vh' }
+            }
+          }}
+        >
+          {selectedPayment && (
+            <>
+              <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Avatar sx={{ bgcolor: selectedPayment.status === 'completed' ? 'success.main' : 'warning.main', width: 48, height: 48 }}>
+                    <Receipt />
+                  </Avatar>
+                  <Box>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      {formatCurrency(selectedPayment.amount)}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {selectedPayment.reference || `#${selectedPayment.id}`}
+                    </Typography>
+                  </Box>
+                </Box>
+                <IconButton onClick={() => setDetailDialogOpen(false)} sx={{ display: { xs: 'flex', sm: 'none' } }}>
+                  <Close />
+                </IconButton>
+              </DialogTitle>
+              <DialogContent dividers>
+                {/* Status */}
+                <Box sx={{ mb: 3 }}>
+                  <Chip
+                    icon={selectedPayment.status === 'completed' ? <CheckCircle /> : <Schedule />}
+                    label={selectedPayment.status === 'completed' ? (t('paid') || 'Pagado') : (t('partialPayment') || 'Parcial')}
+                    color={selectedPayment.status === 'completed' ? 'success' : 'warning'}
+                    sx={{ fontWeight: 500 }}
+                  />
+                </Box>
+
+                {/* Payment Info */}
+                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, textTransform: 'uppercase', fontSize: '0.75rem' }}>
+                  {t('paymentDetails') || 'Detalles del Pago'}
+                </Typography>
+                <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+                    <CalendarToday sx={{ fontSize: 20, color: 'text.secondary' }} />
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">{t('paymentDateLabel')}</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>{selectedPayment.date}</Typography>
+                    </Box>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+                    <CreditCard sx={{ fontSize: 20, color: 'text.secondary' }} />
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">{t('paymentMethod') || 'Método de Pago'}</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        {selectedPayment.method === 'transfer' ? (t('transfer') || 'Transferencia') :
+                         selectedPayment.method === 'cash' ? (t('cash') || 'Efectivo') :
+                         selectedPayment.method === 'check' ? (t('check') || 'Cheque') :
+                         selectedPayment.method}
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Receipt sx={{ fontSize: 20, color: 'text.secondary' }} />
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">{t('type')}</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        {selectedPayment.type === 'rent' ? (t('rentPayment') || 'Alquiler') : selectedPayment.type}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Paper>
+
+                {/* Property Info */}
+                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, textTransform: 'uppercase', fontSize: '0.75rem' }}>
+                  {t('propertyInfo') || 'Propiedad'}
+                </Typography>
+                <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+                    <Home sx={{ fontSize: 20, color: 'primary.main' }} />
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>{selectedPayment.property}</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Person sx={{ fontSize: 20, color: 'text.secondary' }} />
+                    <Typography variant="body2">{selectedPayment.tenant}</Typography>
+                  </Box>
+                </Paper>
+
+                {/* Notes */}
+                {selectedPayment.notes && (
+                  <>
+                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, textTransform: 'uppercase', fontSize: '0.75rem' }}>
+                      {t('notes') || 'Notas'}
+                    </Typography>
+                    <Paper variant="outlined" sx={{ p: 2, bgcolor: 'action.hover' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+                        <Notes sx={{ fontSize: 20, color: 'text.secondary' }} />
+                        <Typography variant="body2">{selectedPayment.notes}</Typography>
+                      </Box>
+                    </Paper>
+                  </>
+                )}
+              </DialogContent>
+              <DialogActions sx={{ px: 3, py: 2 }}>
+                <Button onClick={() => setDetailDialogOpen(false)}>
+                  {t('close') || 'Cerrar'}
+                </Button>
+              </DialogActions>
+            </>
+          )}
+        </Dialog>
       </Box>
     </LocalizationProvider>
   )
-}
+})
 
 export default PaymentForm

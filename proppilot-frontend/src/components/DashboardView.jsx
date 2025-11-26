@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo, useCallback, memo } from 'react'
 import {
   Box,
   Typography,
@@ -21,77 +21,85 @@ import {
   Add,
   Payment,
   Visibility,
-  TrendingUp
+  TrendingUp,
+  TrendingDown,
+  ChevronRight,
+  Schedule
 } from '@mui/icons-material'
 import { useLanguage } from '../contexts/LanguageContext'
+import { getDashboardStats, getRecentPayments, getNextPaymentDue } from '../data/mockData'
 
-const DashboardView = ({ onNavigate }) => {
-  const { t } = useLanguage()
-  const stats = [
+const DashboardView = memo(({ onNavigate }) => {
+  const { t, formatCurrency } = useLanguage()
+
+  // Get data from shared mock data
+  const dashboardStats = useMemo(() => getDashboardStats(), [])
+  const nextPaymentDue = useMemo(() => getNextPaymentDue(), [])
+  const recentPaymentsData = useMemo(() => getRecentPayments(), [])
+
+  const stats = useMemo(() => [
     {
       title: t('totalProperties'),
-      value: '24',
-      change: `+2 ${t('thisMonth')}`,
+      value: dashboardStats.totalProperties.toString(),
+      change: `${dashboardStats.vacantProperties} ${t('vacant') || 'vacantes'}`,
       icon: <Home sx={{ fontSize: 40, color: '#2196F3' }} />,
       color: '#2196F3',
-      navigateTo: 1 // Properties page
+      navigateTo: 1,
+      trendPositive: true
     },
     {
       title: t('activeTenants'),
-      value: '18',
-      change: `+1 ${t('thisWeek')}`,
+      value: dashboardStats.activeTenants.toString(),
+      change: `${dashboardStats.occupiedProperties} ${t('occupied') || 'ocupadas'}`,
       icon: <People sx={{ fontSize: 40, color: '#4CAF50' }} />,
       color: '#4CAF50',
-      navigateTo: 2 // Tenants page
+      navigateTo: 2,
+      trendPositive: true
     },
     {
       title: t('monthlyRevenue'),
-      value: '$24,500',
+      value: formatCurrency(dashboardStats.monthlyRevenue),
       change: `+8% ${t('fromLastMonth')}`,
       icon: <AttachMoney sx={{ fontSize: 40, color: '#FF9800' }} />,
       color: '#FF9800',
-      navigateTo: 3 // Payments page
+      navigateTo: 3,
+      trendPositive: true
     },
     {
       title: t('outstandingPayments'),
-      value: '3',
-      change: `2 ${t('overdue')}`,
+      value: dashboardStats.outstandingPayments.toString(),
+      change: `${dashboardStats.outstandingPayments} ${t('overdue')}`,
       icon: <Warning sx={{ fontSize: 40, color: '#F44336' }} />,
       color: '#F44336',
-      navigateTo: 1 // Properties page - to see which properties have outstanding payments
+      navigateTo: 1,
+      trendPositive: false
     }
-  ]
+  ], [t, formatCurrency, dashboardStats])
 
-  const recentPayments = [
-    {
-      tenant: 'Sarah Johnson',
-      property: 'Oak Street Apt 2B',
-      amount: '$1,200',
-      date: 'Jan 15',
+  const recentPayments = useMemo(() =>
+    recentPaymentsData.map(p => ({
+      tenant: p.tenant,
+      property: p.property,
+      amount: p.amount,
+      date: p.date,
       status: t('paid')
-    },
-    {
-      tenant: 'Mike Chen',
-      property: 'Pine Ave House',
-      amount: '$2,100',
-      date: 'Jan 14',
-      status: t('paid')
-    },
-    {
-      tenant: 'Emma Davis',
-      property: 'Maple Court Unit 5A',
-      amount: '$950',
-      date: 'Jan 13',
-      status: t('paid')
-    }
-  ]
+    }))
+  , [t, recentPaymentsData])
 
-  const quickActions = [
+  const quickActions = useMemo(() => [
     { title: t('addNewTenant'), icon: <Add />, color: 'primary', navigateTo: 2 },
     { title: t('registerPayment'), icon: <Payment />, color: 'secondary', navigateTo: 3 },
     { title: t('addProperty'), icon: <Home />, color: 'primary', navigateTo: 1 },
     { title: t('viewOutstanding'), icon: <Warning />, color: 'error', navigateTo: 1 }
-  ]
+  ], [t])
+
+  const handleStatClick = useCallback((navigateTo) => {
+    onNavigate && onNavigate(navigateTo)
+  }, [onNavigate])
+
+  const handlePaymentClick = useCallback(() => {
+    onNavigate && onNavigate(3)
+  }, [onNavigate])
 
   return (
     <Box>
@@ -101,7 +109,7 @@ const DashboardView = ({ onNavigate }) => {
         {stats.map((stat, index) => (
           <Grid size={{ xs: 12, sm: 6, lg: 3 }} key={index}>
             <Card
-              onClick={() => onNavigate && onNavigate(stat.navigateTo)}
+              onClick={() => handleStatClick(stat.navigateTo)}
               sx={{
                 height: '100%',
                 cursor: 'pointer',
@@ -137,13 +145,18 @@ const DashboardView = ({ onNavigate }) => {
                       {stat.title}
                     </Typography>
                   </Box>
+                  <ChevronRight sx={{ fontSize: { xs: 20, sm: 24 }, color: 'text.disabled', ml: 1 }} />
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <TrendingUp sx={{ fontSize: { xs: 14, sm: 16 }, color: '#4CAF50', mr: 0.5, flexShrink: 0 }} />
+                  {stat.trendPositive ? (
+                    <TrendingUp sx={{ fontSize: { xs: 14, sm: 16 }, color: '#4CAF50', mr: 0.5, flexShrink: 0 }} />
+                  ) : (
+                    <TrendingDown sx={{ fontSize: { xs: 14, sm: 16 }, color: '#F44336', mr: 0.5, flexShrink: 0 }} />
+                  )}
                   <Typography
                     variant="body2"
                     sx={{
-                      color: '#4CAF50',
+                      color: stat.trendPositive ? '#4CAF50' : '#F44336',
                       fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.8rem' },
                       lineHeight: 1.3
                     }}
@@ -156,6 +169,60 @@ const DashboardView = ({ onNavigate }) => {
           </Grid>
         ))}
       </Grid>
+
+      {/* Next Payment Due Card */}
+      <Paper
+        sx={{
+          p: { xs: 2, sm: 3 },
+          mb: { xs: 3, sm: 4 },
+          background: 'linear-gradient(135deg, #FF9800 0%, #F57C00 100%)',
+          color: 'white',
+          cursor: 'pointer',
+          transition: 'transform 0.2s, box-shadow 0.2s',
+          '&:hover': {
+            transform: { xs: 'none', sm: 'translateY(-2px)' },
+            boxShadow: 4
+          }
+        }}
+        onClick={handlePaymentClick}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.5, sm: 2 } }}>
+            <Schedule sx={{ fontSize: { xs: 32, sm: 40 } }} />
+            <Box>
+              <Typography
+                variant="body2"
+                sx={{ opacity: 0.9, fontSize: { xs: '0.75rem', sm: '0.875rem' }, mb: 0.5 }}
+              >
+                {t('nextPaymentDue') || 'Next Payment Due'}
+              </Typography>
+              <Typography
+                variant="h5"
+                sx={{ fontWeight: 700, fontSize: { xs: '1.25rem', sm: '1.5rem' } }}
+              >
+                {formatCurrency(nextPaymentDue.amount)} - {nextPaymentDue.tenant}
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{ opacity: 0.9, fontSize: { xs: '0.75rem', sm: '0.875rem' }, mt: 0.5 }}
+              >
+                {nextPaymentDue.property} • {nextPaymentDue.dueDate}
+              </Typography>
+            </Box>
+          </Box>
+          <Box sx={{ textAlign: 'right', display: { xs: 'none', sm: 'block' } }}>
+            <Chip
+              label={`${nextPaymentDue.daysUntil} ${t('daysLeft') || 'days left'}`}
+              sx={{
+                bgcolor: 'rgba(255,255,255,0.2)',
+                color: 'white',
+                fontWeight: 600
+              }}
+            />
+          </Box>
+          <ChevronRight sx={{ fontSize: 24, ml: 1 }} />
+        </Box>
+      </Paper>
 
       <Grid container spacing={{ xs: 2, sm: 3 }}>
         {/* Recent Payments */}
@@ -231,7 +298,7 @@ const DashboardView = ({ onNavigate }) => {
                           fontSize: { xs: '1rem', sm: '1.25rem' }
                         }}
                       >
-                        {payment.amount}
+                        {formatCurrency(payment.amount)}
                       </Typography>
                       <Typography
                         variant="body2"
@@ -269,7 +336,7 @@ const DashboardView = ({ onNavigate }) => {
                   variant="outlined"
                   startIcon={action.icon}
                   color={action.color}
-                  onClick={() => onNavigate && onNavigate(action.navigateTo)}
+                  onClick={() => handleStatClick(action.navigateTo)}
                   sx={{
                     justifyContent: 'flex-start',
                     py: { xs: 1.25, sm: 1.5 },
@@ -289,6 +356,6 @@ const DashboardView = ({ onNavigate }) => {
       </Grid>
     </Box>
   )
-}
+})
 
 export default DashboardView

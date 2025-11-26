@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo, useCallback, memo } from 'react'
 import useMediaQuery from '@mui/material/useMediaQuery'
 import {
   Typography,
@@ -21,23 +21,58 @@ import {
   Alert,
   CircularProgress,
   Card,
-  Divider
+  Divider,
+  Chip,
+  List,
+  ListItem,
+  ListItemText,
+  Avatar
 } from '@mui/material'
-import { Add, Edit, Delete } from '@mui/icons-material'
+import {
+  Add,
+  Edit,
+  Delete,
+  Home,
+  CalendarToday,
+  CheckCircle,
+  Warning,
+  People,
+  Email,
+  Phone,
+  Person,
+  Payment,
+  Close,
+  ContactPhone,
+  Notes
+} from '@mui/icons-material'
 import { useLanguage } from '../contexts/LanguageContext'
+import { mockTenants as sharedMockTenants, getPaymentsByTenantId } from '../data/mockData'
 
 const API_BASE_URL = '/api'
 
-const TenantsList = () => {
-  const { t } = useLanguage()
+// Helper to check if lease is ending soon (within 30 days)
+const isLeaseEndingSoon = (dateStr) => {
+  if (!dateStr) return false
+  const leaseEnd = new Date(dateStr)
+  const today = new Date()
+  const diffTime = leaseEnd - today
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+  return diffDays <= 30 && diffDays >= 0
+}
+
+const TenantsList = memo(function TenantsList() {
+  const { t, formatCurrency } = useLanguage()
   const isMobile = useMediaQuery('(max-width:600px)')
-  const [tenants, setTenants] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [tenants, setTenants] = useState(sharedMockTenants)
+  const [loading, setLoading] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingTenant, setEditingTenant] = useState(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [tenantToDelete, setTenantToDelete] = useState(null)
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' })
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false)
+  const [selectedTenant, setSelectedTenant] = useState(null)
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success', action: null })
+  const [pendingDelete, setPendingDelete] = useState(null)
   const [formData, setFormData] = useState({
     fullName: '',
     nationalId: '',
@@ -51,7 +86,11 @@ const TenantsList = () => {
     loadTenants()
   }, [])
 
-  const loadTenants = async () => {
+  const showSnackbar = useCallback((message, severity = 'success', action = null) => {
+    setSnackbar({ open: true, message, severity, action })
+  }, [])
+
+  const loadTenants = useCallback(async () => {
     try {
       setLoading(true)
       const response = await fetch(`${API_BASE_URL}/tenants`)
@@ -67,24 +106,20 @@ const TenantsList = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [t, showSnackbar])
 
-  const showSnackbar = (message, severity = 'success') => {
-    setSnackbar({ open: true, message, severity })
-  }
+  const handleCloseSnackbar = useCallback(() => {
+    setSnackbar(prev => ({ ...prev, open: false }))
+  }, [])
 
-  const handleCloseSnackbar = () => {
-    setSnackbar({ ...snackbar, open: false })
-  }
-
-  const openAddDialog = () => {
+  const openAddDialog = useCallback(() => {
     setEditingTenant(null)
     setFormData({ fullName: '', nationalId: '', email: '', phone: '' })
     setFormErrors({})
     setDialogOpen(true)
-  }
+  }, [])
 
-  const openEditDialog = (tenant) => {
+  const openEditDialog = useCallback((tenant) => {
     setEditingTenant(tenant)
     setFormData({
       fullName: tenant.fullName,
@@ -94,34 +129,31 @@ const TenantsList = () => {
     })
     setFormErrors({})
     setDialogOpen(true)
-  }
+  }, [])
 
-  const handleCloseDialog = () => {
+  const handleCloseDialog = useCallback(() => {
     setDialogOpen(false)
     setEditingTenant(null)
     setFormData({ fullName: '', nationalId: '', email: '', phone: '' })
     setFormErrors({})
-  }
+  }, [])
 
-  const handleInputChange = (field, value) => {
+  const handleInputChange = useCallback((field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }))
-    // Clear error when user starts typing
     setFormErrors(prev => {
       if (prev[field]) {
         return { ...prev, [field]: '' }
       }
       return prev
     })
-  }
+  }, [])
 
-  // Handle input events for better browser automation support
-  const handleInput = (field, e) => {
-    // This handles both onChange and onInput events
+  const handleInput = useCallback((field, e) => {
     const value = e.target.value
     handleInputChange(field, value)
-  }
+  }, [handleInputChange])
 
-  const validateForm = () => {
+  const validateForm = useCallback(() => {
     const errors = {}
 
     if (!formData.fullName.trim()) {
@@ -144,7 +176,7 @@ const TenantsList = () => {
 
     setFormErrors(errors)
     return Object.keys(errors).length === 0
-  }
+  }, [formData, t])
 
   const handleSubmit = async () => {
     if (!validateForm()) {
@@ -197,43 +229,81 @@ const TenantsList = () => {
     }
   }
 
-  const openDeleteDialog = (tenant) => {
+  const openDeleteDialog = useCallback((tenant) => {
     setTenantToDelete(tenant)
     setDeleteDialogOpen(true)
-  }
+  }, [])
 
-  const handleCloseDeleteDialog = () => {
+  const handleCloseDeleteDialog = useCallback(() => {
     setDeleteDialogOpen(false)
     setTenantToDelete(null)
-  }
+  }, [])
 
-  const handleDelete = async () => {
+  const handleDelete = useCallback(async () => {
     if (!tenantToDelete) return
 
-    try {
-      const response = await fetch(`${API_BASE_URL}/tenants/${tenantToDelete.id}`, {
-        method: 'DELETE'
-      })
+    const deletedTenant = tenantToDelete
+    const originalTenants = [...tenants]
 
-      if (response.ok) {
-        await loadTenants()
-        showSnackbar(t('tenantDeletedSuccess'))
-      } else {
+    // Optimistically remove from UI
+    setTenants(tenants.filter(t => t.id !== deletedTenant.id))
+    handleCloseDeleteDialog()
+
+    // Set up pending delete with timeout
+    const timeoutId = setTimeout(async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/tenants/${deletedTenant.id}`, {
+          method: 'DELETE'
+        })
+
+        if (!response.ok) {
+          // Restore on failure
+          setTenants(originalTenants)
+          showSnackbar(t('failedToDeleteTenant'), 'error')
+        }
+      } catch (error) {
+        console.error('Error deleting tenant:', error)
+        setTenants(originalTenants)
         showSnackbar(t('failedToDeleteTenant'), 'error')
       }
-    } catch (error) {
-      console.error('Error deleting tenant:', error)
-      showSnackbar(t('failedToDeleteTenant'), 'error')
-    } finally {
-      handleCloseDeleteDialog()
-    }
-  }
+      setPendingDelete(null)
+    }, 5000)
 
-  const getTotalTenantsText = () => {
+    setPendingDelete({ tenant: deletedTenant, originalTenants, timeoutId })
+
+    // Show snackbar with undo action
+    showSnackbar(
+      `${deletedTenant.fullName} ${t('deleted')}`,
+      'success',
+      () => {
+        clearTimeout(timeoutId)
+        setTenants(originalTenants)
+        setPendingDelete(null)
+        showSnackbar(t('actionUndone'))
+      }
+    )
+  }, [tenantToDelete, tenants, handleCloseDeleteDialog, showSnackbar, t])
+
+  const totalTenantsText = useMemo(() => {
     const count = tenants.length
     const plural = count !== 1 ? 's' : ''
     return t('totalTenants').replace('{count}', count).replace('{plural}', plural)
-  }
+  }, [tenants.length, t])
+
+  const openDetailDialog = useCallback((tenant) => {
+    setSelectedTenant(tenant)
+    setDetailDialogOpen(true)
+  }, [])
+
+  const handleCloseDetailDialog = useCallback(() => {
+    setDetailDialogOpen(false)
+    setSelectedTenant(null)
+  }, [])
+
+  const tenantPayments = useMemo(() => {
+    if (!selectedTenant) return []
+    return getPaymentsByTenantId(selectedTenant.id)
+  }, [selectedTenant])
 
   if (loading) {
     return (
@@ -251,21 +321,15 @@ const TenantsList = () => {
       <Box
         display="flex"
         justifyContent="space-between"
-        alignItems={{ xs: 'flex-start', sm: 'center' }}
-        mb={3}
-        flexDirection={{ xs: 'column', sm: 'row' }}
-        gap={{ xs: 2, sm: 0 }}
+        alignItems="center"
+        mb={2}
       >
         <Typography
-          variant="h4"
-          component="h1"
-          gutterBottom
-          sx={{
-            fontSize: { xs: '1.5rem', sm: '2.125rem' },
-            mb: { xs: 0, sm: 1 }
-          }}
+          variant="body2"
+          color="text.secondary"
+          sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
         >
-          {t('tenantsTitle')}
+          {totalTenantsText}
         </Typography>
         <Button
           variant="contained"
@@ -273,56 +337,134 @@ const TenantsList = () => {
           onClick={openAddDialog}
           sx={{
             fontWeight: 'bold',
-            fontSize: { xs: '0.875rem', sm: '1rem' },
-            width: { xs: '100%', sm: 'auto' }
+            fontSize: { xs: '0.875rem', sm: '1rem' }
           }}
         >
           {t('addTenant')}
         </Button>
       </Box>
 
-      <Typography
-        variant="body2"
-        color="text.secondary"
-        gutterBottom
-        sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' }, mb: 2 }}
-      >
-        {getTotalTenantsText()}
-      </Typography>
+      {/* Empty State */}
+      {tenants.length === 0 && (
+        <Paper
+          sx={{
+            p: 4,
+            textAlign: 'center',
+            bgcolor: 'background.default',
+            border: '2px dashed',
+            borderColor: 'divider'
+          }}
+        >
+          <People sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
+          <Typography variant="h6" color="text.secondary" gutterBottom>
+            {t('noTenants')}
+          </Typography>
+          <Typography variant="body2" color="text.disabled" sx={{ mb: 2 }}>
+            {t('noTenantsDesc')}
+          </Typography>
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={openAddDialog}
+          >
+            {t('addTenant')}
+          </Button>
+        </Paper>
+      )}
 
       {/* Desktop Table View */}
-      <Box sx={{ display: { xs: 'none', md: 'block' } }}>
-        <TableContainer component={Paper} elevation={2}>
-          <Table>
+      {tenants.length > 0 && (
+      <Box sx={{ display: { xs: 'none', xl: 'block' } }}>
+        <TableContainer component={Paper} elevation={2} sx={{ overflowX: 'auto' }}>
+          <Table sx={{ minWidth: 1000 }}>
             <TableHead>
               <TableRow>
-                <TableCell sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>{t('id')}</TableCell>
-                <TableCell sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>{t('fullName')}</TableCell>
-                <TableCell sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>{t('nationalId')}</TableCell>
-                <TableCell sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>{t('email')}</TableCell>
-                <TableCell sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>{t('phone')}</TableCell>
-                <TableCell align="center" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>{t('actions')}</TableCell>
+                <TableCell sx={{ minWidth: 160, whiteSpace: 'nowrap' }}>{t('fullName')}</TableCell>
+                <TableCell sx={{ minWidth: 180, whiteSpace: 'nowrap' }}>{t('propertiesMenu')}</TableCell>
+                <TableCell sx={{ minWidth: 120, whiteSpace: 'nowrap' }}>{t('leaseEnds')}</TableCell>
+                <TableCell sx={{ minWidth: 100, whiteSpace: 'nowrap' }}>{t('status')}</TableCell>
+                <TableCell sx={{ minWidth: 200, whiteSpace: 'nowrap' }}>{t('email')}</TableCell>
+                <TableCell sx={{ minWidth: 140, whiteSpace: 'nowrap' }}>{t('phone')}</TableCell>
+                <TableCell align="center" sx={{ minWidth: 100, whiteSpace: 'nowrap' }}>{t('actions')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {tenants.map((tenant) => (
-                <TableRow key={tenant.id} hover>
-                  <TableCell sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>{tenant.id}</TableCell>
-                  <TableCell sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>{tenant.fullName}</TableCell>
-                  <TableCell sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>{tenant.nationalId}</TableCell>
-                  <TableCell sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>{tenant.email}</TableCell>
-                  <TableCell sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>{tenant.phone}</TableCell>
-                  <TableCell align="center">
+                <TableRow
+                  key={tenant.id}
+                  hover
+                  onClick={() => openDetailDialog(tenant)}
+                  sx={{ cursor: 'pointer' }}
+                >
+                  <TableCell>
+                    <Box>
+                      <Typography sx={{ fontWeight: 500, whiteSpace: 'nowrap' }}>{tenant.fullName}</Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
+                        {t('nationalId')}: {tenant.nationalId}
+                      </Typography>
+                    </Box>
+                  </TableCell>
+                  <TableCell>
+                    {tenant.property ? (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <Home sx={{ fontSize: 16, color: 'text.secondary', flexShrink: 0 }} />
+                        <Typography sx={{ whiteSpace: 'nowrap' }}>{tenant.property}</Typography>
+                      </Box>
+                    ) : (
+                      <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                        —
+                      </Typography>
+                    )}
+                  </TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                    {tenant.leaseEndDate ? (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        {isLeaseEndingSoon(tenant.leaseEndDate) && (
+                          <Warning sx={{ fontSize: 16, color: 'warning.main' }} />
+                        )}
+                        <Typography
+                          sx={{
+                            color: isLeaseEndingSoon(tenant.leaseEndDate) ? 'warning.main' : 'text.primary',
+                            fontWeight: isLeaseEndingSoon(tenant.leaseEndDate) ? 500 : 400
+                          }}
+                        >
+                          {tenant.leaseEndDate}
+                        </Typography>
+                      </Box>
+                    ) : (
+                      <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                        —
+                      </Typography>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {tenant.paymentStatus ? (
+                      <Chip
+                        icon={tenant.paymentStatus === 'onTime' ? <CheckCircle /> : <Warning />}
+                        label={t(tenant.paymentStatus)}
+                        size="small"
+                        color={tenant.paymentStatus === 'onTime' ? 'success' : 'error'}
+                        sx={{ '& .MuiChip-icon': { fontSize: 16 } }}
+                      />
+                    ) : (
+                      <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                        —
+                      </Typography>
+                    )}
+                  </TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap' }}>{tenant.email}</TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap' }}>{tenant.phone}</TableCell>
+                  <TableCell align="center" sx={{ whiteSpace: 'nowrap' }}>
                     <IconButton
                       color="primary"
-                      onClick={() => openEditDialog(tenant)}
+                      onClick={(e) => { e.stopPropagation(); openEditDialog(tenant) }}
                       size="small"
                     >
                       <Edit />
                     </IconButton>
                     <IconButton
                       color="error"
-                      onClick={() => openDeleteDialog(tenant)}
+                      onClick={(e) => { e.stopPropagation(); openDeleteDialog(tenant) }}
                       size="small"
                     >
                       <Delete />
@@ -334,42 +476,72 @@ const TenantsList = () => {
           </Table>
         </TableContainer>
       </Box>
+      )}
 
-      {/* Mobile Card View */}
-      <Box sx={{ display: { xs: 'block', md: 'none' } }}>
+      {/* Mobile/Tablet Card View */}
+      {tenants.length > 0 && (
+        <Box sx={{ display: { xs: 'block', xl: 'none' } }}>
         {tenants.map((tenant) => (
-          <Card key={tenant.id} sx={{ mb: 2, p: 2 }}>
+          <Card
+            key={tenant.id}
+            onClick={() => openDetailDialog(tenant)}
+            sx={{
+              mb: 2,
+              p: 2,
+              cursor: 'pointer',
+              transition: 'box-shadow 0.2s',
+              '&:hover': { boxShadow: 3 }
+            }}
+          >
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
               <Box sx={{ flex: 1 }}>
-                <Typography
-                  variant="subtitle1"
-                  sx={{
-                    fontWeight: 600,
-                    fontSize: '1rem',
-                    mb: 0.5
-                  }}
-                >
-                  {tenant.fullName}
-                </Typography>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{ fontSize: '0.8125rem' }}
-                >
-                  ID: {tenant.id}
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                  <Typography
+                    variant="subtitle1"
+                    sx={{
+                      fontWeight: 600,
+                      fontSize: '1rem'
+                    }}
+                  >
+                    {tenant.fullName}
+                  </Typography>
+                  {tenant.paymentStatus && (
+                    <Chip
+                      icon={tenant.paymentStatus === 'onTime' ? <CheckCircle /> : <Warning />}
+                      label={t(tenant.paymentStatus)}
+                      size="small"
+                      color={tenant.paymentStatus === 'onTime' ? 'success' : 'error'}
+                      sx={{ height: 22, '& .MuiChip-icon': { fontSize: 14 }, '& .MuiChip-label': { fontSize: '0.7rem' } }}
+                    />
+                  )}
+                </Box>
+                {tenant.property ? (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: 'text.secondary' }}>
+                    <Home sx={{ fontSize: 14 }} />
+                    <Typography
+                      variant="body2"
+                      sx={{ fontSize: '0.8125rem' }}
+                    >
+                      {tenant.property}
+                    </Typography>
+                  </Box>
+                ) : (
+                  <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', fontSize: '0.8125rem' }}>
+                    {t('noPropertyAssigned') || 'No property assigned'}
+                  </Typography>
+                )}
               </Box>
               <Box sx={{ display: 'flex', gap: 0.5 }}>
                 <IconButton
                   color="primary"
-                  onClick={() => openEditDialog(tenant)}
+                  onClick={(e) => { e.stopPropagation(); openEditDialog(tenant) }}
                   size="small"
                 >
                   <Edit fontSize="small" />
                 </IconButton>
                 <IconButton
                   color="error"
-                  onClick={() => openDeleteDialog(tenant)}
+                  onClick={(e) => { e.stopPropagation(); openDeleteDialog(tenant) }}
                   size="small"
                 >
                   <Delete fontSize="small" />
@@ -378,6 +550,36 @@ const TenantsList = () => {
             </Box>
             <Divider sx={{ my: 1.5 }} />
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Box>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ fontSize: '0.75rem', display: 'block', mb: 0.25 }}
+                >
+                  {t('leaseEnds')}
+                </Typography>
+                {tenant.leaseEndDate ? (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    {isLeaseEndingSoon(tenant.leaseEndDate) && (
+                      <Warning sx={{ fontSize: 14, color: 'warning.main' }} />
+                    )}
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontSize: '0.875rem',
+                        color: isLeaseEndingSoon(tenant.leaseEndDate) ? 'warning.main' : 'text.primary',
+                        fontWeight: isLeaseEndingSoon(tenant.leaseEndDate) ? 500 : 400
+                      }}
+                    >
+                      {tenant.leaseEndDate}
+                    </Typography>
+                  </Box>
+                ) : (
+                  <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', fontSize: '0.875rem' }}>
+                    —
+                  </Typography>
+                )}
+              </Box>
               <Box>
                 <Typography
                   variant="caption"
@@ -418,6 +620,7 @@ const TenantsList = () => {
           </Card>
         ))}
       </Box>
+      )}
 
       {/* Add/Edit Dialog */}
       <Dialog
@@ -536,19 +739,200 @@ const TenantsList = () => {
         </DialogActions>
       </Dialog>
 
+      {/* Tenant Detail Dialog */}
+      <Dialog
+        open={detailDialogOpen}
+        onClose={handleCloseDetailDialog}
+        maxWidth="md"
+        fullWidth
+        fullScreen={isMobile}
+        PaperProps={{
+          sx: {
+            m: { xs: 0, sm: 2 },
+            maxHeight: { xs: '100vh', sm: '90vh' }
+          }
+        }}
+      >
+        {selectedTenant && (
+          <>
+            <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Avatar sx={{ bgcolor: 'primary.main', width: 48, height: 48 }}>
+                  <Person />
+                </Avatar>
+                <Box>
+                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                    {selectedTenant.fullName}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {t('nationalId')}: {selectedTenant.nationalId}
+                  </Typography>
+                </Box>
+              </Box>
+              <IconButton onClick={handleCloseDetailDialog} sx={{ display: { xs: 'flex', sm: 'none' } }}>
+                <Close />
+              </IconButton>
+            </DialogTitle>
+            <DialogContent dividers>
+              {/* Status Chip */}
+              <Box sx={{ mb: 3 }}>
+                <Chip
+                  icon={selectedTenant.paymentStatus === 'onTime' ? <CheckCircle /> : <Warning />}
+                  label={t(selectedTenant.paymentStatus)}
+                  color={selectedTenant.paymentStatus === 'onTime' ? 'success' : 'error'}
+                  sx={{ fontWeight: 500 }}
+                />
+              </Box>
+
+              {/* Contact Info */}
+              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, textTransform: 'uppercase', fontSize: '0.75rem' }}>
+                {t('contactInfo') || 'Información de Contacto'}
+              </Typography>
+              <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+                  <Email sx={{ fontSize: 20, color: 'text.secondary' }} />
+                  <Typography variant="body2">{selectedTenant.email}</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+                  <Phone sx={{ fontSize: 20, color: 'text.secondary' }} />
+                  <Typography variant="body2">{selectedTenant.phone}</Typography>
+                </Box>
+                {selectedTenant.emergencyContact && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <ContactPhone sx={{ fontSize: 20, color: 'text.secondary' }} />
+                    <Typography variant="body2">{selectedTenant.emergencyContact}</Typography>
+                  </Box>
+                )}
+              </Paper>
+
+              {/* Property Info */}
+              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, textTransform: 'uppercase', fontSize: '0.75rem' }}>
+                {t('propertyInfo') || 'Propiedad'}
+              </Typography>
+              <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+                  <Home sx={{ fontSize: 20, color: 'primary.main' }} />
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>{selectedTenant.property}</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">{t('monthlyRent') || 'Alquiler Mensual'}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{formatCurrency(selectedTenant.monthlyRent)}</Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">{t('leaseStart') || 'Inicio Contrato'}</Typography>
+                    <Typography variant="body2">{selectedTenant.leaseStart}</Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">{t('leaseEnds')}</Typography>
+                    <Typography variant="body2" sx={{ color: isLeaseEndingSoon(selectedTenant.leaseEndDate) ? 'warning.main' : 'text.primary' }}>
+                      {selectedTenant.leaseEndDate}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Paper>
+
+              {/* Notes */}
+              {selectedTenant.notes && (
+                <>
+                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, textTransform: 'uppercase', fontSize: '0.75rem' }}>
+                    {t('notes') || 'Notas'}
+                  </Typography>
+                  <Paper variant="outlined" sx={{ p: 2, mb: 3, bgcolor: 'action.hover' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+                      <Notes sx={{ fontSize: 20, color: 'text.secondary' }} />
+                      <Typography variant="body2">{selectedTenant.notes}</Typography>
+                    </Box>
+                  </Paper>
+                </>
+              )}
+
+              {/* Payment History */}
+              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, textTransform: 'uppercase', fontSize: '0.75rem' }}>
+                {t('paymentHistory') || 'Historial de Pagos'}
+              </Typography>
+              <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
+                {tenantPayments.length > 0 ? (
+                  <List disablePadding>
+                    {tenantPayments.slice(0, 5).map((payment, index) => (
+                      <ListItem
+                        key={payment.id}
+                        divider={index < tenantPayments.length - 1}
+                        sx={{ px: 2, py: 1.5 }}
+                      >
+                        <ListItemText
+                          primary={
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                {formatCurrency(payment.amount)}
+                              </Typography>
+                              <Chip
+                                label={t(payment.status) || payment.status}
+                                size="small"
+                                color={payment.status === 'completed' ? 'success' : 'warning'}
+                                sx={{ height: 20, fontSize: '0.7rem' }}
+                              />
+                            </Box>
+                          }
+                          secondary={
+                            <Typography variant="caption" color="text.secondary">
+                              {payment.date} • {t(payment.method) || payment.method}
+                            </Typography>
+                          }
+                        />
+                      </ListItem>
+                    ))}
+                  </List>
+                ) : (
+                  <Box sx={{ p: 3, textAlign: 'center' }}>
+                    <Payment sx={{ fontSize: 32, color: 'text.disabled', mb: 1 }} />
+                    <Typography variant="body2" color="text.secondary">
+                      {t('noPaymentsYet') || 'Sin pagos registrados'}
+                    </Typography>
+                  </Box>
+                )}
+              </Paper>
+            </DialogContent>
+            <DialogActions sx={{ px: 3, py: 2 }}>
+              <Button onClick={handleCloseDetailDialog}>
+                {t('close') || 'Cerrar'}
+              </Button>
+              <Button
+                variant="outlined"
+                startIcon={<Edit />}
+                onClick={() => {
+                  handleCloseDetailDialog()
+                  openEditDialog(selectedTenant)
+                }}
+              >
+                {t('edit') || 'Editar'}
+              </Button>
+            </DialogActions>
+          </>
+        )}
+      </Dialog>
+
       {/* Snackbar for notifications */}
       <Snackbar
         open={snackbar.open}
-        autoHideDuration={6000}
+        autoHideDuration={snackbar.action ? 5000 : 6000}
         onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >
-        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity}>
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          action={snackbar.action && (
+            <Button color="inherit" size="small" onClick={snackbar.action}>
+              {t('undo')}
+            </Button>
+          )}
+        >
           {snackbar.message}
         </Alert>
       </Snackbar>
     </Box>
   )
-}
+})
 
 export default TenantsList

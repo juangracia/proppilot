@@ -184,6 +184,29 @@ export const LanguageProvider = ({ children }) => {
       fromLastMonth: 'desde el mes pasado',
       overdue: 'vencidos',
       paid: 'Pagado',
+      nextPaymentDue: 'Próximo Pago',
+      daysLeft: 'días restantes',
+      lastPayment: 'Último Pago',
+      paymentOverdue: 'Pago Vencido',
+      onTime: 'Al Día',
+      late: 'Atrasado',
+      leaseEnds: 'Fin de Contrato',
+      paymentHistory: 'Historial de Pagos',
+      partialPayment: 'Pago Parcial',
+      remainingBalance: 'Saldo Restante',
+      noProperties: 'No hay propiedades',
+      noPropertiesDesc: 'Agrega tu primera propiedad para comenzar',
+      noTenants: 'No hay inquilinos',
+      noTenantsDesc: 'Agrega tu primer inquilino para comenzar',
+      noPayments: 'No hay pagos registrados',
+      noPaymentsDesc: 'Registra tu primer pago para verlo aquí',
+      actionUndone: 'Acción deshecha',
+      undo: 'Deshacer',
+      deleted: 'eliminado',
+      filterAll: 'Todos',
+      filterOccupied: 'Ocupados',
+      filterVacant: 'Vacantes',
+      filterOverdue: 'Vencidos',
 
       // Common
       viewDetails: 'Ver Detalles',
@@ -365,6 +388,29 @@ export const LanguageProvider = ({ children }) => {
       fromLastMonth: 'from last month',
       overdue: 'overdue',
       paid: 'Paid',
+      nextPaymentDue: 'Next Payment Due',
+      daysLeft: 'days left',
+      lastPayment: 'Last Payment',
+      paymentOverdue: 'Payment Overdue',
+      onTime: 'On Time',
+      late: 'Late',
+      leaseEnds: 'Lease Ends',
+      paymentHistory: 'Payment History',
+      partialPayment: 'Partial Payment',
+      remainingBalance: 'Remaining Balance',
+      noProperties: 'No properties',
+      noPropertiesDesc: 'Add your first property to get started',
+      noTenants: 'No tenants',
+      noTenantsDesc: 'Add your first tenant to get started',
+      noPayments: 'No payments recorded',
+      noPaymentsDesc: 'Register your first payment to see it here',
+      actionUndone: 'Action undone',
+      undo: 'Undo',
+      deleted: 'deleted',
+      filterAll: 'All',
+      filterOccupied: 'Occupied',
+      filterVacant: 'Vacant',
+      filterOverdue: 'Overdue',
 
       // Common
       viewDetails: 'View Details',
@@ -380,6 +426,7 @@ export const LanguageProvider = ({ children }) => {
   }
 
   const t = (key, params = {}) => {
+    if (!key) return ''
     const keys = key.split('.')
     let value = translations[language]
 

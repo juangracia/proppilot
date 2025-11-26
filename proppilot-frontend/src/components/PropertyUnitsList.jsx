@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo, useCallback, memo } from 'react'
 import {
   Paper,
   Typography,
@@ -17,7 +17,13 @@ import {
   CardContent,
   Chip,
   Avatar,
-  Divider
+  Divider,
+  Tabs,
+  Tab,
+  List,
+  ListItem,
+  ListItemText,
+  IconButton
 } from '@mui/material'
 import Grid from '@mui/material/Grid'
 import {
@@ -29,61 +35,33 @@ import {
   AttachMoney,
   CalendarToday,
   Edit,
-  Visibility
+  Visibility,
+  Warning,
+  Receipt,
+  Close,
+  LocationOn,
+  Bed,
+  Bathtub,
+  SquareFoot,
+  Garage,
+  Description,
+  Payment
 } from '@mui/icons-material'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
 import { useLanguage } from '../contexts/LanguageContext'
+import { mockProperties as sharedMockProperties, getPaymentsByPropertyId, getTenantById } from '../data/mockData'
 
 const API_BASE_URL = '/api'
 
-// Mock data for demonstration
-const mockProperties = [
-  {
-    id: 1,
-    address: '123 Oak Street, Apt 2B',
-    type: 'Apartment',
-    status: 'Occupied',
-    tenant: 'Sarah Johnson',
-    monthlyRent: 1200,
-    leaseStart: '12/31/2023'
-  },
-  {
-    id: 2,
-    address: '456 Pine Avenue House',
-    type: 'House',
-    status: 'Occupied',
-    tenant: 'Mike Chen',
-    monthlyRent: 2100,
-    leaseStart: '11/14/2023'
-  },
-  {
-    id: 3,
-    address: '789 Maple Court, Unit 5A',
-    type: 'Apartment',
-    status: 'Occupied',
-    tenant: 'Emma Davis',
-    monthlyRent: 950,
-    leaseStart: '1/31/2024'
-  },
-  {
-    id: 4,
-    address: '321 Elm Street Loft',
-    type: 'Commercial',
-    status: 'Vacant',
-    tenant: 'Vacant',
-    monthlyRent: 1800,
-    leaseStart: null
-  }
-]
-
-function PropertyUnitsList() {
+const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null, onFilterClear }) {
   const { t, formatCurrency, currency } = useLanguage()
-  const [propertyUnits, setPropertyUnits] = useState(mockProperties)
+  const [propertyUnits, setPropertyUnits] = useState(sharedMockProperties)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
+  const [activeFilter, setActiveFilter] = useState(initialFilter)
   const [openAddDialog, setOpenAddDialog] = useState(false)
   const [newProperty, setNewProperty] = useState({
     address: '',
@@ -104,13 +82,36 @@ function PropertyUnitsList() {
   })
   const [editLoading, setEditLoading] = useState(false)
 
-  const filteredProperties = propertyUnits.filter(property =>
-    property.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    property.tenant.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    property.type.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  // Memoize filtered properties
+  const filteredProperties = useMemo(() => {
+    const filteredByStatus = propertyUnits.filter(property => {
+      if (activeFilter === 'occupied') return property.status === 'Occupied'
+      if (activeFilter === 'vacant') return property.status === 'Vacant'
+      if (activeFilter === 'overdue') return property.hasPendingPayment
+      return true
+    })
 
-  const getStatusColor = (status) => {
+    return filteredByStatus.filter(property =>
+      property.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      property.tenant.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      property.type.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  }, [propertyUnits, activeFilter, searchTerm])
+
+  // Count of overdue properties for badge
+  const overdueCount = useMemo(() =>
+    propertyUnits.filter(p => p.hasPendingPayment).length
+  , [propertyUnits])
+
+  const handleFilterChange = useCallback((event, newValue) => {
+    setActiveFilter(newValue === 'all' ? null : newValue)
+  }, [])
+
+  const handleSearchChange = useCallback((e) => {
+    setSearchTerm(e.target.value)
+  }, [])
+
+  const getStatusColor = useCallback((status) => {
     switch (status) {
       case 'Occupied':
         return 'success'
@@ -119,9 +120,9 @@ function PropertyUnitsList() {
       default:
         return 'default'
     }
-  }
+  }, [])
 
-  const getTypeIcon = (type) => {
+  const getTypeIcon = useCallback((type) => {
     switch (type) {
       case 'House':
         return <Home />
@@ -132,23 +133,31 @@ function PropertyUnitsList() {
       default:
         return <Home />
     }
-  }
+  }, [])
 
-  const handleAddProperty = () => {
+  const handleOpenAddDialog = useCallback(() => {
+    setOpenAddDialog(true)
+  }, [])
+
+  const handleCloseAddDialog = useCallback(() => {
+    setOpenAddDialog(false)
+  }, [])
+
+  const handleAddProperty = useCallback(() => {
     setAddLoading(true)
-    // Simulate API call
     setTimeout(() => {
-      const newId = Math.max(...propertyUnits.map(p => p.id)) + 1
-      const property = {
-        id: newId,
-        address: newProperty.address,
-        type: newProperty.type,
-        status: 'Vacant',
-        tenant: 'Vacant',
-        monthlyRent: parseFloat(newProperty.baseRentAmount),
-        leaseStart: newProperty.leaseStartDate ? newProperty.leaseStartDate.toLocaleDateString() : null
-      }
-      setPropertyUnits(prev => [...prev, property])
+      setPropertyUnits(prev => {
+        const newId = Math.max(...prev.map(p => p.id)) + 1
+        return [...prev, {
+          id: newId,
+          address: newProperty.address,
+          type: newProperty.type,
+          status: 'Vacant',
+          tenant: 'Vacant',
+          monthlyRent: parseFloat(newProperty.baseRentAmount),
+          leaseStart: newProperty.leaseStartDate ? newProperty.leaseStartDate.toLocaleDateString() : null
+        }]
+      })
       setOpenAddDialog(false)
       setNewProperty({
         address: '',
@@ -158,19 +167,19 @@ function PropertyUnitsList() {
       })
       setAddLoading(false)
     }, 1000)
-  }
+  }, [newProperty])
 
-  const handleViewDetails = (property) => {
+  const handleViewDetails = useCallback((property) => {
     setSelectedProperty(property)
     setOpenViewDialog(true)
-  }
+  }, [])
 
-  const handleCloseViewDialog = () => {
+  const handleCloseViewDialog = useCallback(() => {
     setOpenViewDialog(false)
     setSelectedProperty(null)
-  }
+  }, [])
 
-  const handleEdit = (property) => {
+  const handleEdit = useCallback((property) => {
     setEditingProperty(property)
     setEditFormData({
       address: property.address,
@@ -179,9 +188,9 @@ function PropertyUnitsList() {
       leaseStartDate: property.leaseStart ? new Date(property.leaseStart) : null
     })
     setOpenEditDialog(true)
-  }
+  }, [])
 
-  const handleCloseEditDialog = () => {
+  const handleCloseEditDialog = useCallback(() => {
     setOpenEditDialog(false)
     setEditingProperty(null)
     setEditFormData({
@@ -190,15 +199,14 @@ function PropertyUnitsList() {
       baseRentAmount: '',
       leaseStartDate: null
     })
-  }
+  }, [])
 
-  const handleUpdateProperty = () => {
+  const handleUpdateProperty = useCallback(() => {
     if (!editFormData.address || !editFormData.type || !editFormData.baseRentAmount) {
       return
     }
 
     setEditLoading(true)
-    // Simulate API call
     setTimeout(() => {
       setPropertyUnits(prev => prev.map(p =>
         p.id === editingProperty.id
@@ -214,7 +222,7 @@ function PropertyUnitsList() {
       handleCloseEditDialog()
       setEditLoading(false)
     }, 1000)
-  }
+  }, [editFormData, editingProperty, handleCloseEditDialog])
 
   if (loading) {
     return (
@@ -227,25 +235,42 @@ function PropertyUnitsList() {
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box>
-        {/* Header */}
-        <Box sx={{ mb: { xs: 3, sm: 4 } }}>
-          <Typography
-            variant="h4"
+        {/* Filter Tabs */}
+        <Box sx={{ mb: { xs: 2, sm: 3 } }}>
+          <Tabs
+            value={activeFilter || 'all'}
+            onChange={handleFilterChange}
+            variant="scrollable"
+            scrollButtons="auto"
             sx={{
-              fontWeight: 600,
-              mb: { xs: 0.75, sm: 1 },
-              fontSize: { xs: '1.5rem', sm: '2.125rem' }
+              minHeight: 40,
+              '& .MuiTab-root': {
+                minHeight: 40,
+                textTransform: 'none',
+                fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                fontWeight: 500,
+                py: 1
+              }
             }}
           >
-            {t('propertyUnitsTitle')}
-          </Typography>
-          <Typography
-            variant="body1"
-            color="text.secondary"
-            sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
-          >
-            {t('appSubtitle')}
-          </Typography>
+            <Tab label={t('filterAll')} value="all" />
+            <Tab label={t('filterOccupied')} value="occupied" />
+            <Tab label={t('filterVacant')} value="vacant" />
+            <Tab
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  {t('filterOverdue')}
+                  <Chip
+                    label={overdueCount}
+                    size="small"
+                    color="error"
+                    sx={{ height: 18, fontSize: '0.7rem', ml: 0.5 }}
+                  />
+                </Box>
+              }
+              value="overdue"
+            />
+          </Tabs>
         </Box>
 
         {/* Search and Add Button */}
@@ -259,7 +284,7 @@ function PropertyUnitsList() {
           <TextField
             placeholder={t('searchPlaceholder')}
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={handleSearchChange}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -277,7 +302,7 @@ function PropertyUnitsList() {
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            onClick={() => setOpenAddDialog(true)}
+            onClick={handleOpenAddDialog}
             sx={{
               textTransform: 'none',
               width: { xs: '100%', sm: 'auto' },
@@ -292,6 +317,34 @@ function PropertyUnitsList() {
           <Alert severity="error" sx={{ mb: 3 }}>
             {error}
           </Alert>
+        )}
+
+        {/* Empty State */}
+        {filteredProperties.length === 0 && (
+          <Paper
+            sx={{
+              p: 4,
+              textAlign: 'center',
+              bgcolor: 'background.default',
+              border: '2px dashed',
+              borderColor: 'divider'
+            }}
+          >
+            <Home sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
+            <Typography variant="h6" color="text.secondary" gutterBottom>
+              {t('noProperties')}
+            </Typography>
+            <Typography variant="body2" color="text.disabled" sx={{ mb: 2 }}>
+              {t('noPropertiesDesc')}
+            </Typography>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleOpenAddDialog}
+            >
+              {t('addProperty')}
+            </Button>
+          </Paper>
         )}
 
         {/* Properties Grid */}
@@ -329,15 +382,30 @@ function PropertyUnitsList() {
                         {t(property.type.toLowerCase())}
                       </Typography>
                     </Box>
-                    <Chip
-                      label={t(property.status.toLowerCase())}
-                      color={getStatusColor(property.status)}
-                      size="small"
-                      sx={{
-                        fontSize: { xs: '0.7rem', sm: '0.75rem' },
-                        height: { xs: 20, sm: 24 }
-                      }}
-                    />
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      {property.hasPendingPayment && (
+                        <Chip
+                          icon={<Warning sx={{ fontSize: 14 }} />}
+                          label={t('paymentOverdue')}
+                          size="small"
+                          color="error"
+                          sx={{
+                            fontSize: { xs: '0.65rem', sm: '0.7rem' },
+                            height: { xs: 20, sm: 24 },
+                            '& .MuiChip-icon': { fontSize: 14 }
+                          }}
+                        />
+                      )}
+                      <Chip
+                        label={t(property.status.toLowerCase())}
+                        color={getStatusColor(property.status)}
+                        size="small"
+                        sx={{
+                          fontSize: { xs: '0.7rem', sm: '0.75rem' },
+                          height: { xs: 20, sm: 24 }
+                        }}
+                      />
+                    </Box>
                   </Box>
 
                   {/* Address */}
@@ -367,10 +435,12 @@ function PropertyUnitsList() {
                       variant="body2"
                       sx={{
                         fontWeight: 500,
-                        fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                        fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                        fontStyle: property.tenant === 'Vacant' ? 'italic' : 'normal',
+                        color: property.tenant === 'Vacant' ? 'text.secondary' : 'text.primary'
                       }}
                     >
-                      {property.tenant}
+                      {property.tenant === 'Vacant' ? t('vacant') : property.tenant}
                     </Typography>
                   </Box>
 
@@ -392,9 +462,33 @@ function PropertyUnitsList() {
                         fontSize: { xs: '0.875rem', sm: '0.875rem' }
                       }}
                     >
-                      ${property.monthlyRent.toLocaleString()}
+                      {formatCurrency(property.monthlyRent)}
                     </Typography>
                   </Box>
+
+                  {/* Last Payment */}
+                  {property.lastPaymentDate && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: { xs: 1.5, sm: 2 }, flexWrap: 'wrap' }}>
+                      <Receipt sx={{ fontSize: { xs: 14, sm: 16 }, color: 'text.secondary' }} />
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                      >
+                        {t('lastPayment')}:
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                          color: property.hasPendingPayment ? 'error.main' : 'success.main',
+                          fontWeight: 500
+                        }}
+                      >
+                        {property.lastPaymentDate}
+                      </Typography>
+                    </Box>
+                  )}
 
                   {/* Lease Start */}
                   {property.leaseStart && (
@@ -456,7 +550,7 @@ function PropertyUnitsList() {
         {/* Add Property Dialog */}
         <Dialog
           open={openAddDialog}
-          onClose={() => setOpenAddDialog(false)}
+          onClose={handleCloseAddDialog}
           maxWidth="sm"
           fullWidth
           PaperProps={{
@@ -484,9 +578,9 @@ function PropertyUnitsList() {
                 fullWidth
                 required
               >
-                <MenuItem value="Apartment">Apartment</MenuItem>
-                <MenuItem value="House">House</MenuItem>
-                <MenuItem value="Commercial">Commercial</MenuItem>
+                <MenuItem value="Apartment">{t('apartment')}</MenuItem>
+                <MenuItem value="House">{t('house')}</MenuItem>
+                <MenuItem value="Commercial">{t('commercial')}</MenuItem>
               </TextField>
               <TextField
                 label={t('baseRentLabel')}
@@ -496,7 +590,7 @@ function PropertyUnitsList() {
                 fullWidth
                 required
                 InputProps={{
-                  startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                  startAdornment: <InputAdornment position="start">{t(`currencySymbol.${currency}`)}</InputAdornment>,
                 }}
               />
               <DatePicker
@@ -512,7 +606,7 @@ function PropertyUnitsList() {
             </Box>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setOpenAddDialog(false)}>{t('cancel')}</Button>
+            <Button onClick={handleCloseAddDialog}>{t('cancel')}</Button>
             <Button
               onClick={handleAddProperty}
               variant="contained"
@@ -527,7 +621,7 @@ function PropertyUnitsList() {
         <Dialog
           open={openViewDialog}
           onClose={handleCloseViewDialog}
-          maxWidth="sm"
+          maxWidth="md"
           fullWidth
           PaperProps={{
             sx: {
@@ -536,56 +630,211 @@ function PropertyUnitsList() {
             }
           }}
         >
-          <DialogTitle>{t('propertyDetails')}</DialogTitle>
-          <DialogContent>
-            {selectedProperty && (
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
-                <Box>
-                  <Typography variant="caption" color="text.secondary">{t('addressLabel')}</Typography>
-                  <Typography variant="body1" sx={{ fontWeight: 500, mt: 0.5 }}>
-                    {selectedProperty.address}
-                  </Typography>
+          {selectedProperty && (
+            <>
+              <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Avatar sx={{ bgcolor: selectedProperty.type === 'Commercial' ? 'secondary.main' : 'primary.main', width: 48, height: 48 }}>
+                    {selectedProperty.type === 'Commercial' ? <Business /> : <Home />}
+                  </Avatar>
+                  <Box>
+                    <Typography variant="h6" sx={{ fontWeight: 600, fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                      {selectedProperty.address}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {t(selectedProperty.type.toLowerCase())}
+                    </Typography>
+                  </Box>
                 </Box>
-                <Box>
-                  <Typography variant="caption" color="text.secondary">{t('type')}</Typography>
-                  <Typography variant="body1" sx={{ fontWeight: 500, mt: 0.5 }}>
-                    {t(selectedProperty.type.toLowerCase())}
-                  </Typography>
-                </Box>
-                <Box>
-                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>{t('status')}</Typography>
+                <IconButton onClick={handleCloseViewDialog} sx={{ display: { xs: 'flex', sm: 'none' } }}>
+                  <Close />
+                </IconButton>
+              </DialogTitle>
+              <DialogContent dividers>
+                {/* Status and Rent */}
+                <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
                   <Chip
                     label={t(selectedProperty.status.toLowerCase())}
                     color={getStatusColor(selectedProperty.status)}
-                    size="small"
+                    sx={{ fontWeight: 500 }}
                   />
+                  {selectedProperty.hasPendingPayment && (
+                    <Chip
+                      icon={<Warning />}
+                      label={t('pendingPayment') || 'Pago Pendiente'}
+                      color="error"
+                      variant="outlined"
+                    />
+                  )}
                 </Box>
-                <Box>
-                  <Typography variant="caption" color="text.secondary">{t('tenant')}</Typography>
-                  <Typography variant="body1" sx={{ fontWeight: 500, mt: 0.5 }}>
-                    {selectedProperty.tenant}
-                  </Typography>
-                </Box>
-                <Box>
-                  <Typography variant="caption" color="text.secondary">{t('monthlyRent')}</Typography>
-                  <Typography variant="body1" sx={{ fontWeight: 500, mt: 0.5 }}>
-                    ${selectedProperty.monthlyRent.toLocaleString()}
-                  </Typography>
-                </Box>
-                {selectedProperty.leaseStart && (
-                  <Box>
-                    <Typography variant="caption" color="text.secondary">{t('leaseStartLabel')}</Typography>
-                    <Typography variant="body1" sx={{ fontWeight: 500, mt: 0.5 }}>
-                      {selectedProperty.leaseStart}
-                    </Typography>
+
+                {/* Property Details */}
+                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, textTransform: 'uppercase', fontSize: '0.75rem' }}>
+                  {t('propertyDetails')}
+                </Typography>
+                <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
+                  <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap', mb: 2 }}>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">{t('monthlyRent')}</Typography>
+                      <Typography variant="h6" sx={{ fontWeight: 600, color: 'primary.main' }}>
+                        {formatCurrency(selectedProperty.monthlyRent)}
+                      </Typography>
+                    </Box>
+                    {selectedProperty.sqMeters && (
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">{t('area') || 'Superficie'}</Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                          {selectedProperty.sqMeters} m²
+                        </Typography>
+                      </Box>
+                    )}
+                    {selectedProperty.bedrooms && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <Bed sx={{ fontSize: 20, color: 'text.secondary' }} />
+                        <Typography variant="body1">{selectedProperty.bedrooms}</Typography>
+                      </Box>
+                    )}
+                    {selectedProperty.bathrooms && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <Bathtub sx={{ fontSize: 20, color: 'text.secondary' }} />
+                        <Typography variant="body1">{selectedProperty.bathrooms}</Typography>
+                      </Box>
+                    )}
+                    {selectedProperty.garage && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <Garage sx={{ fontSize: 20, color: 'text.secondary' }} />
+                        <Typography variant="body1">{t('yes') || 'Sí'}</Typography>
+                      </Box>
+                    )}
                   </Box>
-                )}
-              </Box>
-            )}
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCloseViewDialog}>{t('close')}</Button>
-          </DialogActions>
+                  {selectedProperty.description && (
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+                      <Description sx={{ fontSize: 20, color: 'text.secondary', mt: 0.25 }} />
+                      <Typography variant="body2" color="text.secondary">
+                        {selectedProperty.description}
+                      </Typography>
+                    </Box>
+                  )}
+                  {selectedProperty.amenities && selectedProperty.amenities.length > 0 && (
+                    <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                        {t('amenities') || 'Amenities'}
+                      </Typography>
+                      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                        {selectedProperty.amenities.map((amenity, i) => (
+                          <Chip key={i} label={amenity} size="small" variant="outlined" />
+                        ))}
+                      </Box>
+                    </Box>
+                  )}
+                </Paper>
+
+                {/* Tenant Info */}
+                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, textTransform: 'uppercase', fontSize: '0.75rem' }}>
+                  {t('tenant')}
+                </Typography>
+                <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
+                  {selectedProperty.tenant ? (
+                    <Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+                        <Person sx={{ fontSize: 20, color: 'primary.main' }} />
+                        <Typography variant="body1" sx={{ fontWeight: 500 }}>{selectedProperty.tenant}</Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
+                        {selectedProperty.leaseStart && (
+                          <Box>
+                            <Typography variant="caption" color="text.secondary">{t('leaseStart') || 'Inicio Contrato'}</Typography>
+                            <Typography variant="body2">{selectedProperty.leaseStart}</Typography>
+                          </Box>
+                        )}
+                        {selectedProperty.leaseEnd && (
+                          <Box>
+                            <Typography variant="caption" color="text.secondary">{t('leaseEnds')}</Typography>
+                            <Typography variant="body2">{selectedProperty.leaseEnd}</Typography>
+                          </Box>
+                        )}
+                        {selectedProperty.lastPaymentDate && (
+                          <Box>
+                            <Typography variant="caption" color="text.secondary">{t('lastPayment') || 'Último Pago'}</Typography>
+                            <Typography variant="body2">{selectedProperty.lastPaymentDate}</Typography>
+                          </Box>
+                        )}
+                      </Box>
+                    </Box>
+                  ) : (
+                    <Box sx={{ textAlign: 'center', py: 2 }}>
+                      <Person sx={{ fontSize: 32, color: 'text.disabled', mb: 1 }} />
+                      <Typography variant="body2" color="text.secondary">
+                        {t('noTenantAssigned') || 'Sin inquilino asignado'}
+                      </Typography>
+                    </Box>
+                  )}
+                </Paper>
+
+                {/* Payment History */}
+                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, textTransform: 'uppercase', fontSize: '0.75rem' }}>
+                  {t('paymentHistory') || 'Historial de Pagos'}
+                </Typography>
+                <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
+                  {(() => {
+                    const payments = getPaymentsByPropertyId(selectedProperty.id)
+                    return payments.length > 0 ? (
+                      <List disablePadding>
+                        {payments.slice(0, 5).map((payment, index) => (
+                          <ListItem
+                            key={payment.id}
+                            divider={index < payments.length - 1}
+                            sx={{ px: 2, py: 1.5 }}
+                          >
+                            <ListItemText
+                              primary={
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                    {formatCurrency(payment.amount)}
+                                  </Typography>
+                                  <Chip
+                                    label={t(payment.status) || payment.status}
+                                    size="small"
+                                    color={payment.status === 'completed' ? 'success' : 'warning'}
+                                    sx={{ height: 20, fontSize: '0.7rem' }}
+                                  />
+                                </Box>
+                              }
+                              secondary={
+                                <Typography variant="caption" color="text.secondary">
+                                  {payment.date} • {payment.tenant}
+                                </Typography>
+                              }
+                            />
+                          </ListItem>
+                        ))}
+                      </List>
+                    ) : (
+                      <Box sx={{ p: 3, textAlign: 'center' }}>
+                        <Payment sx={{ fontSize: 32, color: 'text.disabled', mb: 1 }} />
+                        <Typography variant="body2" color="text.secondary">
+                          {t('noPaymentsYet') || 'Sin pagos registrados'}
+                        </Typography>
+                      </Box>
+                    )
+                  })()}
+                </Paper>
+              </DialogContent>
+              <DialogActions sx={{ px: 3, py: 2 }}>
+                <Button onClick={handleCloseViewDialog}>{t('close')}</Button>
+                <Button
+                  variant="outlined"
+                  startIcon={<Edit />}
+                  onClick={() => {
+                    handleCloseViewDialog()
+                    handleOpenEditDialog(selectedProperty)
+                  }}
+                >
+                  {t('edit') || 'Editar'}
+                </Button>
+              </DialogActions>
+            </>
+          )}
         </Dialog>
 
         {/* Edit Property Dialog */}
@@ -631,7 +880,7 @@ function PropertyUnitsList() {
                 fullWidth
                 required
                 InputProps={{
-                  startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                  startAdornment: <InputAdornment position="start">{t(`currencySymbol.${currency}`)}</InputAdornment>,
                 }}
               />
               <DatePicker
@@ -660,6 +909,6 @@ function PropertyUnitsList() {
       </Box>
     </LocalizationProvider>
   )
-}
+})
 
 export default PropertyUnitsList

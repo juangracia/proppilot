@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useCallback, memo } from 'react'
 import {
   Typography,
   Box,
@@ -41,29 +41,33 @@ const drawerWidth = 240
 
 function AppContent() {
   const [selectedView, setSelectedView] = useState(0)
-  const [darkMode, setDarkMode] = useState(false)
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('darkMode')
+    return saved ? JSON.parse(saved) : false
+  })
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [propertyFilter, setPropertyFilter] = useState(null)
   const { t } = useLanguage()
 
-  const menuItems = [
+  const menuItems = useMemo(() => [
     { text: t('dashboardMenu'), icon: <Dashboard />, value: 0 },
     { text: t('propertiesMenu'), icon: <Home />, value: 1 },
     { text: t('tenantsMenu'), icon: <People />, value: 2 },
     { text: t('paymentsMenu'), icon: <Payment />, value: 3 }
-  ]
+  ], [t])
 
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen)
-  }
+  const handleDrawerToggle = useCallback(() => {
+    setMobileOpen(prev => !prev)
+  }, [])
 
-  const handleMenuClick = (value) => {
+  const handleMenuClick = useCallback((value) => {
     setSelectedView(value)
     setMobileOpen(false)
-  }
+  }, [])
 
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode)
-  }
+  const toggleDarkMode = useCallback(() => {
+    setDarkMode(prev => !prev)
+  }, [])
 
   const theme = useMemo(
     () =>
@@ -331,11 +335,12 @@ function AppContent() {
     </Box>
   )
 
-  const handleNavigate = (viewIndex) => {
+  const handleNavigate = useCallback((viewIndex, filter = null) => {
+    setPropertyFilter(filter)
     setSelectedView(viewIndex)
-  }
+  }, [])
 
-  const getCurrentViewTitle = () => {
+  const currentViewTitle = useMemo(() => {
     switch (selectedView) {
       case 0:
         return t('dashboardTitle')
@@ -348,9 +353,9 @@ function AppContent() {
       default:
         return t('dashboardTitle')
     }
-  }
+  }, [selectedView, t])
 
-  const getCurrentViewSubtitle = () => {
+  const currentViewSubtitle = useMemo(() => {
     switch (selectedView) {
       case 0:
         return t('dashboardSubtitle')
@@ -363,9 +368,9 @@ function AppContent() {
       default:
         return t('dashboardSubtitle')
     }
-  }
+  }, [selectedView, t])
 
-  const renderContent = () => {
+  const content = useMemo(() => {
     switch (selectedView) {
       case 0:
         return <DashboardView onNavigate={handleNavigate} />
@@ -378,11 +383,12 @@ function AppContent() {
       default:
         return <DashboardView onNavigate={handleNavigate} />
     }
-  }
+  }, [selectedView, handleNavigate])
 
-  // Update body theme attribute for CSS-based styling
+  // Update body theme attribute for CSS-based styling and persist preference
   React.useEffect(() => {
     document.body.setAttribute('data-theme', darkMode ? 'dark' : 'light')
+    localStorage.setItem('darkMode', JSON.stringify(darkMode))
   }, [darkMode])
 
   return (
@@ -435,9 +441,9 @@ function AppContent() {
                     lineHeight: 1.2
                   }}
                 >
-                  {getCurrentViewTitle()}
+                  {currentViewTitle}
                 </Typography>
-                {getCurrentViewSubtitle() && (
+                {currentViewSubtitle && (
                   <Typography
                     variant="body2"
                     component="div"
@@ -450,7 +456,7 @@ function AppContent() {
                       display: { xs: 'none', sm: 'block' }
                     }}
                   >
-                    {getCurrentViewSubtitle()}
+                    {currentViewSubtitle}
                   </Typography>
                 )}
               </Box>
@@ -523,7 +529,7 @@ function AppContent() {
             }}
           >
             <Container maxWidth="xl" sx={{ px: { xs: 1, sm: 2 } }}>
-              {renderContent()}
+              {content}
             </Container>
           </Box>
         </Box>
