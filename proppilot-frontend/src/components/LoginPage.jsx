@@ -112,7 +112,7 @@ const LoginPage = () => {
                   letterSpacing: '-1px'
                 }}
               >
-                PropPilot
+                MiRent
               </text>
             </Box>
             <Typography variant="h5" component="h1" gutterBottom sx={{ fontWeight: 600 }}>

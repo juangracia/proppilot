@@ -3,11 +3,11 @@ version: '3.8'
 services:
   postgres:
     image: postgres:15
-    container_name: proppilot-postgres
+    container_name: mirent-postgres
     environment:
-      - POSTGRES_DB=proppilot
-      - POSTGRES_USER=proppilot
-      - POSTGRES_PASSWORD=proppilot123
+      - POSTGRES_DB=mirent
+      - POSTGRES_USER=mirent
+      - POSTGRES_PASSWORD=mirent123
     ports:
       - "5433:5432"
     volumes:

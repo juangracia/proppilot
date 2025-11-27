@@ -1,10 +1,10 @@
-# PropPilot Frontend
+# MiRent Frontend
 
-Modern React application for the PropPilot property management system.
+Modern React application for the MiRent property management system.
 
 ## Overview
 
-This is the frontend application for PropPilot, providing a modern, responsive web interface for property management, tenant management, and payment processing. Built with React and Material-UI for a clean, intuitive user experience.
+This is the frontend application for MiRent, providing a modern, responsive web interface for property management, tenant management, and payment processing. Built with React and Material-UI for a clean, intuitive user experience.
 
 ## Tech Stack
 
@@ -20,14 +20,14 @@ This is the frontend application for PropPilot, providing a modern, responsive w
 
 - Node.js 18+ and npm
 - Git
-- PropPilot Backend running (see backend repository)
+- MiRent Backend running (see backend repository)
 
 ## Quick Start
 
 1. **Clone the repository:**
    ```bash
-   git clone https://gitlab.com/juan.gracia2/proppilot-frontend.git
-   cd proppilot-frontend
+   git clone https://gitlab.com/juan.gracia2/mirent-frontend.git
+   cd mirent-frontend
    ```
 
 2. **Install dependencies:**
@@ -106,7 +106,7 @@ src/
 
 ## Backend Integration
 
-This frontend connects to the PropPilot backend API:
+This frontend connects to the MiRent backend API:
 - **API Base URL:** http://localhost:8080
 - **API Proxy:** `/api` routes to `http://localhost:8080/api` (configured in `vite.config.js`)
 - **CORS:** Backend configured to accept requests from `http://localhost:3000`
