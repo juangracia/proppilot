@@ -3,7 +3,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
-ENV VITE_API_URL=https://backend-production-1752.up.railway.app
+ENV VITE_API_URL=https://backend-production-1752.up.railway.app/api
 ENV VITE_GOOGLE_CLIENT_ID=686454629506-d068i9m0tm2nvue7rdbjfgpm3ivvmggb.apps.googleusercontent.com
 RUN npm run build
 
