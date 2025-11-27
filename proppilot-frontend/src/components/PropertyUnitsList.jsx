@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, memo } from 'react'
+import React, { useState, useMemo, useCallback, memo, useEffect } from 'react'
 import {
   Paper,
   Typography,
@@ -45,7 +45,8 @@ import {
   SquareFoot,
   Garage,
   Description,
-  Payment
+  Payment,
+  OpenInNew
 } from '@mui/icons-material'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
@@ -54,7 +55,7 @@ import { useLanguage } from '../contexts/LanguageContext'
 import { mockProperties as sharedMockProperties, getPaymentsByPropertyId, getTenantById } from '../data/mockData'
 import { API_BASE_URL } from '../config/api'
 
-const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null, onFilterClear }) {
+const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null, onFilterClear, onNavigateToTenant, onNavigateToPayment, initialPropertyId, onPropertyViewed }) {
   const { t, formatCurrency, currency } = useLanguage()
   const [propertyUnits, setPropertyUnits] = useState(sharedMockProperties)
   const [loading, setLoading] = useState(false)
@@ -80,6 +81,18 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
     leaseStartDate: null
   })
   const [editLoading, setEditLoading] = useState(false)
+
+  // Auto-open detail dialog when initialPropertyId is provided
+  useEffect(() => {
+    if (initialPropertyId) {
+      const property = propertyUnits.find(p => p.id === initialPropertyId)
+      if (property) {
+        setSelectedProperty(property)
+        setOpenViewDialog(true)
+        onPropertyViewed?.()
+      }
+    }
+  }, [initialPropertyId, propertyUnits, onPropertyViewed])
 
   // Memoize filtered properties
   const filteredProperties = useMemo(() => {
@@ -353,12 +366,14 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
               <Card
                 sx={{
                   height: '100%',
+                  cursor: 'pointer',
                   transition: 'transform 0.2s, box-shadow 0.2s',
                   '&:hover': {
                     transform: { xs: 'none', sm: 'translateY(-4px)' },
                     boxShadow: { xs: 2, sm: 4 }
                   }
                 }}
+                onClick={() => handleViewDetails(property)}
               >
                 <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
                   {/* Property Type and Status */}
@@ -517,7 +532,10 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
                       variant="outlined"
                       size="small"
                       startIcon={<Visibility />}
-                      onClick={() => handleViewDetails(property)}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleViewDetails(property)
+                      }}
                       sx={{
                         textTransform: 'none',
                         flex: 1,
@@ -530,7 +548,10 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
                       variant="outlined"
                       size="small"
                       startIcon={<Edit />}
-                      onClick={() => handleEdit(property)}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleEdit(property)
+                      }}
                       sx={{
                         textTransform: 'none',
                         flex: 1,
@@ -660,7 +681,7 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
                   {selectedProperty.hasPendingPayment && (
                     <Chip
                       icon={<Warning />}
-                      label={t('pendingPayment') || 'Pago Pendiente'}
+                      label={t('pendingPayment')}
                       color="error"
                       variant="outlined"
                     />
@@ -681,7 +702,7 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
                     </Box>
                     {selectedProperty.sqMeters && (
                       <Box>
-                        <Typography variant="caption" color="text.secondary">{t('area') || 'Superficie'}</Typography>
+                        <Typography variant="caption" color="text.secondary">{t('area')}</Typography>
                         <Typography variant="body1" sx={{ fontWeight: 500 }}>
                           {selectedProperty.sqMeters} m²
                         </Typography>
@@ -702,7 +723,7 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
                     {selectedProperty.garage && (
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                         <Garage sx={{ fontSize: 20, color: 'text.secondary' }} />
-                        <Typography variant="body1">{t('yes') || 'Sí'}</Typography>
+                        <Typography variant="body1">{t('yes')}</Typography>
                       </Box>
                     )}
                   </Box>
@@ -717,7 +738,7 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
                   {selectedProperty.amenities && selectedProperty.amenities.length > 0 && (
                     <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
                       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-                        {t('amenities') || 'Amenities'}
+                        {t('amenities')}
                       </Typography>
                       <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                         {selectedProperty.amenities.map((amenity, i) => (
@@ -732,17 +753,38 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
                 <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, textTransform: 'uppercase', fontSize: '0.75rem' }}>
                   {t('tenant')}
                 </Typography>
-                <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    p: 2,
+                    mb: 3,
+                    cursor: onNavigateToTenant && selectedProperty.tenantId ? 'pointer' : 'default',
+                    transition: 'all 0.2s',
+                    '&:hover': onNavigateToTenant && selectedProperty.tenantId ? {
+                      borderColor: 'primary.main',
+                      bgcolor: 'action.hover'
+                    } : {}
+                  }}
+                  onClick={() => {
+                    if (onNavigateToTenant && selectedProperty.tenantId) {
+                      handleCloseViewDialog()
+                      onNavigateToTenant(selectedProperty.tenantId)
+                    }
+                  }}
+                >
                   {selectedProperty.tenant ? (
                     <Box>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
                         <Person sx={{ fontSize: 20, color: 'primary.main' }} />
-                        <Typography variant="body1" sx={{ fontWeight: 500 }}>{selectedProperty.tenant}</Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 500, flex: 1 }}>{selectedProperty.tenant}</Typography>
+                        {onNavigateToTenant && selectedProperty.tenantId && (
+                          <OpenInNew sx={{ fontSize: 16, color: 'text.secondary' }} />
+                        )}
                       </Box>
                       <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
                         {selectedProperty.leaseStart && (
                           <Box>
-                            <Typography variant="caption" color="text.secondary">{t('leaseStart') || 'Inicio Contrato'}</Typography>
+                            <Typography variant="caption" color="text.secondary">{t('leaseStart')}</Typography>
                             <Typography variant="body2">{selectedProperty.leaseStart}</Typography>
                           </Box>
                         )}
@@ -754,7 +796,7 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
                         )}
                         {selectedProperty.lastPaymentDate && (
                           <Box>
-                            <Typography variant="caption" color="text.secondary">{t('lastPayment') || 'Último Pago'}</Typography>
+                            <Typography variant="caption" color="text.secondary">{t('lastPayment')}</Typography>
                             <Typography variant="body2">{selectedProperty.lastPaymentDate}</Typography>
                           </Box>
                         )}
@@ -764,7 +806,7 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
                     <Box sx={{ textAlign: 'center', py: 2 }}>
                       <Person sx={{ fontSize: 32, color: 'text.disabled', mb: 1 }} />
                       <Typography variant="body2" color="text.secondary">
-                        {t('noTenantAssigned') || 'Sin inquilino asignado'}
+                        {t('noTenantAssigned')}
                       </Typography>
                     </Box>
                   )}
@@ -772,7 +814,7 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
 
                 {/* Payment History */}
                 <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, textTransform: 'uppercase', fontSize: '0.75rem' }}>
-                  {t('paymentHistory') || 'Historial de Pagos'}
+                  {t('paymentHistory')}
                 </Typography>
                 <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
                   {(() => {
@@ -783,7 +825,21 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
                           <ListItem
                             key={payment.id}
                             divider={index < payments.length - 1}
-                            sx={{ px: 2, py: 1.5 }}
+                            sx={{
+                              px: 2,
+                              py: 1.5,
+                              cursor: onNavigateToPayment ? 'pointer' : 'default',
+                              transition: 'background-color 0.2s',
+                              '&:hover': onNavigateToPayment ? {
+                                bgcolor: 'action.hover'
+                              } : {}
+                            }}
+                            onClick={() => {
+                              if (onNavigateToPayment) {
+                                handleCloseViewDialog()
+                                onNavigateToPayment(payment.id)
+                              }
+                            }}
                           >
                             <ListItemText
                               primary={
@@ -791,12 +847,17 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
                                   <Typography variant="body2" sx={{ fontWeight: 500 }}>
                                     {formatCurrency(payment.amount)}
                                   </Typography>
-                                  <Chip
-                                    label={t(payment.status) || payment.status}
-                                    size="small"
-                                    color={payment.status === 'completed' ? 'success' : 'warning'}
-                                    sx={{ height: 20, fontSize: '0.7rem' }}
-                                  />
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Chip
+                                      label={t(`status${payment.status.charAt(0).toUpperCase()}${payment.status.slice(1)}`)}
+                                      size="small"
+                                      color={payment.status === 'completed' ? 'success' : 'warning'}
+                                      sx={{ height: 20, fontSize: '0.7rem' }}
+                                    />
+                                    {onNavigateToPayment && (
+                                      <OpenInNew sx={{ fontSize: 14, color: 'text.secondary' }} />
+                                    )}
+                                  </Box>
                                 </Box>
                               }
                               secondary={
@@ -812,7 +873,7 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
                       <Box sx={{ p: 3, textAlign: 'center' }}>
                         <Payment sx={{ fontSize: 32, color: 'text.disabled', mb: 1 }} />
                         <Typography variant="body2" color="text.secondary">
-                          {t('noPaymentsYet') || 'Sin pagos registrados'}
+                          {t('noPaymentsYet')}
                         </Typography>
                       </Box>
                     )
@@ -826,10 +887,10 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
                   startIcon={<Edit />}
                   onClick={() => {
                     handleCloseViewDialog()
-                    handleOpenEditDialog(selectedProperty)
+                    handleEdit(selectedProperty)
                   }}
                 >
-                  {t('edit') || 'Editar'}
+                  {t('edit')}
                 </Button>
               </DialogActions>
             </>

@@ -5,3 +5,10 @@ app:
   local-dev:
     # Use Google account email to share data between local dev and Google SSO
     email: juanmgracia@gmail.com
+
+spring:
+  devtools:
+    restart:
+      enabled: true
+    livereload:
+      enabled: true

@@ -53,6 +53,9 @@ function AppContent() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [propertyFilter, setPropertyFilter] = useState(null)
   const [anchorEl, setAnchorEl] = useState(null)
+  const [selectedPropertyId, setSelectedPropertyId] = useState(null)
+  const [selectedTenantId, setSelectedTenantId] = useState(null)
+  const [selectedPaymentId, setSelectedPaymentId] = useState(null)
   const { t, language } = useLanguage()
   const { user, logout, isAuthenticated, loading } = useAuth()
 
@@ -360,6 +363,21 @@ function AppContent() {
     setSelectedView(viewIndex)
   }, [])
 
+  const handleNavigateToProperty = useCallback((propertyId) => {
+    setSelectedPropertyId(propertyId)
+    setSelectedView(1) // Properties view
+  }, [])
+
+  const handleNavigateToTenant = useCallback((tenantId) => {
+    setSelectedTenantId(tenantId)
+    setSelectedView(2) // Tenants view
+  }, [])
+
+  const handleNavigateToPayment = useCallback((paymentId) => {
+    setSelectedPaymentId(paymentId)
+    setSelectedView(3) // Payments view
+  }, [])
+
   const currentViewTitle = useMemo(() => {
     switch (selectedView) {
       case 0:
@@ -395,15 +413,36 @@ function AppContent() {
       case 0:
         return <DashboardView onNavigate={handleNavigate} />
       case 1:
-        return <PropertyUnitsList />
+        return (
+          <PropertyUnitsList
+            onNavigateToTenant={handleNavigateToTenant}
+            onNavigateToPayment={handleNavigateToPayment}
+            initialPropertyId={selectedPropertyId}
+            onPropertyViewed={() => setSelectedPropertyId(null)}
+          />
+        )
       case 2:
-        return <TenantsList />
+        return (
+          <TenantsList
+            onNavigateToProperty={handleNavigateToProperty}
+            onNavigateToPayment={handleNavigateToPayment}
+            initialTenantId={selectedTenantId}
+            onTenantViewed={() => setSelectedTenantId(null)}
+          />
+        )
       case 3:
-        return <PaymentForm />
+        return (
+          <PaymentForm
+            onNavigateToProperty={handleNavigateToProperty}
+            onNavigateToTenant={handleNavigateToTenant}
+            initialPaymentId={selectedPaymentId}
+            onPaymentViewed={() => setSelectedPaymentId(null)}
+          />
+        )
       default:
         return <DashboardView onNavigate={handleNavigate} />
     }
-  }, [selectedView, handleNavigate])
+  }, [selectedView, handleNavigate, handleNavigateToTenant, handleNavigateToProperty, handleNavigateToPayment, selectedPropertyId, selectedTenantId, selectedPaymentId])
 
   // Update body theme attribute for CSS-based styling and persist preference
   React.useEffect(() => {

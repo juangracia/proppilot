@@ -28,7 +28,7 @@ public class PropertyUnit {
     @Size(min = 2, max = 50, message = "Property type must be between 2 and 50 characters")
     private String type;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "tenant_id")
     private Tenant tenant;
 

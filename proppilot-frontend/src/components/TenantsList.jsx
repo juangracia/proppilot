@@ -43,10 +43,11 @@ import {
   Payment,
   Close,
   ContactPhone,
-  Notes
+  Notes,
+  OpenInNew
 } from '@mui/icons-material'
 import { useLanguage } from '../contexts/LanguageContext'
-import { mockTenants as sharedMockTenants, getPaymentsByTenantId } from '../data/mockData'
+import { mockTenants as sharedMockTenants, getPaymentsByTenantId, getPropertyById } from '../data/mockData'
 import { API_BASE_URL } from '../config/api'
 
 // Helper to check if lease is ending soon (within 30 days)
@@ -59,7 +60,7 @@ const isLeaseEndingSoon = (dateStr) => {
   return diffDays <= 30 && diffDays >= 0
 }
 
-const TenantsList = memo(function TenantsList() {
+const TenantsList = memo(function TenantsList({ onNavigateToProperty, onNavigateToPayment, initialTenantId, onTenantViewed }) {
   const { t, formatCurrency } = useLanguage()
   const isMobile = useMediaQuery('(max-width:600px)')
   const [tenants, setTenants] = useState(sharedMockTenants)
@@ -70,6 +71,18 @@ const TenantsList = memo(function TenantsList() {
   const [tenantToDelete, setTenantToDelete] = useState(null)
   const [detailDialogOpen, setDetailDialogOpen] = useState(false)
   const [selectedTenant, setSelectedTenant] = useState(null)
+
+  // Auto-open detail dialog when initialTenantId is provided
+  useEffect(() => {
+    if (initialTenantId) {
+      const tenant = tenants.find(t => t.id === initialTenantId)
+      if (tenant) {
+        setSelectedTenant(tenant)
+        setDetailDialogOpen(true)
+        onTenantViewed?.()
+      }
+    }
+  }, [initialTenantId, tenants, onTenantViewed])
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success', action: null })
   const [pendingDelete, setPendingDelete] = useState(null)
   const [formData, setFormData] = useState({
@@ -526,7 +539,7 @@ const TenantsList = memo(function TenantsList() {
                   </Box>
                 ) : (
                   <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', fontSize: '0.8125rem' }}>
-                    {t('noPropertyAssigned') || 'No property assigned'}
+                    {t('noPropertyAssigned')}
                   </Typography>
                 )}
               </Box>
@@ -785,7 +798,7 @@ const TenantsList = memo(function TenantsList() {
 
               {/* Contact Info */}
               <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, textTransform: 'uppercase', fontSize: '0.75rem' }}>
-                {t('contactInfo') || 'Información de Contacto'}
+                {t('contactInfo')}
               </Typography>
               <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
@@ -806,20 +819,41 @@ const TenantsList = memo(function TenantsList() {
 
               {/* Property Info */}
               <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, textTransform: 'uppercase', fontSize: '0.75rem' }}>
-                {t('propertyInfo') || 'Propiedad'}
+                {t('propertyInfo')}
               </Typography>
-              <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
+              <Paper
+                variant="outlined"
+                sx={{
+                  p: 2,
+                  mb: 3,
+                  cursor: onNavigateToProperty && selectedTenant.propertyId ? 'pointer' : 'default',
+                  transition: 'all 0.2s',
+                  '&:hover': onNavigateToProperty && selectedTenant.propertyId ? {
+                    borderColor: 'primary.main',
+                    bgcolor: 'action.hover'
+                  } : {}
+                }}
+                onClick={() => {
+                  if (onNavigateToProperty && selectedTenant.propertyId) {
+                    handleCloseDetailDialog()
+                    onNavigateToProperty(selectedTenant.propertyId)
+                  }
+                }}
+              >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
                   <Home sx={{ fontSize: 20, color: 'primary.main' }} />
-                  <Typography variant="body2" sx={{ fontWeight: 500 }}>{selectedTenant.property}</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500, flex: 1 }}>{selectedTenant.property}</Typography>
+                  {onNavigateToProperty && selectedTenant.propertyId && (
+                    <OpenInNew sx={{ fontSize: 16, color: 'text.secondary' }} />
+                  )}
                 </Box>
                 <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
                   <Box>
-                    <Typography variant="caption" color="text.secondary">{t('monthlyRent') || 'Alquiler Mensual'}</Typography>
+                    <Typography variant="caption" color="text.secondary">{t('monthlyRent')}</Typography>
                     <Typography variant="body2" sx={{ fontWeight: 600 }}>{formatCurrency(selectedTenant.monthlyRent)}</Typography>
                   </Box>
                   <Box>
-                    <Typography variant="caption" color="text.secondary">{t('leaseStart') || 'Inicio Contrato'}</Typography>
+                    <Typography variant="caption" color="text.secondary">{t('leaseStart')}</Typography>
                     <Typography variant="body2">{selectedTenant.leaseStart}</Typography>
                   </Box>
                   <Box>
@@ -835,7 +869,7 @@ const TenantsList = memo(function TenantsList() {
               {selectedTenant.notes && (
                 <>
                   <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, textTransform: 'uppercase', fontSize: '0.75rem' }}>
-                    {t('notes') || 'Notas'}
+                    {t('notes')}
                   </Typography>
                   <Paper variant="outlined" sx={{ p: 2, mb: 3, bgcolor: 'action.hover' }}>
                     <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
@@ -848,7 +882,7 @@ const TenantsList = memo(function TenantsList() {
 
               {/* Payment History */}
               <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, textTransform: 'uppercase', fontSize: '0.75rem' }}>
-                {t('paymentHistory') || 'Historial de Pagos'}
+                {t('paymentHistory')}
               </Typography>
               <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
                 {tenantPayments.length > 0 ? (
@@ -857,7 +891,21 @@ const TenantsList = memo(function TenantsList() {
                       <ListItem
                         key={payment.id}
                         divider={index < tenantPayments.length - 1}
-                        sx={{ px: 2, py: 1.5 }}
+                        sx={{
+                          px: 2,
+                          py: 1.5,
+                          cursor: onNavigateToPayment ? 'pointer' : 'default',
+                          transition: 'background-color 0.2s',
+                          '&:hover': onNavigateToPayment ? {
+                            bgcolor: 'action.hover'
+                          } : {}
+                        }}
+                        onClick={() => {
+                          if (onNavigateToPayment) {
+                            handleCloseDetailDialog()
+                            onNavigateToPayment(payment.id)
+                          }
+                        }}
                       >
                         <ListItemText
                           primary={
@@ -865,17 +913,22 @@ const TenantsList = memo(function TenantsList() {
                               <Typography variant="body2" sx={{ fontWeight: 500 }}>
                                 {formatCurrency(payment.amount)}
                               </Typography>
-                              <Chip
-                                label={t(payment.status) || payment.status}
-                                size="small"
-                                color={payment.status === 'completed' ? 'success' : 'warning'}
-                                sx={{ height: 20, fontSize: '0.7rem' }}
-                              />
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Chip
+                                  label={t(`status${payment.status.charAt(0).toUpperCase()}${payment.status.slice(1)}`)}
+                                  size="small"
+                                  color={payment.status === 'completed' ? 'success' : 'warning'}
+                                  sx={{ height: 20, fontSize: '0.7rem' }}
+                                />
+                                {onNavigateToPayment && (
+                                  <OpenInNew sx={{ fontSize: 14, color: 'text.secondary' }} />
+                                )}
+                              </Box>
                             </Box>
                           }
                           secondary={
                             <Typography variant="caption" color="text.secondary">
-                              {payment.date} • {t(payment.method) || payment.method}
+                              {payment.date} • {t(`method${payment.method.charAt(0).toUpperCase()}${payment.method.slice(1)}`)}
                             </Typography>
                           }
                         />
@@ -886,7 +939,7 @@ const TenantsList = memo(function TenantsList() {
                   <Box sx={{ p: 3, textAlign: 'center' }}>
                     <Payment sx={{ fontSize: 32, color: 'text.disabled', mb: 1 }} />
                     <Typography variant="body2" color="text.secondary">
-                      {t('noPaymentsYet') || 'Sin pagos registrados'}
+                      {t('noPaymentsYet')}
                     </Typography>
                   </Box>
                 )}
@@ -894,7 +947,7 @@ const TenantsList = memo(function TenantsList() {
             </DialogContent>
             <DialogActions sx={{ px: 3, py: 2 }}>
               <Button onClick={handleCloseDetailDialog}>
-                {t('close') || 'Cerrar'}
+                {t('close')}
               </Button>
               <Button
                 variant="outlined"
@@ -904,7 +957,7 @@ const TenantsList = memo(function TenantsList() {
                   openEditDialog(selectedTenant)
                 }}
               >
-                {t('edit') || 'Editar'}
+                {t('edit')}
               </Button>
             </DialogActions>
           </>

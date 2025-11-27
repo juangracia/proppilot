@@ -31,7 +31,12 @@ export const AuthProvider = ({ children }) => {
   const fetchCurrentUser = async () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/auth/me`)
-      setUser(response.data)
+      const userData = response.data
+      setUser({
+        email: userData.email,
+        name: userData.fullName,
+        picture: userData.pictureUrl
+      })
     } catch {
       logout()
     } finally {

@@ -218,6 +218,35 @@ export const LanguageProvider = ({ children }) => {
       occupied: 'Ocupado',
       vacant: 'Vacante',
       commercial: 'Comercial',
+
+      // Tenant Details
+      contactInfo: 'Información de Contacto',
+      propertyInfo: 'Propiedad',
+      notes: 'Notas',
+      noPaymentsYet: 'Sin pagos registrados',
+      noPropertyAssigned: 'Sin propiedad asignada',
+      emergencyContact: 'Contacto de Emergencia',
+
+      // Property Details
+      pendingPayment: 'Pago Pendiente',
+      area: 'Superficie',
+      yes: 'Sí',
+      no: 'No',
+      amenities: 'Amenities',
+      noTenantAssigned: 'Sin inquilino asignado',
+      paymentDetails: 'Detalles del Pago',
+      paymentMethod: 'Método de Pago',
+
+      // Payment Status
+      statusCompleted: 'Pagado',
+      statusPending: 'Pendiente',
+      statusOverdue: 'Vencido',
+
+      // Payment Methods
+      methodTransfer: 'Transferencia',
+      methodCash: 'Efectivo',
+      methodCheck: 'Cheque',
+      methodCard: 'Tarjeta',
     },
     en: {
       // Header
@@ -422,6 +451,35 @@ export const LanguageProvider = ({ children }) => {
       occupied: 'Occupied',
       vacant: 'Vacant',
       commercial: 'Commercial',
+
+      // Tenant Details
+      contactInfo: 'Contact Information',
+      propertyInfo: 'Property',
+      notes: 'Notes',
+      noPaymentsYet: 'No payments recorded',
+      noPropertyAssigned: 'No property assigned',
+      emergencyContact: 'Emergency Contact',
+
+      // Property Details
+      pendingPayment: 'Pending Payment',
+      area: 'Area',
+      yes: 'Yes',
+      no: 'No',
+      amenities: 'Amenities',
+      noTenantAssigned: 'No tenant assigned',
+      paymentDetails: 'Payment Details',
+      paymentMethod: 'Payment Method',
+
+      // Payment Status
+      statusCompleted: 'Completed',
+      statusPending: 'Pending',
+      statusOverdue: 'Overdue',
+
+      // Payment Methods
+      methodTransfer: 'Transfer',
+      methodCash: 'Cash',
+      methodCheck: 'Check',
+      methodCard: 'Card',
     }
   }
 

@@ -42,7 +42,8 @@ import {
   Receipt,
   CalendarToday,
   Notes,
-  CreditCard
+  CreditCard,
+  OpenInNew
 } from '@mui/icons-material'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
@@ -63,7 +64,7 @@ const mockPropertyUnits = sharedMockProperties.map(p => ({
   tenantId: p.tenantId
 }))
 
-const PaymentForm = memo(function PaymentForm() {
+const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigateToTenant, initialPaymentId, onPaymentViewed }) {
   const { t, formatCurrency, currency } = useLanguage()
   const [activeTab, setActiveTab] = useState(0)
 
@@ -96,6 +97,19 @@ const PaymentForm = memo(function PaymentForm() {
     // Use mock data instead of API call
     setPropertyUnits(mockPropertyUnits)
   }, [])
+
+  // Auto-open detail dialog when initialPaymentId is provided
+  useEffect(() => {
+    if (initialPaymentId) {
+      const payment = mockPayments.find(p => p.id === initialPaymentId)
+      if (payment) {
+        setSelectedPayment(payment)
+        setDetailDialogOpen(true)
+        setActiveTab(1) // Switch to payment history tab
+        onPaymentViewed?.()
+      }
+    }
+  }, [initialPaymentId, onPaymentViewed])
 
   // Auto-fill rent amount when property is selected
   const handlePropertyChange = useCallback((propertyId) => {
@@ -637,10 +651,7 @@ const PaymentForm = memo(function PaymentForm() {
                     <Box>
                       <Typography variant="caption" color="text.secondary">{t('paymentMethod') || 'Método de Pago'}</Typography>
                       <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                        {selectedPayment.method === 'transfer' ? (t('transfer') || 'Transferencia') :
-                         selectedPayment.method === 'cash' ? (t('cash') || 'Efectivo') :
-                         selectedPayment.method === 'check' ? (t('check') || 'Cheque') :
-                         selectedPayment.method}
+                        {t(`method${selectedPayment.method.charAt(0).toUpperCase()}${selectedPayment.method.slice(1)}`)}
                       </Typography>
                     </Box>
                   </Box>
@@ -657,16 +668,65 @@ const PaymentForm = memo(function PaymentForm() {
 
                 {/* Property Info */}
                 <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, textTransform: 'uppercase', fontSize: '0.75rem' }}>
-                  {t('propertyInfo') || 'Propiedad'}
+                  {t('propertyInfo')}
                 </Typography>
-                <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
-                    <Home sx={{ fontSize: 20, color: 'primary.main' }} />
-                    <Typography variant="body2" sx={{ fontWeight: 500 }}>{selectedPayment.property}</Typography>
-                  </Box>
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    p: 2,
+                    mb: 2,
+                    cursor: onNavigateToProperty && selectedPayment.propertyId ? 'pointer' : 'default',
+                    transition: 'all 0.2s',
+                    '&:hover': onNavigateToProperty && selectedPayment.propertyId ? {
+                      borderColor: 'primary.main',
+                      bgcolor: 'action.hover'
+                    } : {}
+                  }}
+                  onClick={() => {
+                    if (onNavigateToProperty && selectedPayment.propertyId) {
+                      setDetailDialogOpen(false)
+                      onNavigateToProperty(selectedPayment.propertyId)
+                    }
+                  }}
+                >
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <Person sx={{ fontSize: 20, color: 'text.secondary' }} />
-                    <Typography variant="body2">{selectedPayment.tenant}</Typography>
+                    <Home sx={{ fontSize: 20, color: 'primary.main' }} />
+                    <Typography variant="body2" sx={{ fontWeight: 500, flex: 1 }}>{selectedPayment.property}</Typography>
+                    {onNavigateToProperty && selectedPayment.propertyId && (
+                      <OpenInNew sx={{ fontSize: 16, color: 'text.secondary' }} />
+                    )}
+                  </Box>
+                </Paper>
+
+                {/* Tenant Info */}
+                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, textTransform: 'uppercase', fontSize: '0.75rem' }}>
+                  {t('tenant')}
+                </Typography>
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    p: 2,
+                    mb: 3,
+                    cursor: onNavigateToTenant && selectedPayment.tenantId ? 'pointer' : 'default',
+                    transition: 'all 0.2s',
+                    '&:hover': onNavigateToTenant && selectedPayment.tenantId ? {
+                      borderColor: 'primary.main',
+                      bgcolor: 'action.hover'
+                    } : {}
+                  }}
+                  onClick={() => {
+                    if (onNavigateToTenant && selectedPayment.tenantId) {
+                      setDetailDialogOpen(false)
+                      onNavigateToTenant(selectedPayment.tenantId)
+                    }
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Person sx={{ fontSize: 20, color: 'primary.main' }} />
+                    <Typography variant="body2" sx={{ fontWeight: 500, flex: 1 }}>{selectedPayment.tenant}</Typography>
+                    {onNavigateToTenant && selectedPayment.tenantId && (
+                      <OpenInNew sx={{ fontSize: 16, color: 'text.secondary' }} />
+                    )}
                   </Box>
                 </Paper>
 
