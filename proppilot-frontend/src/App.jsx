@@ -1,8 +1,7 @@
-import React, { useState, useMemo, useCallback, memo } from 'react'
+import React, { useState, useMemo, useCallback } from 'react'
 import {
   Typography,
   Box,
-  Paper,
   ThemeProvider,
   createTheme,
   CssBaseline,
@@ -15,7 +14,11 @@ import {
   ListItemIcon,
   ListItemText,
   Divider,
-  Container
+  Container,
+  Avatar,
+  Menu as MuiMenu,
+  MenuItem,
+  CircularProgress
 } from '@mui/material'
 import {
   Brightness4,
@@ -24,7 +27,8 @@ import {
   Home,
   Payment,
   People,
-  Menu
+  Menu,
+  Logout
 } from '@mui/icons-material'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
@@ -32,10 +36,11 @@ import DashboardView from './components/DashboardView'
 import PropertyUnitsList from './components/PropertyUnitsList'
 import PaymentForm from './components/PaymentForm'
 import TenantsList from './components/TenantsList'
+import LoginPage from './components/LoginPage'
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext'
+import { AuthProvider, useAuth } from './contexts/AuthContext'
 import LanguageCurrencySelector from './components/LanguageCurrencySelector'
 import './App.css'
-import Logo from './assets/logo.svg'
 
 const drawerWidth = 240
 
@@ -47,7 +52,22 @@ function AppContent() {
   })
   const [mobileOpen, setMobileOpen] = useState(false)
   const [propertyFilter, setPropertyFilter] = useState(null)
-  const { t } = useLanguage()
+  const [anchorEl, setAnchorEl] = useState(null)
+  const { t, language } = useLanguage()
+  const { user, logout, isAuthenticated, loading } = useAuth()
+
+  const handleUserMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget)
+  }
+
+  const handleUserMenuClose = () => {
+    setAnchorEl(null)
+  }
+
+  const handleLogout = () => {
+    handleUserMenuClose()
+    logout()
+  }
 
   const menuItems = useMemo(() => [
     { text: t('dashboardMenu'), icon: <Dashboard />, value: 0 },
@@ -391,6 +411,19 @@ function AppContent() {
     localStorage.setItem('darkMode', JSON.stringify(darkMode))
   }, [darkMode])
 
+  // Early returns AFTER all hooks
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    )
+  }
+
+  if (!isAuthenticated) {
+    return <LoginPage />
+  }
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -464,13 +497,45 @@ function AppContent() {
               <IconButton
                 color="inherit"
                 onClick={() => setDarkMode(!darkMode)}
-                sx={{ 
+                sx={{
                   ml: 1,
                   color: 'text.primary'
                 }}
               >
                 {darkMode ? <Brightness7 /> : <Brightness4 />}
               </IconButton>
+              <IconButton
+                onClick={handleUserMenuOpen}
+                sx={{ ml: 1 }}
+              >
+                <Avatar
+                  src={user?.picture}
+                  alt={user?.name}
+                  sx={{ width: 32, height: 32 }}
+                />
+              </IconButton>
+              <MuiMenu
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={handleUserMenuClose}
+                anchorOrigin={{
+                  vertical: 'bottom',
+                  horizontal: 'right',
+                }}
+                transformOrigin={{
+                  vertical: 'top',
+                  horizontal: 'right',
+                }}
+              >
+                <MenuItem disabled>
+                  <Typography variant="body2">{user?.email}</Typography>
+                </MenuItem>
+                <Divider />
+                <MenuItem onClick={handleLogout}>
+                  <Logout fontSize="small" sx={{ mr: 1 }} />
+                  {language === 'es' ? 'Cerrar Sesion' : 'Logout'}
+                </MenuItem>
+              </MuiMenu>
             </Toolbar>
           </AppBar>
 
@@ -541,7 +606,9 @@ function AppContent() {
 function App() {
   return (
     <LanguageProvider>
-      <AppContent />
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
     </LanguageProvider>
   )
 }

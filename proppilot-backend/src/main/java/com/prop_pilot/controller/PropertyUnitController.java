@@ -1,6 +1,8 @@
 package com.prop_pilot.controller;
 
 import com.prop_pilot.entity.PropertyUnit;
+import com.prop_pilot.entity.User;
+import com.prop_pilot.service.CurrentUserService;
 import com.prop_pilot.service.PropertyUnitService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -20,9 +22,11 @@ import java.util.List;
 public class PropertyUnitController {
 
     private final PropertyUnitService propertyUnitService;
+    private final CurrentUserService currentUserService;
 
-    public PropertyUnitController(PropertyUnitService propertyUnitService) {
+    public PropertyUnitController(PropertyUnitService propertyUnitService, CurrentUserService currentUserService) {
         this.propertyUnitService = propertyUnitService;
+        this.currentUserService = currentUserService;
     }
 
     @PostMapping
@@ -32,7 +36,8 @@ public class PropertyUnitController {
         @ApiResponse(responseCode = "400", description = "Invalid input data")
     })
     public ResponseEntity<PropertyUnit> createPropertyUnit(@Valid @RequestBody @NonNull PropertyUnit propertyUnit) {
-        PropertyUnit createdPropertyUnit = propertyUnitService.createPropertyUnit(propertyUnit);
+        User owner = currentUserService.getCurrentUser();
+        PropertyUnit createdPropertyUnit = propertyUnitService.createPropertyUnit(propertyUnit, owner);
         return new ResponseEntity<>(createdPropertyUnit, HttpStatus.CREATED);
     }
 
@@ -43,21 +48,24 @@ public class PropertyUnitController {
         @ApiResponse(responseCode = "404", description = "Property unit not found")
     })
     public ResponseEntity<PropertyUnit> getPropertyUnitById(@PathVariable @NonNull Long id) {
-        PropertyUnit propertyUnit = propertyUnitService.getPropertyUnitById(id);
+        Long ownerId = currentUserService.getCurrentUserId();
+        PropertyUnit propertyUnit = propertyUnitService.getPropertyUnitById(id, ownerId);
         return ResponseEntity.ok(propertyUnit);
     }
 
     @GetMapping
-    @Operation(summary = "Get all property units", description = "Retrieves a list of all property units in the system")
+    @Operation(summary = "Get all property units", description = "Retrieves a list of all property units owned by the current user")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved all property units")
     public ResponseEntity<List<PropertyUnit>> getAllPropertyUnits() {
-        List<PropertyUnit> propertyUnits = propertyUnitService.getAllPropertyUnits();
+        Long ownerId = currentUserService.getCurrentUserId();
+        List<PropertyUnit> propertyUnits = propertyUnitService.getAllPropertyUnits(ownerId);
         return ResponseEntity.ok(propertyUnits);
     }
 
     @GetMapping("/tenant/{tenantId}")
     public ResponseEntity<List<PropertyUnit>> getPropertyUnitsByTenant(@PathVariable Long tenantId) {
-        List<PropertyUnit> propertyUnits = propertyUnitService.getPropertyUnitsByTenant(tenantId);
+        Long ownerId = currentUserService.getCurrentUserId();
+        List<PropertyUnit> propertyUnits = propertyUnitService.getPropertyUnitsByTenant(tenantId, ownerId);
         return ResponseEntity.ok(propertyUnits);
     }
 
@@ -66,19 +74,22 @@ public class PropertyUnitController {
     @ApiResponse(responseCode = "200", description = "Successfully retrieved matching property units")
     public ResponseEntity<List<PropertyUnit>> searchPropertyUnits(
             @Parameter(description = "Address to search for") @RequestParam String address) {
-        List<PropertyUnit> propertyUnits = propertyUnitService.searchPropertyUnits(address);
+        Long ownerId = currentUserService.getCurrentUserId();
+        List<PropertyUnit> propertyUnits = propertyUnitService.searchPropertyUnits(address, ownerId);
         return ResponseEntity.ok(propertyUnits);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<PropertyUnit> updatePropertyUnit(@PathVariable @NonNull Long id, @Valid @RequestBody PropertyUnit propertyUnit) {
-        PropertyUnit updatedPropertyUnit = propertyUnitService.updatePropertyUnit(id, propertyUnit);
+        Long ownerId = currentUserService.getCurrentUserId();
+        PropertyUnit updatedPropertyUnit = propertyUnitService.updatePropertyUnit(id, propertyUnit, ownerId);
         return ResponseEntity.ok(updatedPropertyUnit);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletePropertyUnit(@PathVariable @NonNull Long id) {
-        propertyUnitService.deletePropertyUnit(id);
+        Long ownerId = currentUserService.getCurrentUserId();
+        propertyUnitService.deletePropertyUnit(id, ownerId);
         return ResponseEntity.noContent().build();
     }
 }

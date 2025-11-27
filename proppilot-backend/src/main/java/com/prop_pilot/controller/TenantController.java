@@ -1,6 +1,7 @@
 package com.prop_pilot.controller;
 
 import com.prop_pilot.entity.Tenant;
+import com.prop_pilot.service.CurrentUserService;
 import com.prop_pilot.service.TenantService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -22,9 +23,11 @@ import java.util.Optional;
 public class TenantController {
 
     private final TenantService tenantService;
+    private final CurrentUserService currentUserService;
 
-    public TenantController(TenantService tenantService) {
+    public TenantController(TenantService tenantService, CurrentUserService currentUserService) {
         this.tenantService = tenantService;
+        this.currentUserService = currentUserService;
     }
 
     @PostMapping
@@ -53,12 +56,13 @@ public class TenantController {
     }
 
     @GetMapping
-    @Operation(summary = "Get all tenants", description = "Retrieves a list of all tenants")
+    @Operation(summary = "Get all tenants", description = "Retrieves a list of all tenants for the current landlord")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Tenants retrieved successfully")
     })
     public ResponseEntity<List<Tenant>> getAllTenants() {
-        List<Tenant> tenants = tenantService.getAllTenants();
+        Long ownerId = currentUserService.getCurrentUserId();
+        List<Tenant> tenants = tenantService.getAllTenants(ownerId);
         return new ResponseEntity<>(tenants, HttpStatus.OK);
     }
 
@@ -71,7 +75,8 @@ public class TenantController {
     public ResponseEntity<Tenant> getTenantById(
             @Parameter(description = "Tenant ID", required = true)
             @PathVariable @NonNull Long id) {
-        Optional<Tenant> tenant = tenantService.getTenantById(id);
+        Long ownerId = currentUserService.getCurrentUserId();
+        Optional<Tenant> tenant = tenantService.getTenantById(id, ownerId);
         return tenant.map(t -> new ResponseEntity<>(t, HttpStatus.OK))
                     .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
@@ -98,7 +103,8 @@ public class TenantController {
             @PathVariable @NonNull Long id,
             @Valid @RequestBody @NonNull Tenant tenant) {
         try {
-            Tenant updatedTenant = tenantService.updateTenant(id, tenant);
+            Long ownerId = currentUserService.getCurrentUserId();
+            Tenant updatedTenant = tenantService.updateTenant(id, tenant, ownerId);
             return new ResponseEntity<>(updatedTenant, HttpStatus.OK);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
@@ -117,7 +123,8 @@ public class TenantController {
             @Parameter(description = "Tenant ID", required = true)
             @PathVariable @NonNull Long id) {
         try {
-            tenantService.deleteTenant(id);
+            Long ownerId = currentUserService.getCurrentUserId();
+            tenantService.deleteTenant(id, ownerId);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -133,7 +140,8 @@ public class TenantController {
     public ResponseEntity<Tenant> getTenantByNationalId(
             @Parameter(description = "National ID", required = true)
             @PathVariable String nationalId) {
-        Optional<Tenant> tenant = tenantService.getTenantByNationalId(nationalId);
+        Long ownerId = currentUserService.getCurrentUserId();
+        Optional<Tenant> tenant = tenantService.getTenantByNationalId(nationalId, ownerId);
         return tenant.map(t -> new ResponseEntity<>(t, HttpStatus.OK))
                     .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
@@ -147,7 +155,8 @@ public class TenantController {
     public ResponseEntity<Tenant> getTenantByEmail(
             @Parameter(description = "Email", required = true)
             @PathVariable String email) {
-        Optional<Tenant> tenant = tenantService.getTenantByEmail(email);
+        Long ownerId = currentUserService.getCurrentUserId();
+        Optional<Tenant> tenant = tenantService.getTenantByEmail(email, ownerId);
         return tenant.map(t -> new ResponseEntity<>(t, HttpStatus.OK))
                     .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }

@@ -38,8 +38,7 @@ import {
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import axios from 'axios'
 import { useLanguage } from '../contexts/LanguageContext'
-
-const API_BASE_URL = '/api'
+import { API_BASE_URL } from '../config/api'
 
 function PropertyUnitsList() {
   const { t, formatCurrency, currency } = useLanguage()

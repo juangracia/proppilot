@@ -51,8 +51,7 @@ import { format } from 'date-fns'
 import axios from 'axios'
 import { useLanguage } from '../contexts/LanguageContext'
 import { mockPayments, mockProperties as sharedMockProperties, getTenantById } from '../data/mockData'
-
-const API_BASE_URL = '/api'
+import { API_BASE_URL } from '../config/api'
 
 // Create property units list from shared data
 const mockPropertyUnits = sharedMockProperties.map(p => ({

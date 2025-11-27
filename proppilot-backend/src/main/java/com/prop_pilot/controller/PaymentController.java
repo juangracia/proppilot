@@ -1,6 +1,7 @@
 package com.prop_pilot.controller;
 
 import com.prop_pilot.entity.Payment;
+import com.prop_pilot.service.CurrentUserService;
 import com.prop_pilot.service.PaymentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -23,9 +24,11 @@ import java.util.List;
 public class PaymentController {
 
     private final PaymentService paymentService;
+    private final CurrentUserService currentUserService;
 
-    public PaymentController(PaymentService paymentService) {
+    public PaymentController(PaymentService paymentService, CurrentUserService currentUserService) {
         this.paymentService = paymentService;
+        this.currentUserService = currentUserService;
     }
 
     @PostMapping
@@ -35,7 +38,8 @@ public class PaymentController {
         @ApiResponse(responseCode = "400", description = "Invalid payment data")
     })
     public ResponseEntity<Payment> createPayment(@Valid @RequestBody Payment payment) {
-        Payment createdPayment = paymentService.createPayment(payment);
+        Long ownerId = currentUserService.getCurrentUserId();
+        Payment createdPayment = paymentService.createPayment(payment, ownerId);
         return new ResponseEntity<>(createdPayment, HttpStatus.CREATED);
     }
 
@@ -43,15 +47,17 @@ public class PaymentController {
     @Operation(summary = "Get payment by ID", description = "Retrieves a specific payment by its ID")
     @ApiResponse(responseCode = "200", description = "Payment retrieved successfully")
     public ResponseEntity<Payment> getPaymentById(@PathVariable Long id) {
-        Payment payment = paymentService.getPaymentById(id);
+        Long ownerId = currentUserService.getCurrentUserId();
+        Payment payment = paymentService.getPaymentById(id, ownerId);
         return ResponseEntity.ok(payment);
     }
 
     @GetMapping
-    @Operation(summary = "Get all payments", description = "Retrieves a list of all payments in the system")
+    @Operation(summary = "Get all payments", description = "Retrieves a list of all payments for the current landlord")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved all payments")
     public ResponseEntity<List<Payment>> getAllPayments() {
-        List<Payment> payments = paymentService.getAllPayments();
+        Long ownerId = currentUserService.getCurrentUserId();
+        List<Payment> payments = paymentService.getAllPayments(ownerId);
         return ResponseEntity.ok(payments);
     }
 
@@ -59,7 +65,8 @@ public class PaymentController {
     @Operation(summary = "Get payments by property unit", description = "Retrieves all payments for a specific property unit")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved payments for property unit")
     public ResponseEntity<List<Payment>> getPaymentsByPropertyUnit(@PathVariable Long propertyUnitId) {
-        List<Payment> payments = paymentService.getPaymentsByPropertyUnit(propertyUnitId);
+        Long ownerId = currentUserService.getCurrentUserId();
+        List<Payment> payments = paymentService.getPaymentsByPropertyUnit(propertyUnitId, ownerId);
         return ResponseEntity.ok(payments);
     }
 
@@ -67,7 +74,8 @@ public class PaymentController {
     @Operation(summary = "Update payment", description = "Updates an existing payment")
     @ApiResponse(responseCode = "200", description = "Payment updated successfully")
     public ResponseEntity<Payment> updatePayment(@PathVariable Long id, @RequestBody Payment payment) {
-        Payment updatedPayment = paymentService.updatePayment(id, payment);
+        Long ownerId = currentUserService.getCurrentUserId();
+        Payment updatedPayment = paymentService.updatePayment(id, payment, ownerId);
         return ResponseEntity.ok(updatedPayment);
     }
 
@@ -75,7 +83,8 @@ public class PaymentController {
     @Operation(summary = "Delete payment", description = "Deletes a payment by ID")
     @ApiResponse(responseCode = "204", description = "Payment deleted successfully")
     public ResponseEntity<Void> deletePayment(@PathVariable Long id) {
-        paymentService.deletePayment(id);
+        Long ownerId = currentUserService.getCurrentUserId();
+        paymentService.deletePayment(id, ownerId);
         return ResponseEntity.noContent().build();
     }
 
@@ -86,11 +95,12 @@ public class PaymentController {
     @ApiResponse(responseCode = "200", description = "Adjusted rent calculated successfully")
     public ResponseEntity<BigDecimal> calculateAdjustedRent(
             @Parameter(description = "Property unit ID") @PathVariable Long propertyUnitId,
-            @Parameter(description = "Effective date for calculation (defaults to current date)") 
+            @Parameter(description = "Effective date for calculation (defaults to current date)")
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate effectiveDate) {
-        
+
         LocalDate calculationDate = effectiveDate != null ? effectiveDate : LocalDate.now();
-        BigDecimal adjustedRent = paymentService.calculateAdjustedRent(propertyUnitId, calculationDate);
+        Long ownerId = currentUserService.getCurrentUserId();
+        BigDecimal adjustedRent = paymentService.calculateAdjustedRent(propertyUnitId, calculationDate, ownerId);
         return ResponseEntity.ok(adjustedRent);
     }
 
@@ -98,7 +108,8 @@ public class PaymentController {
     @Operation(summary = "Get outstanding payments", description = "Retrieves all outstanding (pending) payments for a property unit")
     @ApiResponse(responseCode = "200", description = "Outstanding payments retrieved successfully")
     public ResponseEntity<List<Payment>> getOutstandingPayments(@PathVariable Long propertyUnitId) {
-        List<Payment> outstandingPayments = paymentService.getOutstandingPayments(propertyUnitId);
+        Long ownerId = currentUserService.getCurrentUserId();
+        List<Payment> outstandingPayments = paymentService.getOutstandingPayments(propertyUnitId, ownerId);
         return ResponseEntity.ok(outstandingPayments);
     }
 
@@ -109,9 +120,10 @@ public class PaymentController {
             @Parameter(description = "Property unit ID") @PathVariable Long propertyUnitId,
             @Parameter(description = "As of date for calculation (defaults to current date)")
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate asOfDate) {
-        
+
         LocalDate calculationDate = asOfDate != null ? asOfDate : LocalDate.now();
-        BigDecimal outstandingAmount = paymentService.calculateOutstandingAmount(propertyUnitId, calculationDate);
+        Long ownerId = currentUserService.getCurrentUserId();
+        BigDecimal outstandingAmount = paymentService.calculateOutstandingAmount(propertyUnitId, calculationDate, ownerId);
         return ResponseEntity.ok(outstandingAmount);
     }
 
@@ -121,8 +133,9 @@ public class PaymentController {
     public ResponseEntity<BigDecimal> getTotalPaidAmount(
             @Parameter(description = "Property unit ID") @PathVariable Long propertyUnitId,
             @Parameter(description = "Payment type") @RequestParam Payment.PaymentType paymentType) {
-        
-        BigDecimal totalPaid = paymentService.getTotalPaidAmount(propertyUnitId, paymentType);
+
+        Long ownerId = currentUserService.getCurrentUserId();
+        BigDecimal totalPaid = paymentService.getTotalPaidAmount(propertyUnitId, paymentType, ownerId);
         return ResponseEntity.ok(totalPaid);
     }
 
@@ -133,8 +146,9 @@ public class PaymentController {
             @Parameter(description = "Property unit ID") @PathVariable Long propertyUnitId,
             @Parameter(description = "Start date") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @Parameter(description = "End date") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        
-        List<Payment> paymentHistory = paymentService.getPaymentHistory(propertyUnitId, startDate, endDate);
+
+        Long ownerId = currentUserService.getCurrentUserId();
+        List<Payment> paymentHistory = paymentService.getPaymentHistory(propertyUnitId, startDate, endDate, ownerId);
         return ResponseEntity.ok(paymentHistory);
     }
 }

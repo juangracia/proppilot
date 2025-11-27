@@ -28,17 +28,15 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    public Payment createPayment(@NonNull Payment payment) {
-        // Validate property unit exists
+    public Payment createPayment(@NonNull Payment payment, @NonNull Long ownerId) {
+        // Validate property unit exists and belongs to the owner
         if (payment.getPropertyUnit() != null && payment.getPropertyUnit().getId() != null) {
             Long propertyUnitId = payment.getPropertyUnit().getId();
-            if (propertyUnitId != null) {
-                PropertyUnit propertyUnit = propertyUnitRepository.findById(propertyUnitId)
-                        .orElseThrow(() -> new ResourceNotFoundException("Property unit not found with id: " + propertyUnitId));
-                payment.setPropertyUnit(propertyUnit);
-            }
+            PropertyUnit propertyUnit = propertyUnitRepository.findByIdAndOwnerId(propertyUnitId, ownerId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Property unit not found with id: " + propertyUnitId));
+            payment.setPropertyUnit(propertyUnit);
         }
-        
+
         // Business rule: Payment amount should not exceed 3 months of rent for a single payment
         if (payment.getPropertyUnit() != null && payment.getAmount() != null) {
             BigDecimal maxPayment = payment.getPropertyUnit().getBaseRentAmount().multiply(new BigDecimal("3"));
@@ -46,29 +44,29 @@ public class PaymentServiceImpl implements PaymentService {
                 throw new BusinessLogicException("Payment amount cannot exceed 3 months of rent in a single payment");
             }
         }
-        
+
         return paymentRepository.save(payment);
     }
 
     @Override
-    public Payment getPaymentById(@NonNull Long id) {
-        return paymentRepository.findById(id)
+    public Payment getPaymentById(@NonNull Long id, @NonNull Long ownerId) {
+        return paymentRepository.findByIdAndPropertyOwnerId(id, ownerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Payment not found with id: " + id));
     }
 
     @Override
-    public List<Payment> getAllPayments() {
-        return paymentRepository.findAll();
+    public List<Payment> getAllPayments(@NonNull Long ownerId) {
+        return paymentRepository.findByPropertyOwnerId(ownerId);
     }
 
     @Override
-    public List<Payment> getPaymentsByPropertyUnit(Long propertyUnitId) {
-        return paymentRepository.findByPropertyUnitId(propertyUnitId);
+    public List<Payment> getPaymentsByPropertyUnit(Long propertyUnitId, @NonNull Long ownerId) {
+        return paymentRepository.findByPropertyUnitIdAndOwnerId(propertyUnitId, ownerId);
     }
 
     @Override
-    public Payment updatePayment(@NonNull Long id, Payment payment) {
-        Payment existingPayment = getPaymentById(id);
+    public Payment updatePayment(@NonNull Long id, Payment payment, @NonNull Long ownerId) {
+        Payment existingPayment = getPaymentById(id, ownerId);
         existingPayment.setAmount(payment.getAmount());
         existingPayment.setPaymentDate(payment.getPaymentDate());
         existingPayment.setPaymentType(payment.getPaymentType());
@@ -78,15 +76,14 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    @SuppressWarnings("null")
-    public void deletePayment(@NonNull Long id) {
-        Payment payment = getPaymentById(id);
+    public void deletePayment(@NonNull Long id, @NonNull Long ownerId) {
+        Payment payment = getPaymentById(id, ownerId);
         paymentRepository.delete(payment);
     }
 
     @Override
-    public BigDecimal calculateAdjustedRent(@NonNull Long propertyUnitId, LocalDate effectiveDate) {
-        PropertyUnit propertyUnit = propertyUnitRepository.findById(propertyUnitId)
+    public BigDecimal calculateAdjustedRent(@NonNull Long propertyUnitId, LocalDate effectiveDate, @NonNull Long ownerId) {
+        PropertyUnit propertyUnit = propertyUnitRepository.findByIdAndOwnerId(propertyUnitId, ownerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Property unit not found with id: " + propertyUnitId));
 
         BigDecimal baseRent = propertyUnit.getBaseRentAmount();
@@ -99,32 +96,40 @@ public class PaymentServiceImpl implements PaymentService {
         // Calculate years since lease start
         long yearsSinceStart = ChronoUnit.YEARS.between(leaseStartDate, effectiveDate);
 
-        // Apply 3% annual increase (this is a simple example - in real scenarios this might be more complex)
-        BigDecimal adjustmentRate = new BigDecimal("0.03"); // 3% per year
+        // Apply 3% annual increase
+        BigDecimal adjustmentRate = new BigDecimal("0.03");
         BigDecimal adjustmentFactor = BigDecimal.ONE.add(adjustmentRate).pow((int) yearsSinceStart);
-        
+
         return baseRent.multiply(adjustmentFactor).setScale(2, RoundingMode.HALF_UP);
     }
 
     @Override
-    public List<Payment> getOutstandingPayments(Long propertyUnitId) {
-        return paymentRepository.findByPropertyUnitIdAndStatus(propertyUnitId, Payment.PaymentStatus.PENDING);
+    public List<Payment> getOutstandingPayments(Long propertyUnitId, @NonNull Long ownerId) {
+        return paymentRepository.findByPropertyUnitIdAndStatusAndOwnerId(propertyUnitId, Payment.PaymentStatus.PENDING, ownerId);
     }
 
     @Override
-    public BigDecimal getTotalPaidAmount(Long propertyUnitId, Payment.PaymentType paymentType) {
+    public BigDecimal getTotalPaidAmount(Long propertyUnitId, Payment.PaymentType paymentType, @NonNull Long ownerId) {
+        // Verify property belongs to owner first
+        propertyUnitRepository.findByIdAndOwnerId(propertyUnitId, ownerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Property unit not found with id: " + propertyUnitId));
+
         BigDecimal total = paymentRepository.sumAmountByPropertyUnitIdAndPaymentType(propertyUnitId, paymentType);
         return total != null ? total : BigDecimal.ZERO;
     }
 
     @Override
-    public List<Payment> getPaymentHistory(Long propertyUnitId, LocalDate startDate, LocalDate endDate) {
+    public List<Payment> getPaymentHistory(Long propertyUnitId, LocalDate startDate, LocalDate endDate, @NonNull Long ownerId) {
+        // Verify property belongs to owner first
+        propertyUnitRepository.findByIdAndOwnerId(propertyUnitId, ownerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Property unit not found with id: " + propertyUnitId));
+
         return paymentRepository.findByPropertyUnitIdAndPaymentDateBetween(propertyUnitId, startDate, endDate);
     }
 
     @Override
-    public BigDecimal calculateOutstandingAmount(@NonNull Long propertyUnitId, LocalDate asOfDate) {
-        PropertyUnit propertyUnit = propertyUnitRepository.findById(propertyUnitId)
+    public BigDecimal calculateOutstandingAmount(@NonNull Long propertyUnitId, LocalDate asOfDate, @NonNull Long ownerId) {
+        PropertyUnit propertyUnit = propertyUnitRepository.findByIdAndOwnerId(propertyUnitId, ownerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Property unit not found with id: " + propertyUnitId));
 
         // Calculate expected rent from lease start to asOfDate
@@ -135,17 +140,15 @@ public class PaymentServiceImpl implements PaymentService {
 
         // Calculate total expected rent payments
         long monthsElapsed = ChronoUnit.MONTHS.between(leaseStartDate, asOfDate);
-        BigDecimal currentAdjustedRent = calculateAdjustedRent(propertyUnitId, asOfDate);
-        
-        // For simplicity, we'll use current adjusted rent for all months
-        // In a real system, you'd calculate month-by-month with proper adjustments
+        BigDecimal currentAdjustedRent = calculateAdjustedRent(propertyUnitId, asOfDate, ownerId);
+
         BigDecimal expectedTotal = currentAdjustedRent.multiply(new BigDecimal(monthsElapsed));
 
         // Calculate total paid rent
-        BigDecimal totalPaidRent = getTotalPaidAmount(propertyUnitId, Payment.PaymentType.RENT);
+        BigDecimal totalPaidRent = getTotalPaidAmount(propertyUnitId, Payment.PaymentType.RENT, ownerId);
 
         // Outstanding amount = Expected - Paid
         BigDecimal outstanding = expectedTotal.subtract(totalPaidRent);
-        return outstanding.max(BigDecimal.ZERO); // Don't return negative amounts
+        return outstanding.max(BigDecimal.ZERO);
     }
 }

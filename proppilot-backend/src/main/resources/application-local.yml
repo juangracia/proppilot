@@ -1,0 +1,2 @@
+# Local development profile - no authentication required
+# This profile is automatically active when spring.profiles.active=local

@@ -47,8 +47,7 @@ import {
 } from '@mui/icons-material'
 import { useLanguage } from '../contexts/LanguageContext'
 import { mockTenants as sharedMockTenants, getPaymentsByTenantId } from '../data/mockData'
-
-const API_BASE_URL = '/api'
+import { API_BASE_URL } from '../config/api'
 
 // Helper to check if lease is ending soon (within 30 days)
 const isLeaseEndingSoon = (dateStr) => {

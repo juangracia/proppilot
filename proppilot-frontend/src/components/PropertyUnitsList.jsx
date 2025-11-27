@@ -52,8 +52,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
 import { useLanguage } from '../contexts/LanguageContext'
 import { mockProperties as sharedMockProperties, getPaymentsByPropertyId, getTenantById } from '../data/mockData'
-
-const API_BASE_URL = '/api'
+import { API_BASE_URL } from '../config/api'
 
 const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null, onFilterClear }) {
   const { t, formatCurrency, currency } = useLanguage()

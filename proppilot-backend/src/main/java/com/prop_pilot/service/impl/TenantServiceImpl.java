@@ -31,18 +31,18 @@ public class TenantServiceImpl implements TenantService {
     }
 
     @Override
-    public List<Tenant> getAllTenants() {
-        return tenantRepository.findAll();
+    public List<Tenant> getAllTenants(@NonNull Long ownerId) {
+        return tenantRepository.findByPropertyOwnerId(ownerId);
     }
 
     @Override
-    public Optional<Tenant> getTenantById(@NonNull Long id) {
-        return tenantRepository.findById(id);
+    public Optional<Tenant> getTenantById(@NonNull Long id, @NonNull Long ownerId) {
+        return tenantRepository.findByIdAndPropertyOwnerId(id, ownerId);
     }
 
     @Override
-    public Tenant updateTenant(@NonNull Long id, @NonNull Tenant tenant) {
-        return tenantRepository.findById(id)
+    public Tenant updateTenant(@NonNull Long id, @NonNull Tenant tenant, @NonNull Long ownerId) {
+        return tenantRepository.findByIdAndPropertyOwnerId(id, ownerId)
                 .map(existingTenant -> {
                     // Check if national ID is being changed and if it's unique
                     if (!existingTenant.getNationalId().equals(tenant.getNationalId())) {
@@ -51,7 +51,7 @@ public class TenantServiceImpl implements TenantService {
                             throw new IllegalArgumentException("A tenant with this national ID already exists");
                         }
                     }
-                    
+
                     // Check if email is being changed and if it's unique
                     if (!existingTenant.getEmail().equals(tenant.getEmail())) {
                         Tenant tenantWithSameEmail = tenantRepository.findByEmail(tenant.getEmail());
@@ -59,33 +59,32 @@ public class TenantServiceImpl implements TenantService {
                             throw new IllegalArgumentException("A tenant with this email already exists");
                         }
                     }
-                    
+
                     // Update fields
                     existingTenant.setFullName(tenant.getFullName());
                     existingTenant.setNationalId(tenant.getNationalId());
                     existingTenant.setEmail(tenant.getEmail());
                     existingTenant.setPhone(tenant.getPhone());
-                    
+
                     return tenantRepository.save(existingTenant);
                 })
                 .orElseThrow(() -> new ResourceNotFoundException("Tenant not found with id: " + id));
     }
 
     @Override
-    public void deleteTenant(@NonNull Long id) {
-        if (!tenantRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Tenant not found with id: " + id);
-        }
-        tenantRepository.deleteById(id);
+    public void deleteTenant(@NonNull Long id, @NonNull Long ownerId) {
+        Tenant tenant = tenantRepository.findByIdAndPropertyOwnerId(id, ownerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Tenant not found with id: " + id));
+        tenantRepository.delete(tenant);
     }
 
     @Override
-    public Optional<Tenant> getTenantByNationalId(String nationalId) {
-        return Optional.ofNullable(tenantRepository.findByNationalId(nationalId));
+    public Optional<Tenant> getTenantByNationalId(String nationalId, @NonNull Long ownerId) {
+        return tenantRepository.findByNationalIdAndPropertyOwnerId(nationalId, ownerId);
     }
 
     @Override
-    public Optional<Tenant> getTenantByEmail(String email) {
-        return Optional.ofNullable(tenantRepository.findByEmail(email));
+    public Optional<Tenant> getTenantByEmail(String email, @NonNull Long ownerId) {
+        return tenantRepository.findByEmailAndPropertyOwnerId(email, ownerId);
     }
 }
