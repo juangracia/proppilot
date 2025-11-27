@@ -18,6 +18,9 @@ public class CurrentUserService {
     @Value("${spring.profiles.active:}")
     private String activeProfile;
 
+    @Value("${app.local-dev.email:#{null}}")
+    private String localDevEmail;
+
     public CurrentUserService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
@@ -54,6 +57,22 @@ public class CurrentUserService {
     }
 
     private User getOrCreateLocalUser() {
+        // If configured email exists, use that user (allows sharing data with Google SSO user)
+        if (localDevEmail != null && !localDevEmail.isBlank()) {
+            return userRepository.findByEmail(localDevEmail)
+                    .orElseGet(() -> {
+                        User user = new User();
+                        user.setEmail(localDevEmail);
+                        user.setFullName("Local Developer");
+                        user.setProvider("local");
+                        user.setProviderId("local-dev-001");
+                        user.setCreatedAt(LocalDateTime.now());
+                        user.setLastLoginAt(LocalDateTime.now());
+                        return userRepository.save(user);
+                    });
+        }
+
+        // Fallback to default local-dev user
         String localEmail = "local-dev@proppilot.local";
         return userRepository.findByEmail(localEmail)
                 .orElseGet(() -> {

@@ -1,2 +1,7 @@
 # Local development profile - no authentication required
 # This profile is automatically active when spring.profiles.active=local
+
+app:
+  local-dev:
+    # Use Google account email to share data between local dev and Google SSO
+    email: juanmgracia@gmail.com
