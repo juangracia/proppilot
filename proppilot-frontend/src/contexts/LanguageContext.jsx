@@ -17,7 +17,7 @@ export const LanguageProvider = ({ children }) => {
   const translations = {
     es: {
       // Header
-      appTitle: 'MiRent',
+      appTitle: 'PropPilot',
       appSubtitle: 'Gestión de Propiedades de Alquiler',
 
       // Tabs
@@ -250,7 +250,7 @@ export const LanguageProvider = ({ children }) => {
     },
     en: {
       // Header
-      appTitle: 'MiRent',
+      appTitle: 'PropPilot',
       appSubtitle: 'Rental Property Management',
 
       // Tabs

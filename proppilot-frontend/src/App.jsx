@@ -282,7 +282,7 @@ function AppContent() {
                 letterSpacing: '-1px'
               }}
             >
-              MiRent
+              PropPilot
             </text>
           </Box>
         </Box>

@@ -1,10 +1,10 @@
-# MiRent 🏠
+# PropPilot 🏠
 
 A comprehensive property rental management system built with Spring Boot and React.
 
 ## Overview
 
-MiRent is a full-stack application designed to help property managers efficiently manage rental properties, tenants, and payments. The system provides a modern web interface for tracking property units, managing tenant information, and processing rental payments.
+PropPilot is a full-stack application designed to help property managers efficiently manage rental properties, tenants, and payments. The system provides a modern web interface for tracking property units, managing tenant information, and processing rental payments.
 
 ## Features
 
@@ -35,8 +35,8 @@ MiRent is a full-stack application designed to help property managers efficientl
 ## Project Structure
 
 ```
-mirent/
-├── mirent-backend/        # Spring Boot backend API
+proppilot/
+├── proppilot-backend/     # Spring Boot backend API
 │   ├── src/
 │   │   ├── main/
 │   │   │   ├── java/      # Java source code
@@ -45,7 +45,7 @@ mirent/
 │   ├── docker-compose.yml  # PostgreSQL database setup
 │   └── pom.xml            # Maven dependencies
 │
-└── mirent-frontend/       # React frontend application
+└── proppilot-frontend/    # React frontend application
     ├── src/
     │   ├── components/    # React components
     │   ├── contexts/     # React contexts (i18n)
@@ -68,25 +68,25 @@ mirent/
 1. **Clone the repository:**
    ```bash
    git clone <repository-url>
-   cd mirent
+   cd proppilot
    ```
 
 2. **Start the database:**
    ```bash
-   cd mirent-backend
+   cd proppilot-backend
    docker-compose up -d
    ```
 
 3. **Start the backend:**
    ```bash
-   cd mirent-backend
+   cd proppilot-backend
    ./start-backend.sh
    ```
    The backend API will be available at: http://localhost:8080
 
 4. **Start the frontend:**
    ```bash
-   cd mirent-frontend
+   cd proppilot-frontend
    npm install
    ./start-frontend.sh
    ```
@@ -94,7 +94,7 @@ mirent/
 
 5. **Populate with sample data (optional):**
    ```bash
-   cd mirent-backend
+   cd proppilot-backend
    ./populate_database.sh
    ```
 
@@ -109,9 +109,9 @@ Once the backend is running, you can access:
 ### Database
 - **Host:** localhost
 - **Port:** 5433
-- **Database:** mirent
-- **Username:** mirent
-- **Password:** mirent123
+- **Database:** proppilot
+- **Username:** proppilot
+- **Password:** proppilot123
 
 ### Backend
 - **Port:** 8080
@@ -127,7 +127,7 @@ Once the backend is running, you can access:
 ### Backend Development
 
 ```bash
-cd mirent-backend
+cd proppilot-backend
 
 # Run tests
 mvn test
@@ -145,7 +145,7 @@ tail -f backend.log
 ### Frontend Development
 
 ```bash
-cd mirent-frontend
+cd proppilot-frontend
 
 # Install dependencies
 npm install
@@ -197,13 +197,13 @@ docker ps
 
 **View database logs:**
 ```bash
-cd mirent-backend
+cd proppilot-backend
 docker-compose logs postgres
 ```
 
 **Restart database:**
 ```bash
-cd mirent-backend
+cd proppilot-backend
 docker-compose restart
 ```
 
@@ -211,13 +211,13 @@ docker-compose restart
 
 **Backend:**
 ```bash
-cd mirent-backend
+cd proppilot-backend
 mvn clean install
 ```
 
 **Frontend:**
 ```bash
-cd mirent-frontend
+cd proppilot-frontend
 rm -rf node_modules package-lock.json
 npm install
 ```
