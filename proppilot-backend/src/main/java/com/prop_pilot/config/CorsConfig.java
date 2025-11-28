@@ -34,7 +34,7 @@ public class CorsConfig implements WebMvcConfigurer {
         CorsConfiguration configuration = new CorsConfiguration();
         List<String> origins = Arrays.asList(corsOrigins.split(","));
         configuration.setAllowedOrigins(origins);
-        configuration.setAllowedOriginPatterns(Arrays.asList("http://localhost:*", "https://*.railway.app"));
+        configuration.setAllowedOriginPatterns(Arrays.asList("http://localhost:*", "https://*.railway.app", "https://proppilot.com", "https://www.proppilot.com"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
