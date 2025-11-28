@@ -179,7 +179,7 @@ const DashboardView = memo(({ onNavigate }) => {
     <Box>
 
       {/* Stats Cards */}
-      <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ mb: { xs: 3, sm: 4 } }}>
+      <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ mb: { xs: 3, sm: 4 } }} data-tour="dashboard-stats">
         {stats.map((stat, index) => (
           <Grid size={{ xs: 12, sm: 6, lg: 3 }} key={index}>
             <Card

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import {
   Typography,
   Box,
@@ -28,7 +28,8 @@ import {
   Payment,
   People,
   Menu,
-  Logout
+  Logout,
+  HelpOutline
 } from '@mui/icons-material'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
@@ -40,6 +41,7 @@ import LoginPage from './components/LoginPage'
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import LanguageCurrencySelector from './components/LanguageCurrencySelector'
+import ProductTour, { useTour } from './components/ProductTour'
 import './App.css'
 
 const drawerWidth = 240
@@ -58,6 +60,7 @@ function AppContent() {
   const [selectedPaymentId, setSelectedPaymentId] = useState(null)
   const { t, language } = useLanguage()
   const { user, logout, isAuthenticated, loading } = useAuth()
+  const { startTour } = useTour()
 
   const handleUserMenuOpen = (event) => {
     setAnchorEl(event.currentTarget)
@@ -72,11 +75,16 @@ function AppContent() {
     logout()
   }
 
+  const handleStartTour = () => {
+    handleUserMenuClose()
+    startTour()
+  }
+
   const menuItems = useMemo(() => [
-    { text: t('dashboardMenu'), icon: <Dashboard />, value: 0 },
-    { text: t('propertiesMenu'), icon: <Home />, value: 1 },
-    { text: t('tenantsMenu'), icon: <People />, value: 2 },
-    { text: t('paymentsMenu'), icon: <Payment />, value: 3 }
+    { text: t('dashboardMenu'), icon: <Dashboard />, value: 0, tourId: 'nav-dashboard' },
+    { text: t('propertiesMenu'), icon: <Home />, value: 1, tourId: 'nav-properties' },
+    { text: t('tenantsMenu'), icon: <People />, value: 2, tourId: 'nav-tenants' },
+    { text: t('paymentsMenu'), icon: <Payment />, value: 3, tourId: 'nav-payments' }
   ], [t])
 
   const handleDrawerToggle = useCallback(() => {
@@ -288,13 +296,14 @@ function AppContent() {
         </Box>
       </Toolbar>
       <Divider sx={{ borderColor: 'divider' }} />
-      <List>
+      <List data-tour="sidebar-nav">
         {menuItems.map((item) => (
           <ListItem
             component="button"
             key={item.text}
             onClick={() => handleMenuClick(item.value)}
             selected={selectedView === item.value}
+            data-tour={item.tourId}
             sx={{
               border: 'none',
               width: '100%',
@@ -445,7 +454,7 @@ function AppContent() {
   }, [selectedView, handleNavigate, handleNavigateToTenant, handleNavigateToProperty, handleNavigateToPayment, selectedPropertyId, selectedTenantId, selectedPaymentId])
 
   // Update body theme attribute for CSS-based styling and persist preference
-  React.useEffect(() => {
+  useEffect(() => {
     document.body.setAttribute('data-theme', darkMode ? 'dark' : 'light')
     localStorage.setItem('darkMode', JSON.stringify(darkMode))
   }, [darkMode])
@@ -532,10 +541,13 @@ function AppContent() {
                   </Typography>
                 )}
               </Box>
-              <LanguageCurrencySelector />
+              <Box data-tour="language-selector">
+                <LanguageCurrencySelector />
+              </Box>
               <IconButton
                 color="inherit"
                 onClick={() => setDarkMode(!darkMode)}
+                data-tour="dark-mode-toggle"
                 sx={{
                   ml: 1,
                   color: 'text.primary'
@@ -545,6 +557,7 @@ function AppContent() {
               </IconButton>
               <IconButton
                 onClick={handleUserMenuOpen}
+                data-tour="user-menu"
                 sx={{ ml: 1 }}
               >
                 <Avatar
@@ -570,9 +583,13 @@ function AppContent() {
                   <Typography variant="body2">{user?.email}</Typography>
                 </MenuItem>
                 <Divider />
+                <MenuItem onClick={handleStartTour}>
+                  <HelpOutline fontSize="small" sx={{ mr: 1 }} />
+                  {t('startTour')}
+                </MenuItem>
                 <MenuItem onClick={handleLogout}>
                   <Logout fontSize="small" sx={{ mr: 1 }} />
-                  {language === 'es' ? 'Cerrar Sesion' : 'Logout'}
+                  {language === 'es' ? 'Cerrar Sesión' : 'Logout'}
                 </MenuItem>
               </MuiMenu>
             </Toolbar>
@@ -636,6 +653,7 @@ function AppContent() {
               {content}
             </Container>
           </Box>
+          <ProductTour onNavigate={handleNavigate} currentView={selectedView} />
         </Box>
       </LocalizationProvider>
     </ThemeProvider>
