@@ -52,13 +52,13 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
 import { useLanguage } from '../contexts/LanguageContext'
-import { mockProperties as sharedMockProperties, getPaymentsByPropertyId, getTenantById } from '../data/mockData'
 import { API_BASE_URL } from '../config/api'
+import axios from 'axios'
 
 const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null, onFilterClear, onNavigateToTenant, onNavigateToPayment, initialPropertyId, onPropertyViewed }) {
   const { t, formatCurrency, currency } = useLanguage()
-  const [propertyUnits, setPropertyUnits] = useState(sharedMockProperties)
-  const [loading, setLoading] = useState(false)
+  const [propertyUnits, setPropertyUnits] = useState([])
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [activeFilter, setActiveFilter] = useState(initialFilter)
@@ -81,6 +81,46 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
     leaseStartDate: null
   })
   const [editLoading, setEditLoading] = useState(false)
+
+  // Fetch property units from API
+  const fetchPropertyUnits = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const response = await axios.get(`${API_BASE_URL}/property-units`)
+      // Transform API response to match expected format
+      const transformedData = response.data.map(property => {
+        const lastPayment = property.payments && property.payments.length > 0
+          ? property.payments.sort((a, b) => new Date(b.paymentDate) - new Date(a.paymentDate))[0]
+          : null
+        const hasPendingPayment = property.payments?.some(p => p.status === 'PENDING' || p.status === 'OVERDUE') || false
+
+        return {
+          id: property.id,
+          address: property.address,
+          type: property.type,
+          status: property.tenant ? 'Occupied' : 'Vacant',
+          tenant: property.tenant?.fullName || '',
+          tenantId: property.tenant?.id || null,
+          monthlyRent: parseFloat(property.baseRentAmount) || 0,
+          leaseStart: property.leaseStartDate,
+          lastPaymentDate: lastPayment?.paymentDate || null,
+          hasPendingPayment,
+          payments: property.payments || []
+        }
+      })
+      setPropertyUnits(transformedData)
+    } catch (err) {
+      console.error('Error fetching property units:', err)
+      setError('Failed to load properties. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchPropertyUnits()
+  }, [fetchPropertyUnits])
 
   // Auto-open detail dialog when initialPropertyId is provided
   useEffect(() => {
@@ -105,7 +145,7 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
 
     return filteredByStatus.filter(property =>
       property.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      property.tenant.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (property.tenant && property.tenant.toLowerCase().includes(searchTerm.toLowerCase())) ||
       property.type.toLowerCase().includes(searchTerm.toLowerCase())
     )
   }, [propertyUnits, activeFilter, searchTerm])
@@ -155,21 +195,18 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
     setOpenAddDialog(false)
   }, [])
 
-  const handleAddProperty = useCallback(() => {
+  const handleAddProperty = useCallback(async () => {
     setAddLoading(true)
-    setTimeout(() => {
-      setPropertyUnits(prev => {
-        const newId = Math.max(...prev.map(p => p.id)) + 1
-        return [...prev, {
-          id: newId,
-          address: newProperty.address,
-          type: newProperty.type,
-          status: 'Vacant',
-          tenant: 'Vacant',
-          monthlyRent: parseFloat(newProperty.baseRentAmount),
-          leaseStart: newProperty.leaseStartDate ? newProperty.leaseStartDate.toLocaleDateString() : null
-        }]
-      })
+    try {
+      const payload = {
+        address: newProperty.address,
+        type: newProperty.type,
+        baseRentAmount: parseFloat(newProperty.baseRentAmount),
+        leaseStartDate: newProperty.leaseStartDate
+          ? newProperty.leaseStartDate.toISOString().split('T')[0]
+          : new Date().toISOString().split('T')[0]
+      }
+      await axios.post(`${API_BASE_URL}/property-units`, payload)
       setOpenAddDialog(false)
       setNewProperty({
         address: '',
@@ -177,9 +214,15 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
         baseRentAmount: '',
         leaseStartDate: null
       })
+      // Refresh the list
+      fetchPropertyUnits()
+    } catch (err) {
+      console.error('Error adding property:', err)
+      setError('Failed to add property. Please try again.')
+    } finally {
       setAddLoading(false)
-    }, 1000)
-  }, [newProperty])
+    }
+  }, [newProperty, fetchPropertyUnits])
 
   const handleViewDetails = useCallback((property) => {
     setSelectedProperty(property)
@@ -213,28 +256,32 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
     })
   }, [])
 
-  const handleUpdateProperty = useCallback(() => {
+  const handleUpdateProperty = useCallback(async () => {
     if (!editFormData.address || !editFormData.type || !editFormData.baseRentAmount) {
       return
     }
 
     setEditLoading(true)
-    setTimeout(() => {
-      setPropertyUnits(prev => prev.map(p =>
-        p.id === editingProperty.id
-          ? {
-            ...p,
-            address: editFormData.address,
-            type: editFormData.type,
-            monthlyRent: parseFloat(editFormData.baseRentAmount),
-            leaseStart: editFormData.leaseStartDate ? editFormData.leaseStartDate.toLocaleDateString() : p.leaseStart
-          }
-          : p
-      ))
+    try {
+      const payload = {
+        address: editFormData.address,
+        type: editFormData.type,
+        baseRentAmount: parseFloat(editFormData.baseRentAmount),
+        leaseStartDate: editFormData.leaseStartDate
+          ? editFormData.leaseStartDate.toISOString().split('T')[0]
+          : editingProperty.leaseStart
+      }
+      await axios.put(`${API_BASE_URL}/property-units/${editingProperty.id}`, payload)
       handleCloseEditDialog()
+      // Refresh the list
+      fetchPropertyUnits()
+    } catch (err) {
+      console.error('Error updating property:', err)
+      setError('Failed to update property. Please try again.')
+    } finally {
       setEditLoading(false)
-    }, 1000)
-  }, [editFormData, editingProperty, handleCloseEditDialog])
+    }
+  }, [editFormData, editingProperty, handleCloseEditDialog, fetchPropertyUnits])
 
   if (loading) {
     return (
@@ -818,7 +865,7 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
                 </Typography>
                 <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
                   {(() => {
-                    const payments = getPaymentsByPropertyId(selectedProperty.id)
+                    const payments = selectedProperty.payments || []
                     return payments.length > 0 ? (
                       <List disablePadding>
                         {payments.slice(0, 5).map((payment, index) => (
@@ -862,7 +909,7 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
                               }
                               secondary={
                                 <Typography variant="caption" color="text.secondary">
-                                  {payment.date} • {payment.tenant}
+                                  {payment.paymentDate} {payment.description && `• ${payment.description}`}
                                 </Typography>
                               }
                             />

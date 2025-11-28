@@ -51,8 +51,13 @@ public class JwtUtil {
 
     public boolean isTokenValid(String token) {
         try {
-            return !isTokenExpired(token);
+            boolean expired = isTokenExpired(token);
+            if (expired) {
+                System.out.println("JwtUtil: Token is expired");
+            }
+            return !expired;
         } catch (Exception e) {
+            System.out.println("JwtUtil: Token validation failed: " + e.getClass().getName() + " - " + e.getMessage());
             return false;
         }
     }

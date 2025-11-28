@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, memo } from 'react'
+import React, { useMemo, useCallback, memo, useState, useEffect } from 'react'
 import {
   Box,
   Typography,
@@ -9,8 +9,8 @@ import {
   List,
   ListItem,
   Chip,
-  IconButton,
-  Divider
+  Divider,
+  CircularProgress
 } from '@mui/material'
 import Grid from '@mui/material/Grid'
 import {
@@ -20,22 +20,95 @@ import {
   Warning,
   Add,
   Payment,
-  Visibility,
   TrendingUp,
   TrendingDown,
   ChevronRight,
   Schedule
 } from '@mui/icons-material'
 import { useLanguage } from '../contexts/LanguageContext'
-import { getDashboardStats, getRecentPayments, getNextPaymentDue } from '../data/mockData'
+import { API_BASE_URL } from '../config/api'
+import axios from 'axios'
 
 const DashboardView = memo(({ onNavigate }) => {
   const { t, formatCurrency } = useLanguage()
+  const [loading, setLoading] = useState(true)
+  const [propertyUnits, setPropertyUnits] = useState([])
+  const [tenants, setTenants] = useState([])
+  const [payments, setPayments] = useState([])
 
-  // Get data from shared mock data
-  const dashboardStats = useMemo(() => getDashboardStats(), [])
-  const nextPaymentDue = useMemo(() => getNextPaymentDue(), [])
-  const recentPaymentsData = useMemo(() => getRecentPayments(), [])
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        const [propertiesRes, tenantsRes, paymentsRes] = await Promise.all([
+          axios.get(`${API_BASE_URL}/property-units`),
+          axios.get(`${API_BASE_URL}/tenants`),
+          axios.get(`${API_BASE_URL}/payments`)
+        ])
+        setPropertyUnits(propertiesRes.data)
+        setTenants(tenantsRes.data)
+        setPayments(paymentsRes.data)
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [])
+
+  // Calculate dashboard stats from real data
+  const dashboardStats = useMemo(() => {
+    const totalProperties = propertyUnits.length
+    const occupiedProperties = propertyUnits.filter(p => p.tenant).length
+    const vacantProperties = totalProperties - occupiedProperties
+    const activeTenants = tenants.length
+    const monthlyRevenue = propertyUnits.reduce((sum, p) => sum + (parseFloat(p.baseRentAmount) || 0), 0)
+    const outstandingPayments = payments.filter(p => p.status === 'PENDING' || p.status === 'OVERDUE').length
+    return { totalProperties, vacantProperties, occupiedProperties, activeTenants, monthlyRevenue, outstandingPayments }
+  }, [propertyUnits, tenants, payments])
+
+  // Get recent completed payments
+  const recentPaymentsData = useMemo(() => {
+    return payments
+      .filter(p => p.status === 'COMPLETED')
+      .sort((a, b) => new Date(b.paymentDate) - new Date(a.paymentDate))
+      .slice(0, 5)
+      .map(p => {
+        const property = propertyUnits.find(prop => prop.id === p.propertyUnitId)
+        return {
+          tenant: property?.tenant?.fullName || 'Unknown',
+          property: property?.address || 'Unknown',
+          amount: p.amount,
+          date: p.paymentDate
+        }
+      })
+  }, [payments, propertyUnits])
+
+  // Get next pending payment
+  const nextPaymentDue = useMemo(() => {
+    const pendingPayments = payments
+      .filter(p => p.status === 'PENDING')
+      .sort((a, b) => new Date(a.paymentDate) - new Date(b.paymentDate))
+
+    if (pendingPayments.length === 0) {
+      return null
+    }
+
+    const next = pendingPayments[0]
+    const property = propertyUnits.find(prop => prop.id === next.propertyUnitId)
+    const dueDate = new Date(next.paymentDate)
+    const today = new Date()
+    const daysUntil = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24))
+
+    return {
+      amount: next.amount,
+      tenant: property?.tenant?.fullName || 'Unknown',
+      property: property?.address || 'Unknown',
+      dueDate: next.paymentDate,
+      daysUntil: Math.max(0, daysUntil)
+    }
+  }, [payments, propertyUnits])
 
   const stats = useMemo(() => [
     {
@@ -76,16 +149,6 @@ const DashboardView = memo(({ onNavigate }) => {
     }
   ], [t, formatCurrency, dashboardStats])
 
-  const recentPayments = useMemo(() =>
-    recentPaymentsData.map(p => ({
-      tenant: p.tenant,
-      property: p.property,
-      amount: p.amount,
-      date: p.date,
-      status: t('paid')
-    }))
-  , [t, recentPaymentsData])
-
   const quickActions = useMemo(() => [
     { title: t('addNewTenant'), icon: <Add />, color: 'primary', navigateTo: 2 },
     { title: t('registerPayment'), icon: <Payment />, color: 'secondary', navigateTo: 3 },
@@ -100,6 +163,17 @@ const DashboardView = memo(({ onNavigate }) => {
   const handlePaymentClick = useCallback(() => {
     onNavigate && onNavigate(3)
   }, [onNavigate])
+
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+        <CircularProgress />
+        <Typography variant="body1" sx={{ ml: 2 }}>
+          {t('loading')}
+        </Typography>
+      </Box>
+    )
+  }
 
   return (
     <Box>
@@ -171,58 +245,60 @@ const DashboardView = memo(({ onNavigate }) => {
       </Grid>
 
       {/* Next Payment Due Card */}
-      <Paper
-        sx={{
-          p: { xs: 2, sm: 3 },
-          mb: { xs: 3, sm: 4 },
-          background: 'linear-gradient(135deg, #FF9800 0%, #F57C00 100%)',
-          color: 'white',
-          cursor: 'pointer',
-          transition: 'transform 0.2s, box-shadow 0.2s',
-          '&:hover': {
-            transform: { xs: 'none', sm: 'translateY(-2px)' },
-            boxShadow: 4
-          }
-        }}
-        onClick={handlePaymentClick}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.5, sm: 2 } }}>
-            <Schedule sx={{ fontSize: { xs: 32, sm: 40 } }} />
-            <Box>
-              <Typography
-                variant="body2"
-                sx={{ opacity: 0.9, fontSize: { xs: '0.75rem', sm: '0.875rem' }, mb: 0.5 }}
-              >
-                {t('nextPaymentDue') || 'Next Payment Due'}
-              </Typography>
-              <Typography
-                variant="h5"
-                sx={{ fontWeight: 700, fontSize: { xs: '1.25rem', sm: '1.5rem' } }}
-              >
-                {formatCurrency(nextPaymentDue.amount)} - {nextPaymentDue.tenant}
-              </Typography>
-              <Typography
-                variant="body2"
-                sx={{ opacity: 0.9, fontSize: { xs: '0.75rem', sm: '0.875rem' }, mt: 0.5 }}
-              >
-                {nextPaymentDue.property} • {nextPaymentDue.dueDate}
-              </Typography>
+      {nextPaymentDue && (
+        <Paper
+          sx={{
+            p: { xs: 2, sm: 3 },
+            mb: { xs: 3, sm: 4 },
+            background: 'linear-gradient(135deg, #FF9800 0%, #F57C00 100%)',
+            color: 'white',
+            cursor: 'pointer',
+            transition: 'transform 0.2s, box-shadow 0.2s',
+            '&:hover': {
+              transform: { xs: 'none', sm: 'translateY(-2px)' },
+              boxShadow: 4
+            }
+          }}
+          onClick={handlePaymentClick}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.5, sm: 2 } }}>
+              <Schedule sx={{ fontSize: { xs: 32, sm: 40 } }} />
+              <Box>
+                <Typography
+                  variant="body2"
+                  sx={{ opacity: 0.9, fontSize: { xs: '0.75rem', sm: '0.875rem' }, mb: 0.5 }}
+                >
+                  {t('nextPaymentDue') || 'Next Payment Due'}
+                </Typography>
+                <Typography
+                  variant="h5"
+                  sx={{ fontWeight: 700, fontSize: { xs: '1.25rem', sm: '1.5rem' } }}
+                >
+                  {formatCurrency(nextPaymentDue.amount)} - {nextPaymentDue.tenant}
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{ opacity: 0.9, fontSize: { xs: '0.75rem', sm: '0.875rem' }, mt: 0.5 }}
+                >
+                  {nextPaymentDue.property} • {nextPaymentDue.dueDate}
+                </Typography>
+              </Box>
             </Box>
+            <Box sx={{ textAlign: 'right', display: { xs: 'none', sm: 'block' } }}>
+              <Chip
+                label={`${nextPaymentDue.daysUntil} ${t('daysLeft') || 'days left'}`}
+                sx={{
+                  bgcolor: 'rgba(255,255,255,0.2)',
+                  color: 'white',
+                  fontWeight: 600
+                }}
+              />
+            </Box>
+            <ChevronRight sx={{ fontSize: 24, ml: 1 }} />
           </Box>
-          <Box sx={{ textAlign: 'right', display: { xs: 'none', sm: 'block' } }}>
-            <Chip
-              label={`${nextPaymentDue.daysUntil} ${t('daysLeft') || 'days left'}`}
-              sx={{
-                bgcolor: 'rgba(255,255,255,0.2)',
-                color: 'white',
-                fontWeight: 600
-              }}
-            />
-          </Box>
-          <ChevronRight sx={{ fontSize: 24, ml: 1 }} />
-        </Box>
-      </Paper>
+        </Paper>
+      )}
 
       <Grid container spacing={{ xs: 2, sm: 3 }}>
         {/* Recent Payments */}
@@ -238,81 +314,90 @@ const DashboardView = memo(({ onNavigate }) => {
             >
               {t('recentPayments')}
             </Typography>
-            <List>
-              {recentPayments.map((payment, index) => (
-                <React.Fragment key={index}>
-                  <ListItem
-                    sx={{
-                      px: 0,
-                      py: { xs: 1.5, sm: 2 },
-                      display: 'flex',
-                      flexDirection: { xs: 'column', sm: 'row' },
-                      justifyContent: 'space-between',
-                      alignItems: { xs: 'flex-start', sm: 'flex-start' },
-                      gap: { xs: 1, sm: 0 }
-                    }}
-                  >
-                    <Box sx={{ flex: 1, minWidth: 0, width: '100%' }}>
-                      <Box sx={{
+            {recentPaymentsData.length > 0 ? (
+              <List>
+                {recentPaymentsData.map((payment, index) => (
+                  <React.Fragment key={index}>
+                    <ListItem
+                      sx={{
+                        px: 0,
+                        py: { xs: 1.5, sm: 2 },
                         display: 'flex',
-                        alignItems: 'center',
-                        mb: 0.5,
-                        gap: 1,
-                        flexWrap: 'wrap'
+                        flexDirection: { xs: 'column', sm: 'row' },
+                        justifyContent: 'space-between',
+                        alignItems: { xs: 'flex-start', sm: 'flex-start' },
+                        gap: { xs: 1, sm: 0 }
+                      }}
+                    >
+                      <Box sx={{ flex: 1, minWidth: 0, width: '100%' }}>
+                        <Box sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          mb: 0.5,
+                          gap: 1,
+                          flexWrap: 'wrap'
+                        }}>
+                          <Typography
+                            variant="subtitle1"
+                            sx={{
+                              fontWeight: 500,
+                              fontSize: { xs: '0.875rem', sm: '1rem' }
+                            }}
+                          >
+                            {payment.tenant}
+                          </Typography>
+                          <Chip
+                            label={t('paid')}
+                            size="small"
+                            color="success"
+                            sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' }, height: { xs: 20, sm: 24 } }}
+                          />
+                        </Box>
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                        >
+                          {payment.property}
+                        </Typography>
+                      </Box>
+                      <Box sx={{
+                        textAlign: { xs: 'left', sm: 'right' },
+                        ml: { xs: 0, sm: 2 },
+                        flexShrink: 0,
+                        width: { xs: '100%', sm: 'auto' }
                       }}>
                         <Typography
-                          variant="subtitle1"
+                          variant="h6"
                           sx={{
-                            fontWeight: 500,
-                            fontSize: { xs: '0.875rem', sm: '1rem' }
+                            fontWeight: 600,
+                            mb: 0.5,
+                            fontSize: { xs: '1rem', sm: '1.25rem' }
                           }}
                         >
-                          {payment.tenant}
+                          {formatCurrency(payment.amount)}
                         </Typography>
-                        <Chip
-                          label={payment.status}
-                          size="small"
-                          color="success"
-                          sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' }, height: { xs: 20, sm: 24 } }}
-                        />
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                        >
+                          {payment.date}
+                        </Typography>
                       </Box>
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                      >
-                        {payment.property}
-                      </Typography>
-                    </Box>
-                    <Box sx={{
-                      textAlign: { xs: 'left', sm: 'right' },
-                      ml: { xs: 0, sm: 2 },
-                      flexShrink: 0,
-                      width: { xs: '100%', sm: 'auto' }
-                    }}>
-                      <Typography
-                        variant="h6"
-                        sx={{
-                          fontWeight: 600,
-                          mb: 0.5,
-                          fontSize: { xs: '1rem', sm: '1.25rem' }
-                        }}
-                      >
-                        {formatCurrency(payment.amount)}
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                      >
-                        {payment.date}
-                      </Typography>
-                    </Box>
-                  </ListItem>
-                  {index < recentPayments.length - 1 && <Divider />}
-                </React.Fragment>
-              ))}
-            </List>
+                    </ListItem>
+                    {index < recentPaymentsData.length - 1 && <Divider />}
+                  </React.Fragment>
+                ))}
+              </List>
+            ) : (
+              <Box sx={{ py: 4, textAlign: 'center' }}>
+                <Payment sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
+                <Typography variant="body2" color="text.secondary">
+                  {t('noRecentPayments') || 'No recent payments'}
+                </Typography>
+              </Box>
+            )}
           </Paper>
         </Grid>
 

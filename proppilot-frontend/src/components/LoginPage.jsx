@@ -8,16 +8,21 @@ import {
   Alert,
   ThemeProvider,
   createTheme,
-  CssBaseline
+  CssBaseline,
+  TextField,
+  Button,
+  Divider
 } from '@mui/material'
 import { useAuth } from '../contexts/AuthContext'
 import { useLanguage } from '../contexts/LanguageContext'
 
 const LoginPage = () => {
-  const { loginWithGoogle } = useAuth()
+  const { loginWithGoogle, loginWithLocalUser, isLocalDev } = useAuth()
   const { t, language } = useLanguage()
   const [error, setError] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [localEmail, setLocalEmail] = useState('')
+  const [localName, setLocalName] = useState('')
 
   const theme = createTheme({
     palette: {
@@ -44,6 +49,27 @@ const LoginPage = () => {
   const handleGoogleError = () => {
     setError(language === 'es' ? 'Error con Google. Por favor intente de nuevo.' : 'Google sign-in error. Please try again.')
   }
+
+  const handleLocalLogin = async (e) => {
+    e.preventDefault()
+    if (!localEmail.trim()) {
+      setError('Email is required')
+      return
+    }
+    setIsLoading(true)
+    setError(null)
+    const success = await loginWithLocalUser(localEmail, localName || localEmail.split('@')[0])
+    if (!success) {
+      setError('Local login failed. Make sure backend is running with local profile.')
+    }
+    setIsLoading(false)
+  }
+
+  const quickLoginUsers = [
+    { email: 'alice@test.local', name: 'Alice Test' },
+    { email: 'bob@test.local', name: 'Bob Test' },
+    { email: 'charlie@test.local', name: 'Charlie Test' }
+  ]
 
   return (
     <ThemeProvider theme={theme}>
@@ -134,6 +160,55 @@ const LoginPage = () => {
           {isLoading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
               <CircularProgress />
+            </Box>
+          ) : isLocalDev ? (
+            <Box>
+              <Alert severity="info" sx={{ mb: 2, textAlign: 'left' }}>
+                Local Dev Mode - No Google OAuth required
+              </Alert>
+
+              <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+                Quick Login (Test Users):
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: 'center', mb: 2 }}>
+                {quickLoginUsers.map((user) => (
+                  <Button
+                    key={user.email}
+                    variant="outlined"
+                    size="small"
+                    onClick={() => loginWithLocalUser(user.email, user.name)}
+                  >
+                    {user.name}
+                  </Button>
+                ))}
+              </Box>
+
+              <Divider sx={{ my: 2 }}>or</Divider>
+
+              <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+                Custom User:
+              </Typography>
+              <Box component="form" onSubmit={handleLocalLogin} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <TextField
+                  label="Email"
+                  type="email"
+                  size="small"
+                  value={localEmail}
+                  onChange={(e) => setLocalEmail(e.target.value)}
+                  placeholder="user@test.local"
+                  required
+                />
+                <TextField
+                  label="Name (optional)"
+                  size="small"
+                  value={localName}
+                  onChange={(e) => setLocalName(e.target.value)}
+                  placeholder="Test User"
+                />
+                <Button type="submit" variant="contained" fullWidth>
+                  Login as Local User
+                </Button>
+              </Box>
             </Box>
           ) : (
             <Box sx={{ display: 'flex', justifyContent: 'center' }}>

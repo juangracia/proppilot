@@ -2,6 +2,7 @@ package com.prop_pilot.service;
 
 import com.prop_pilot.entity.User;
 import com.prop_pilot.repository.UserRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -11,6 +12,7 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Service
+@Slf4j
 public class CurrentUserService {
 
     private final UserRepository userRepository;
@@ -27,21 +29,33 @@ public class CurrentUserService {
 
     public User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        log.info("CurrentUserService: Getting current user. Authentication: {}", authentication);
 
-        // If no authentication or anonymous, check for local profile
-        if (authentication == null || !authentication.isAuthenticated() ||
-                "anonymousUser".equals(authentication.getPrincipal())) {
-
-            // For local development, create/return a default user
-            if (activeProfile != null && activeProfile.contains("local")) {
-                return getOrCreateLocalUser();
-            }
-            throw new IllegalStateException("User not authenticated");
+        if (authentication != null) {
+            log.info("CurrentUserService: Auth class={}, isAuthenticated={}, principal={}, principalClass={}",
+                    authentication.getClass().getSimpleName(),
+                    authentication.isAuthenticated(),
+                    authentication.getPrincipal(),
+                    authentication.getPrincipal() != null ? authentication.getPrincipal().getClass().getSimpleName() : "null");
         }
 
-        String email = (String) authentication.getPrincipal();
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalStateException("Authenticated user not found in database: " + email));
+        // If we have a valid authentication with a non-anonymous principal, use it
+        if (authentication != null && authentication.isAuthenticated() &&
+                authentication.getPrincipal() != null &&
+                !"anonymousUser".equals(authentication.getPrincipal())) {
+            String email = (String) authentication.getPrincipal();
+            log.info("CurrentUserService: Using authenticated user with email: {}", email);
+            return userRepository.findByEmail(email)
+                    .orElseThrow(() -> new IllegalStateException("Authenticated user not found in database: " + email));
+        }
+
+        // Fallback for local development - only if no valid authentication
+        if (activeProfile != null && activeProfile.contains("local")) {
+            log.info("CurrentUserService: Falling back to local user (activeProfile={})", activeProfile);
+            return getOrCreateLocalUser();
+        }
+
+        throw new IllegalStateException("User not authenticated");
     }
 
     public Optional<User> getCurrentUserOptional() {

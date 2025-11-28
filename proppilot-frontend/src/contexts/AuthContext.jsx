@@ -4,7 +4,7 @@ import { API_BASE_URL } from '../config/api'
 
 const AuthContext = createContext()
 
-const isLocalDev = import.meta.env.DEV && !import.meta.env.VITE_GOOGLE_CLIENT_ID
+const isLocalDev = import.meta.env.DEV
 
 export const useAuth = () => {
   const context = useContext(AuthContext)
@@ -15,9 +15,9 @@ export const useAuth = () => {
 }
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(isLocalDev ? { name: 'Local Dev User', email: 'dev@local' } : null)
+  const [user, setUser] = useState(null)
   const [token, setToken] = useState(() => localStorage.getItem('token'))
-  const [loading, setLoading] = useState(!isLocalDev)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (token) {
@@ -27,6 +27,24 @@ export const AuthProvider = ({ children }) => {
       setLoading(false)
     }
   }, [token])
+
+  const loginWithLocalUser = async (email, name) => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/auth/local`, {
+        email,
+        name
+      })
+      const { token: newToken, email: userEmail, name: userName } = response.data
+      localStorage.setItem('token', newToken)
+      axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`
+      setToken(newToken)
+      setUser({ email: userEmail, name: userName, picture: null })
+      return true
+    } catch (error) {
+      console.error('Local login failed:', error)
+      return false
+    }
+  }
 
   const fetchCurrentUser = async () => {
     try {
@@ -73,7 +91,9 @@ export const AuthProvider = ({ children }) => {
     token,
     loading,
     isAuthenticated: !!user,
+    isLocalDev,
     loginWithGoogle,
+    loginWithLocalUser,
     logout
   }
 

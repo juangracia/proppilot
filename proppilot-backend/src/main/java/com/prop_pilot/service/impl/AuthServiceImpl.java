@@ -72,6 +72,31 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    public AuthResponse authenticateLocal(String email, String name) {
+        String providerId = "local-" + email.hashCode();
+
+        User user = userRepository.findByEmail(email)
+                .orElseGet(() -> {
+                    User newUser = new User();
+                    newUser.setEmail(email);
+                    newUser.setFullName(name);
+                    newUser.setProvider("local");
+                    newUser.setProviderId(providerId);
+                    newUser.setCreatedAt(LocalDateTime.now());
+                    return userRepository.save(newUser);
+                });
+
+        user.setLastLoginAt(LocalDateTime.now());
+        if (name != null && !name.isBlank()) {
+            user.setFullName(name);
+        }
+        userRepository.save(user);
+
+        String token = jwtUtil.generateToken(email, user.getFullName(), null);
+        return new AuthResponse(token, email, user.getFullName(), null);
+    }
+
+    @Override
     public User getCurrentUser(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));

@@ -47,8 +47,8 @@ import {
   OpenInNew
 } from '@mui/icons-material'
 import { useLanguage } from '../contexts/LanguageContext'
-import { mockTenants as sharedMockTenants, getPaymentsByTenantId, getPropertyById } from '../data/mockData'
 import { API_BASE_URL } from '../config/api'
+import axios from 'axios'
 
 // Helper to check if lease is ending soon (within 30 days)
 const isLeaseEndingSoon = (dateStr) => {
@@ -63,8 +63,8 @@ const isLeaseEndingSoon = (dateStr) => {
 const TenantsList = memo(function TenantsList({ onNavigateToProperty, onNavigateToPayment, initialTenantId, onTenantViewed }) {
   const { t, formatCurrency } = useLanguage()
   const isMobile = useMediaQuery('(max-width:600px)')
-  const [tenants, setTenants] = useState(sharedMockTenants)
-  const [loading, setLoading] = useState(false)
+  const [tenants, setTenants] = useState([])
+  const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingTenant, setEditingTenant] = useState(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -105,13 +105,8 @@ const TenantsList = memo(function TenantsList({ onNavigateToProperty, onNavigate
   const loadTenants = useCallback(async () => {
     try {
       setLoading(true)
-      const response = await fetch(`${API_BASE_URL}/tenants`)
-      if (response.ok) {
-        const data = await response.json()
-        setTenants(data)
-      } else {
-        showSnackbar(t('errorOccurred'), 'error')
-      }
+      const response = await axios.get(`${API_BASE_URL}/tenants`)
+      setTenants(response.data)
     } catch (error) {
       console.error('Error loading tenants:', error)
       showSnackbar(t('errorOccurred'), 'error')
@@ -196,32 +191,23 @@ const TenantsList = memo(function TenantsList({ onNavigateToProperty, onNavigate
     }
 
     try {
-      const url = editingTenant
-        ? `${API_BASE_URL}/tenants/${editingTenant.id}`
-        : `${API_BASE_URL}/tenants`
-
-      const method = editingTenant ? 'PUT' : 'POST'
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData)
-      })
-
-      if (response.ok) {
-        await loadTenants()
-        handleCloseDialog()
-        showSnackbar(
-          editingTenant ? t('tenantUpdatedSuccess') : t('tenantCreatedSuccess')
-        )
-      } else if (response.status === 400) {
-        // Handle validation errors from backend
-        const errorText = await response.text()
-        if (errorText.includes('national ID')) {
+      if (editingTenant) {
+        await axios.put(`${API_BASE_URL}/tenants/${editingTenant.id}`, formData)
+      } else {
+        await axios.post(`${API_BASE_URL}/tenants`, formData)
+      }
+      await loadTenants()
+      handleCloseDialog()
+      showSnackbar(
+        editingTenant ? t('tenantUpdatedSuccess') : t('tenantCreatedSuccess')
+      )
+    } catch (error) {
+      console.error('Error saving tenant:', error)
+      if (error.response?.status === 400) {
+        const errorText = error.response?.data || ''
+        if (typeof errorText === 'string' && errorText.includes('national ID')) {
           showSnackbar(t('duplicateNationalId'), 'error')
-        } else if (errorText.includes('email')) {
+        } else if (typeof errorText === 'string' && errorText.includes('email')) {
           showSnackbar(t('duplicateEmail'), 'error')
         } else {
           showSnackbar(t('errorOccurred'), 'error')
@@ -232,12 +218,6 @@ const TenantsList = memo(function TenantsList({ onNavigateToProperty, onNavigate
           'error'
         )
       }
-    } catch (error) {
-      console.error('Error saving tenant:', error)
-      showSnackbar(
-        editingTenant ? t('failedToUpdateTenant') : t('failedToCreateTenant'),
-        'error'
-      )
     }
   }
 
@@ -264,15 +244,7 @@ const TenantsList = memo(function TenantsList({ onNavigateToProperty, onNavigate
     // Set up pending delete with timeout
     const timeoutId = setTimeout(async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/tenants/${deletedTenant.id}`, {
-          method: 'DELETE'
-        })
-
-        if (!response.ok) {
-          // Restore on failure
-          setTenants(originalTenants)
-          showSnackbar(t('failedToDeleteTenant'), 'error')
-        }
+        await axios.delete(`${API_BASE_URL}/tenants/${deletedTenant.id}`)
       } catch (error) {
         console.error('Error deleting tenant:', error)
         setTenants(originalTenants)
@@ -314,7 +286,9 @@ const TenantsList = memo(function TenantsList({ onNavigateToProperty, onNavigate
 
   const tenantPayments = useMemo(() => {
     if (!selectedTenant) return []
-    return getPaymentsByTenantId(selectedTenant.id)
+    // Payments are not included in tenant API response
+    // They would need to be fetched separately if needed
+    return []
   }, [selectedTenant])
 
   if (loading) {
