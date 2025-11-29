@@ -18,7 +18,7 @@ public class Payment {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "lease_id", nullable = false)
+    @JoinColumn(name = "lease_id", nullable = true)
     @JsonBackReference("lease-payments")
     private Lease lease;
 
