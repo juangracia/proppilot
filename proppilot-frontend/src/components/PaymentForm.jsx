@@ -42,7 +42,6 @@ import {
   Receipt,
   CalendarToday,
   Notes,
-  CreditCard,
   OpenInNew
 } from '@mui/icons-material'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
@@ -51,18 +50,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
 import { format } from 'date-fns'
 import axios from 'axios'
 import { useLanguage } from '../contexts/LanguageContext'
-import { mockPayments, mockProperties as sharedMockProperties, getTenantById } from '../data/mockData'
 import { API_BASE_URL } from '../config/api'
-
-// Create property units list from shared data
-const mockPropertyUnits = sharedMockProperties.map(p => ({
-  id: p.id,
-  address: p.address,
-  type: p.type,
-  baseRentAmount: p.monthlyRent,
-  tenant: p.tenant,
-  tenantId: p.tenantId
-}))
 
 const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigateToTenant, initialPaymentId, onPaymentViewed }) {
   const { t, formatCurrency, currency } = useLanguage()
@@ -84,6 +72,7 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
   const [success, setSuccess] = useState(null)
   const [detailDialogOpen, setDetailDialogOpen] = useState(false)
   const [selectedPayment, setSelectedPayment] = useState(null)
+  const [payments, setPayments] = useState([])
 
   const paymentTypes = useMemo(() => [
     { value: 'RENT', label: t('rentPayment') },
@@ -94,14 +83,25 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
   ], [t])
 
   useEffect(() => {
-    // Use mock data instead of API call
-    setPropertyUnits(mockPropertyUnits)
+    const fetchData = async () => {
+      try {
+        const [propertiesRes, paymentsRes] = await Promise.all([
+          axios.get(`${API_BASE_URL}/property-units`),
+          axios.get(`${API_BASE_URL}/payments`)
+        ])
+        setPropertyUnits(propertiesRes.data)
+        setPayments(paymentsRes.data)
+      } catch (error) {
+        console.error('Error fetching data:', error)
+      }
+    }
+    fetchData()
   }, [])
 
   // Auto-open detail dialog when initialPaymentId is provided
   useEffect(() => {
-    if (initialPaymentId) {
-      const payment = mockPayments.find(p => p.id === initialPaymentId)
+    if (initialPaymentId && payments.length > 0) {
+      const payment = payments.find(p => p.id === initialPaymentId)
       if (payment) {
         setSelectedPayment(payment)
         setDetailDialogOpen(true)
@@ -109,17 +109,17 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
         onPaymentViewed?.()
       }
     }
-  }, [initialPaymentId, onPaymentViewed])
+  }, [initialPaymentId, payments, onPaymentViewed])
 
   // Auto-fill rent amount when property is selected
   const handlePropertyChange = useCallback((propertyId) => {
-    const selectedUnit = mockPropertyUnits.find(u => u.id === parseInt(propertyId))
+    const selectedUnit = propertyUnits.find(u => u.id === parseInt(propertyId))
     setFormData(prev => ({
       ...prev,
       propertyUnitId: propertyId,
       amount: selectedUnit && !prev.isPartialPayment ? selectedUnit.baseRentAmount.toString() : prev.amount
     }))
-  }, [])
+  }, [propertyUnits])
 
   const validateForm = useCallback(() => {
     const errors = {}
@@ -227,6 +227,20 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
   const handleTabChange = useCallback((e, newValue) => {
     setActiveTab(newValue)
   }, [])
+
+  // Transform payments for display with property and tenant info
+  const displayPayments = useMemo(() => {
+    return payments.map(payment => {
+      const property = propertyUnits.find(p => p.id === payment.propertyUnitId)
+      return {
+        ...payment,
+        propertyAddress: property?.address || 'Unknown',
+        tenantName: property?.tenant?.fullName || 'Unknown',
+        propertyId: property?.id,
+        tenantId: property?.tenant?.id
+      }
+    })
+  }, [payments, propertyUnits])
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
@@ -471,7 +485,7 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
           {activeTab === 1 && (
             <Box>
               {/* Empty State */}
-              {mockPayments.length === 0 && (
+              {payments.length === 0 && (
                 <Paper
                   sx={{
                     p: 4,
@@ -492,7 +506,7 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
               )}
 
               {/* Desktop/Tablet Table View */}
-              {mockPayments.length > 0 && (
+              {payments.length > 0 && (
               <>
               <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
                 <TableContainer>
@@ -507,7 +521,7 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {mockPayments.map((payment) => (
+                      {displayPayments.map((payment) => (
                         <TableRow
                           key={payment.id}
                           hover
@@ -515,23 +529,23 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
                           sx={{ cursor: 'pointer' }}
                         >
                           <TableCell sx={{ fontSize: '0.875rem' }}>
-                            {payment.property}
+                            {payment.propertyAddress}
                           </TableCell>
                           <TableCell sx={{ fontSize: '0.875rem' }}>
-                            {payment.tenant}
+                            {payment.tenantName}
                           </TableCell>
                           <TableCell sx={{ fontSize: '0.875rem', fontWeight: 500 }}>
                             {formatCurrency(payment.amount)}
                           </TableCell>
                           <TableCell sx={{ fontSize: '0.875rem' }}>
-                            {payment.date}
+                            {payment.paymentDate}
                           </TableCell>
                           <TableCell>
                             <Chip
-                              icon={payment.status === 'completed' ? <CheckCircle /> : <Schedule />}
-                              label={payment.status === 'completed' ? t('paid') : t('partialPayment')}
+                              icon={payment.status === 'COMPLETED' ? <CheckCircle /> : <Schedule />}
+                              label={payment.status === 'COMPLETED' ? t('paid') : t('pending')}
                               size="small"
-                              color={payment.status === 'completed' ? 'success' : 'warning'}
+                              color={payment.status === 'COMPLETED' ? 'success' : 'warning'}
                               sx={{ '& .MuiChip-icon': { fontSize: 16 } }}
                             />
                           </TableCell>
@@ -544,7 +558,7 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
 
               {/* Mobile Card View */}
               <Box sx={{ display: { xs: 'block', sm: 'none' } }}>
-                {mockPayments.map((payment) => (
+                {displayPayments.map((payment) => (
                   <Paper
                     key={payment.id}
                     variant="outlined"
@@ -560,25 +574,25 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
                   >
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
                       <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.875rem' }}>
-                        {payment.property}
+                        {payment.propertyAddress}
                       </Typography>
                       <Chip
-                        icon={payment.status === 'completed' ? <CheckCircle /> : <Schedule />}
-                        label={payment.status === 'completed' ? t('paid') : t('partialPayment')}
+                        icon={payment.status === 'COMPLETED' ? <CheckCircle /> : <Schedule />}
+                        label={payment.status === 'COMPLETED' ? t('paid') : t('pending')}
                         size="small"
-                        color={payment.status === 'completed' ? 'success' : 'warning'}
+                        color={payment.status === 'COMPLETED' ? 'success' : 'warning'}
                         sx={{ '& .MuiChip-icon': { fontSize: 14 }, ml: 1, flexShrink: 0 }}
                       />
                     </Box>
                     <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8125rem', mb: 1 }}>
-                      {payment.tenant}
+                      {payment.tenantName}
                     </Typography>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Typography variant="body1" sx={{ fontWeight: 600, color: 'primary.main' }}>
                         {formatCurrency(payment.amount)}
                       </Typography>
                       <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8125rem' }}>
-                        {payment.date}
+                        {payment.paymentDate}
                       </Typography>
                     </Box>
                   </Paper>
@@ -607,7 +621,7 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
             <>
               <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <Avatar sx={{ bgcolor: selectedPayment.status === 'completed' ? 'success.main' : 'warning.main', width: 48, height: 48 }}>
+                  <Avatar sx={{ bgcolor: selectedPayment.status === 'COMPLETED' ? 'success.main' : 'warning.main', width: 48, height: 48 }}>
                     <Receipt />
                   </Avatar>
                   <Box>
@@ -615,7 +629,7 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
                       {formatCurrency(selectedPayment.amount)}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {selectedPayment.reference || `#${selectedPayment.id}`}
+                      #{selectedPayment.id}
                     </Typography>
                   </Box>
                 </Box>
@@ -627,9 +641,9 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
                 {/* Status */}
                 <Box sx={{ mb: 3 }}>
                   <Chip
-                    icon={selectedPayment.status === 'completed' ? <CheckCircle /> : <Schedule />}
-                    label={selectedPayment.status === 'completed' ? (t('paid') || 'Pagado') : (t('partialPayment') || 'Parcial')}
-                    color={selectedPayment.status === 'completed' ? 'success' : 'warning'}
+                    icon={selectedPayment.status === 'COMPLETED' ? <CheckCircle /> : <Schedule />}
+                    label={selectedPayment.status === 'COMPLETED' ? (t('paid') || 'Pagado') : (t('pending') || 'Pendiente')}
+                    color={selectedPayment.status === 'COMPLETED' ? 'success' : 'warning'}
                     sx={{ fontWeight: 500 }}
                   />
                 </Box>
@@ -643,16 +657,7 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
                     <CalendarToday sx={{ fontSize: 20, color: 'text.secondary' }} />
                     <Box>
                       <Typography variant="caption" color="text.secondary">{t('paymentDateLabel')}</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>{selectedPayment.date}</Typography>
-                    </Box>
-                  </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-                    <CreditCard sx={{ fontSize: 20, color: 'text.secondary' }} />
-                    <Box>
-                      <Typography variant="caption" color="text.secondary">{t('paymentMethod') || 'Método de Pago'}</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                        {t(`method${selectedPayment.method.charAt(0).toUpperCase()}${selectedPayment.method.slice(1)}`)}
-                      </Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>{selectedPayment.paymentDate}</Typography>
                     </Box>
                   </Box>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -660,7 +665,7 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
                     <Box>
                       <Typography variant="caption" color="text.secondary">{t('type')}</Typography>
                       <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                        {selectedPayment.type === 'rent' ? (t('rentPayment') || 'Alquiler') : selectedPayment.type}
+                        {t(`${selectedPayment.paymentType?.toLowerCase()}Payment`) || selectedPayment.paymentType}
                       </Typography>
                     </Box>
                   </Box>
@@ -691,7 +696,7 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
                 >
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                     <Home sx={{ fontSize: 20, color: 'primary.main' }} />
-                    <Typography variant="body2" sx={{ fontWeight: 500, flex: 1 }}>{selectedPayment.property}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 500, flex: 1 }}>{selectedPayment.propertyAddress}</Typography>
                     {onNavigateToProperty && selectedPayment.propertyId && (
                       <OpenInNew sx={{ fontSize: 16, color: 'text.secondary' }} />
                     )}
@@ -723,23 +728,23 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
                 >
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                     <Person sx={{ fontSize: 20, color: 'primary.main' }} />
-                    <Typography variant="body2" sx={{ fontWeight: 500, flex: 1 }}>{selectedPayment.tenant}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 500, flex: 1 }}>{selectedPayment.tenantName}</Typography>
                     {onNavigateToTenant && selectedPayment.tenantId && (
                       <OpenInNew sx={{ fontSize: 16, color: 'text.secondary' }} />
                     )}
                   </Box>
                 </Paper>
 
-                {/* Notes */}
-                {selectedPayment.notes && (
+                {/* Description */}
+                {selectedPayment.description && (
                   <>
                     <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, textTransform: 'uppercase', fontSize: '0.75rem' }}>
-                      {t('notes') || 'Notas'}
+                      {t('descriptionLabel') || 'Description'}
                     </Typography>
                     <Paper variant="outlined" sx={{ p: 2, bgcolor: 'action.hover' }}>
                       <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
                         <Notes sx={{ fontSize: 20, color: 'text.secondary' }} />
-                        <Typography variant="body2">{selectedPayment.notes}</Typography>
+                        <Typography variant="body2">{selectedPayment.description}</Typography>
                       </Box>
                     </Paper>
                   </>
