@@ -3,6 +3,7 @@ package com.prop_pilot.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -19,15 +20,20 @@ public class Tenant {
     private Long id;
 
     @Column(nullable = false)
+    @NotBlank(message = "Full name is required")
     private String fullName;
 
     @Column(nullable = false, unique = true)
+    @NotBlank(message = "National ID is required")
     private String nationalId;
 
     @Column(nullable = false)
+    @NotBlank(message = "Email is required")
+    @Email(message = "Invalid email format")
     private String email;
 
     @Column(nullable = false)
+    @NotBlank(message = "Phone is required")
     private String phone;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -35,48 +41,53 @@ public class Tenant {
     @JsonIgnore
     private User owner;
 
-    @OneToMany(mappedBy = "tenant", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "tenant", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
-    private List<PropertyUnit> propertyUnits = new ArrayList<>();
+    private List<Lease> leases = new ArrayList<>();
+
+    @Transient
+    public Lease getActiveLease() {
+        if (leases == null) return null;
+        return leases.stream()
+            .filter(Lease::isActive)
+            .findFirst()
+            .orElse(null);
+    }
 
     @JsonProperty("property")
     public String getPropertyAddress() {
-        if (propertyUnits == null || propertyUnits.isEmpty()) {
-            return null;
-        }
-        return propertyUnits.get(0).getAddress();
+        Lease activeLease = getActiveLease();
+        return activeLease != null ? activeLease.getPropertyAddress() : null;
     }
 
     @JsonProperty("propertyId")
     public Long getPropertyId() {
-        if (propertyUnits == null || propertyUnits.isEmpty()) {
-            return null;
-        }
-        return propertyUnits.get(0).getId();
+        Lease activeLease = getActiveLease();
+        return activeLease != null && activeLease.getPropertyUnit() != null
+            ? activeLease.getPropertyUnit().getId() : null;
     }
 
     @JsonProperty("monthlyRent")
     public BigDecimal getMonthlyRent() {
-        if (propertyUnits == null || propertyUnits.isEmpty()) {
-            return null;
-        }
-        return propertyUnits.get(0).getBaseRentAmount();
+        Lease activeLease = getActiveLease();
+        return activeLease != null ? activeLease.getMonthlyRent() : null;
     }
 
     @JsonProperty("leaseStart")
     public LocalDate getLeaseStart() {
-        if (propertyUnits == null || propertyUnits.isEmpty()) {
-            return null;
-        }
-        return propertyUnits.get(0).getLeaseStartDate();
+        Lease activeLease = getActiveLease();
+        return activeLease != null ? activeLease.getStartDate() : null;
     }
 
     @JsonProperty("leaseEndDate")
     public LocalDate getLeaseEndDate() {
-        if (propertyUnits == null || propertyUnits.isEmpty()) {
-            return null;
-        }
-        LocalDate startDate = propertyUnits.get(0).getLeaseStartDate();
-        return startDate != null ? startDate.plusYears(1) : null;
+        Lease activeLease = getActiveLease();
+        return activeLease != null ? activeLease.getEndDate() : null;
+    }
+
+    @JsonProperty("activeLeaseId")
+    public Long getActiveLeaseId() {
+        Lease activeLease = getActiveLease();
+        return activeLease != null ? activeLease.getId() : null;
     }
 }

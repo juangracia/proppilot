@@ -42,7 +42,8 @@ import {
   Receipt,
   CalendarToday,
   Notes,
-  OpenInNew
+  OpenInNew,
+  Description
 } from '@mui/icons-material'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
@@ -57,7 +58,7 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
   const [activeTab, setActiveTab] = useState(0)
 
   const [formData, setFormData] = useState({
-    propertyUnitId: '',
+    leaseId: '',
     amount: '',
     paymentDate: null,
     paymentType: 'RENT',
@@ -66,7 +67,7 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
   })
 
   const [validationErrors, setValidationErrors] = useState({})
-  const [propertyUnits, setPropertyUnits] = useState([])
+  const [leases, setLeases] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
@@ -82,21 +83,22 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
     { value: 'OTHER', label: t('otherPayment') }
   ], [t])
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [propertiesRes, paymentsRes] = await Promise.all([
-          axios.get(`${API_BASE_URL}/property-units`),
-          axios.get(`${API_BASE_URL}/payments`)
-        ])
-        setPropertyUnits(propertiesRes.data)
-        setPayments(paymentsRes.data)
-      } catch (error) {
-        console.error('Error fetching data:', error)
-      }
+  const fetchData = useCallback(async () => {
+    try {
+      const [leasesRes, paymentsRes] = await Promise.all([
+        axios.get(`${API_BASE_URL}/leases/active`),
+        axios.get(`${API_BASE_URL}/payments`)
+      ])
+      setLeases(Array.isArray(leasesRes.data) ? leasesRes.data : [])
+      setPayments(Array.isArray(paymentsRes.data) ? paymentsRes.data : [])
+    } catch (error) {
+      console.error('Error fetching data:', error)
     }
-    fetchData()
   }, [])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
 
   // Auto-open detail dialog when initialPaymentId is provided
   useEffect(() => {
@@ -105,27 +107,27 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
       if (payment) {
         setSelectedPayment(payment)
         setDetailDialogOpen(true)
-        setActiveTab(1) // Switch to payment history tab
+        setActiveTab(0)
         onPaymentViewed?.()
       }
     }
   }, [initialPaymentId, payments, onPaymentViewed])
 
-  // Auto-fill rent amount when property is selected
-  const handlePropertyChange = useCallback((propertyId) => {
-    const selectedUnit = propertyUnits.find(u => u.id === parseInt(propertyId))
+  // Auto-fill rent amount when lease is selected
+  const handleLeaseChange = useCallback((leaseId) => {
+    const selectedLease = leases.find(l => l.id === parseInt(leaseId))
     setFormData(prev => ({
       ...prev,
-      propertyUnitId: propertyId,
-      amount: selectedUnit && !prev.isPartialPayment ? selectedUnit.baseRentAmount.toString() : prev.amount
+      leaseId: leaseId,
+      amount: selectedLease && !prev.isPartialPayment ? selectedLease.monthlyRent.toString() : prev.amount
     }))
-  }, [propertyUnits])
+  }, [leases])
 
   const validateForm = useCallback(() => {
     const errors = {}
 
-    if (!formData.propertyUnitId) {
-      errors.propertyUnitId = t('propertyUnitRequired')
+    if (!formData.leaseId) {
+      errors.leaseId = t('leaseRequired') || 'Contrato requerido'
     }
 
     if (!formData.amount) {
@@ -168,7 +170,7 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
 
     try {
       const paymentData = {
-        propertyUnit: { id: parseInt(formData.propertyUnitId) },
+        leaseId: parseInt(formData.leaseId),
         amount: parseFloat(formData.amount),
         paymentDate: format(formData.paymentDate, 'yyyy-MM-dd'),
         paymentType: formData.paymentType,
@@ -179,19 +181,21 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
 
       if (response.status === 201) {
         setSuccess(t('paymentRegisteredSuccess'))
+        // Add new payment to the list immediately (fix reload bug)
+        setPayments(prev => [response.data, ...prev])
         setFormData({
-          propertyUnitId: '',
+          leaseId: '',
           amount: '',
           paymentDate: null,
           paymentType: 'RENT',
-          description: ''
+          description: '',
+          isPartialPayment: false
         })
         setValidationErrors({})
       }
     } catch (err) {
       console.error('Error creating payment:', err)
 
-      // Handle validation errors from backend
       if (err.response?.status === 400 && err.response?.data?.validationErrors) {
         setValidationErrors(err.response.data.validationErrors)
         setError(t('fixValidationErrors'))
@@ -203,46 +207,24 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
     }
   }
 
-  const handleInputChange = (field) => (event) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: event.target.value
-    }))
-    // Clear messages when user starts typing
-    if (error) setError(null)
-    if (success) setSuccess(null)
-  }
-
-  const handleDateChange = (newDate) => {
-    setFormData(prev => ({
-      ...prev,
-      paymentDate: newDate
-    }))
-  }
-
-  const selectedPropertyUnit = useMemo(() =>
-    propertyUnits.find(unit => unit.id === parseInt(formData.propertyUnitId))
-  , [propertyUnits, formData.propertyUnitId])
+  const selectedLease = useMemo(() =>
+    leases.find(lease => lease.id === parseInt(formData.leaseId))
+  , [leases, formData.leaseId])
 
   const handleTabChange = useCallback((e, newValue) => {
     setActiveTab(newValue)
   }, [])
 
-  // Transform payments for display - use API response fields directly
+  // Transform payments for display
   const displayPayments = useMemo(() => {
-    return payments.map(payment => {
-      // Find property for navigation IDs only (API already provides propertyAddress and tenantName)
-      const property = propertyUnits.find(p => p.id === payment.propertyUnitIdRef)
-      return {
-        ...payment,
-        // Use API fields directly, fallback to lookup only if not present
-        propertyAddress: payment.propertyAddress || property?.address || 'Unknown',
-        tenantName: payment.tenantName || property?.tenant?.fullName || 'Sin inquilino',
-        propertyId: payment.propertyUnitIdRef || property?.id,
-        tenantId: property?.tenant?.id
-      }
-    })
-  }, [payments, propertyUnits])
+    return payments.map(payment => ({
+      ...payment,
+      propertyAddress: payment.propertyAddress || 'Unknown',
+      tenantName: payment.tenantName || 'Sin inquilino',
+      propertyId: payment.propertyUnitId,
+      tenantId: payment.tenantId
+    }))
+  }, [payments])
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
@@ -273,7 +255,25 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
                 </Alert>
               )}
 
-              {loading ? (
+              {leases.length === 0 ? (
+                <Paper
+                  sx={{
+                    p: 4,
+                    textAlign: 'center',
+                    bgcolor: 'background.default',
+                    border: '2px dashed',
+                    borderColor: 'divider'
+                  }}
+                >
+                  <Description sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
+                  <Typography variant="h6" color="text.secondary" gutterBottom>
+                    {t('noActiveLeases') || 'No hay contratos activos'}
+                  </Typography>
+                  <Typography variant="body2" color="text.disabled">
+                    {t('noActiveLeasesDesc') || 'Primero debes crear un contrato de alquiler para registrar pagos'}
+                  </Typography>
+                </Paper>
+              ) : loading ? (
                 <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
                   <CircularProgress />
                 </Box>
@@ -281,22 +281,22 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
             <Box component="form" onSubmit={handleSubmit}>
               <Grid container spacing={{ xs: 2, sm: 3 }}>
                 <Grid size={{ xs: 12, md: 6 }}>
-                  <FormControl fullWidth required error={!!validationErrors.propertyUnitId}>
-                    <InputLabel>{t('propertyUnitLabel')}</InputLabel>
+                  <FormControl fullWidth required error={!!validationErrors.leaseId}>
+                    <InputLabel>{t('selectLease') || 'Seleccionar Contrato'}</InputLabel>
                     <Select
-                      value={formData.propertyUnitId}
-                      onChange={(e) => handlePropertyChange(e.target.value)}
-                      label={t('propertyUnitLabel')}
+                      value={formData.leaseId}
+                      onChange={(e) => handleLeaseChange(e.target.value)}
+                      label={t('selectLease') || 'Seleccionar Contrato'}
                     >
-                      {propertyUnits.map((unit) => (
-                        <MenuItem key={unit.id} value={unit.id}>
-                          {unit.address} ({unit.type}) - {formatCurrency(unit.baseRentAmount)}
+                      {leases.map((lease) => (
+                        <MenuItem key={lease.id} value={lease.id}>
+                          {lease.propertyAddress} - {lease.tenantName} ({formatCurrency(lease.monthlyRent)})
                         </MenuItem>
                       ))}
                     </Select>
-                    {validationErrors.propertyUnitId && (
+                    {validationErrors.leaseId && (
                       <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.75 }}>
-                        {validationErrors.propertyUnitId}
+                        {validationErrors.leaseId}
                       </Typography>
                     )}
                   </FormControl>
@@ -383,7 +383,7 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
                   />
                 </Grid>
 
-                {selectedPropertyUnit && (
+                {selectedLease && (
                   <Grid size={{ xs: 12 }}>
                     <Box sx={{
                       p: { xs: 1.5, sm: 2 },
@@ -398,35 +398,39 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
                         color="primary"
                         sx={{ fontSize: { xs: '0.875rem', sm: '0.875rem' } }}
                       >
-                        {t('selectedPropertyDetails')}
+                        {t('leaseDetails') || 'Detalles del Contrato'}
                       </Typography>
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                         <Typography
                           variant="body2"
                           sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
                         >
-                          <strong>{t('addressLabel')}:</strong> {selectedPropertyUnit.address}
+                          <strong>{t('propertyInfo') || 'Propiedad'}:</strong> {selectedLease.propertyAddress}
                         </Typography>
                         <Typography
                           variant="body2"
                           sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
                         >
-                          <strong>{t('type')}:</strong> {t(selectedPropertyUnit.type.toLowerCase())}
+                          <strong>{t('tenant')}:</strong> {selectedLease.tenantName}
                         </Typography>
                         <Typography
                           variant="body2"
                           sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
                         >
-                          <strong>{t('baseRentLabel')}:</strong> {formatCurrency(selectedPropertyUnit.baseRentAmount)}
+                          <strong>{t('monthlyRent') || 'Alquiler Mensual'}:</strong> {formatCurrency(selectedLease.monthlyRent)}
                         </Typography>
-                        {selectedPropertyUnit.tenant && (
-                          <Typography
-                            variant="body2"
-                            sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
-                          >
-                            <strong>{t('tenant')}:</strong> {selectedPropertyUnit.tenant.firstName} {selectedPropertyUnit.tenant.lastName}
-                          </Typography>
-                        )}
+                        <Typography
+                          variant="body2"
+                          sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
+                        >
+                          <strong>{t('leasePeriod') || 'Período'}:</strong> {selectedLease.startDate} - {selectedLease.endDate}
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
+                        >
+                          <strong>{t('adjustmentIndex') || 'Índice de Ajuste'}:</strong> {selectedLease.adjustmentIndex}
+                        </Typography>
                       </Box>
                     </Box>
                   </Grid>
@@ -447,7 +451,7 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
                       variant="outlined"
                       onClick={() => {
                         setFormData({
-                          propertyUnitId: '',
+                          leaseId: '',
                           amount: '',
                           paymentDate: null,
                           paymentType: 'RENT',
@@ -673,6 +677,26 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
                     </Box>
                   </Box>
                 </Paper>
+
+                {/* Lease Info */}
+                {(selectedPayment.leaseStartDate || selectedPayment.leaseEndDate) && (
+                  <>
+                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, textTransform: 'uppercase', fontSize: '0.75rem' }}>
+                      {t('leaseInfo') || 'Contrato'}
+                    </Typography>
+                    <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                        <Description sx={{ fontSize: 20, color: 'text.secondary' }} />
+                        <Box>
+                          <Typography variant="caption" color="text.secondary">{t('leasePeriod') || 'Período'}</Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                            {selectedPayment.leaseStartDate} - {selectedPayment.leaseEndDate}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Paper>
+                  </>
+                )}
 
                 {/* Property Info */}
                 <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, textTransform: 'uppercase', fontSize: '0.75rem' }}>

@@ -110,8 +110,8 @@ const TenantsList = memo(function TenantsList({ onNavigateToProperty, onNavigate
         axios.get(`${API_BASE_URL}/tenants`),
         axios.get(`${API_BASE_URL}/payments`)
       ])
-      setTenants(tenantsRes.data)
-      setAllPayments(paymentsRes.data)
+      setTenants(Array.isArray(tenantsRes.data) ? tenantsRes.data : [])
+      setAllPayments(Array.isArray(paymentsRes.data) ? paymentsRes.data : [])
     } catch (error) {
       console.error('Error loading tenants:', error)
       showSnackbar(t('errorOccurred'), 'error')

@@ -2,12 +2,14 @@ package com.prop_pilot.service.impl;
 
 import com.prop_pilot.entity.PropertyUnit;
 import com.prop_pilot.entity.User;
+import com.prop_pilot.exception.BusinessLogicException;
 import com.prop_pilot.exception.ResourceNotFoundException;
-import com.prop_pilot.exception.ValidationException;
 import com.prop_pilot.repository.PropertyUnitRepository;
 import com.prop_pilot.service.PropertyUnitService;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 
 @Service
@@ -20,6 +22,7 @@ public class PropertyUnitServiceImpl implements PropertyUnitService {
     }
 
     @Override
+    @Transactional
     public PropertyUnit createPropertyUnit(@NonNull PropertyUnit propertyUnit, @NonNull User owner) {
         propertyUnit.setOwner(owner);
         return propertyUnitRepository.save(propertyUnit);
@@ -37,30 +40,38 @@ public class PropertyUnitServiceImpl implements PropertyUnitService {
     }
 
     @Override
-    public List<PropertyUnit> getPropertyUnitsByTenant(Long tenantId, @NonNull Long ownerId) {
-        return propertyUnitRepository.findByTenantIdAndOwnerId(tenantId, ownerId);
+    public List<PropertyUnit> getAllPropertyUnitsWithLeases(@NonNull Long ownerId) {
+        return propertyUnitRepository.findByOwnerIdWithLeases(ownerId);
     }
 
     @Override
-    public PropertyUnit updatePropertyUnit(@NonNull Long id, PropertyUnit propertyUnit, @NonNull Long ownerId) {
+    @Transactional
+    public PropertyUnit updatePropertyUnit(@NonNull Long id, @NonNull PropertyUnit propertyUnit, @NonNull Long ownerId) {
         PropertyUnit existingPropertyUnit = getPropertyUnitById(id, ownerId);
 
-        // Validate business rules
-        if (propertyUnit.getBaseRentAmount() != null && propertyUnit.getBaseRentAmount().compareTo(existingPropertyUnit.getBaseRentAmount()) < 0) {
-            throw new ValidationException("New rent amount cannot be lower than current rent amount");
+        if (propertyUnit.getAddress() != null) {
+            existingPropertyUnit.setAddress(propertyUnit.getAddress());
+        }
+        if (propertyUnit.getType() != null) {
+            existingPropertyUnit.setType(propertyUnit.getType());
+        }
+        if (propertyUnit.getBaseRentAmount() != null) {
+            existingPropertyUnit.setBaseRentAmount(propertyUnit.getBaseRentAmount());
         }
 
-        existingPropertyUnit.setAddress(propertyUnit.getAddress());
-        existingPropertyUnit.setType(propertyUnit.getType());
-        existingPropertyUnit.setBaseRentAmount(propertyUnit.getBaseRentAmount());
-        existingPropertyUnit.setLeaseStartDate(propertyUnit.getLeaseStartDate());
-        existingPropertyUnit.setTenant(propertyUnit.getTenant());
         return propertyUnitRepository.save(existingPropertyUnit);
     }
 
     @Override
+    @Transactional
     public void deletePropertyUnit(@NonNull Long id, @NonNull Long ownerId) {
         PropertyUnit propertyUnit = getPropertyUnitById(id, ownerId);
+
+        // Don't allow deletion if there are active leases
+        if (propertyUnit.getLeases() != null && !propertyUnit.getLeases().isEmpty()) {
+            throw new BusinessLogicException("Cannot delete property unit with existing leases");
+        }
+
         propertyUnitRepository.delete(propertyUnit);
     }
 

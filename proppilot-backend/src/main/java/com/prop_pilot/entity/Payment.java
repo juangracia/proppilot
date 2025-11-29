@@ -3,7 +3,9 @@ package com.prop_pilot.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
@@ -16,9 +18,9 @@ public class Payment {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "property_unit_id", nullable = false)
-    @JsonBackReference
-    private PropertyUnit propertyUnit;
+    @JoinColumn(name = "lease_id", nullable = false)
+    @JsonBackReference("lease-payments")
+    private Lease lease;
 
     @Column(nullable = false, precision = 10, scale = 2)
     @NotNull(message = "Payment amount is required")
@@ -43,34 +45,60 @@ public class Payment {
     @Column(nullable = false)
     private PaymentStatus status = PaymentStatus.PAID;
 
-    // Legacy fields for compatibility
-    @Column
-    private String monthYear;
-
-    @Column
-    private String appliedIndex;
-
     @Transient
-    @com.fasterxml.jackson.annotation.JsonProperty("propertyUnitId")
-    private Long inputPropertyUnitId;
+    @JsonProperty("leaseId")
+    private Long inputLeaseId;
 
-    // Computed JSON properties for API responses
-    @com.fasterxml.jackson.annotation.JsonProperty("propertyAddress")
+    @JsonProperty("propertyAddress")
     public String getPropertyAddress() {
-        return propertyUnit != null ? propertyUnit.getAddress() : null;
-    }
-
-    @com.fasterxml.jackson.annotation.JsonProperty("tenantName")
-    public String getTenantName() {
-        if (propertyUnit != null && propertyUnit.getTenant() != null) {
-            return propertyUnit.getTenant().getFullName();
+        if (lease != null && lease.getPropertyUnit() != null) {
+            return lease.getPropertyUnit().getAddress();
         }
         return null;
     }
 
-    @com.fasterxml.jackson.annotation.JsonProperty("propertyUnitIdRef")
+    @JsonProperty("tenantName")
+    public String getTenantName() {
+        if (lease != null && lease.getTenant() != null) {
+            return lease.getTenant().getFullName();
+        }
+        return null;
+    }
+
+    @JsonProperty("tenantId")
+    public Long getTenantIdRef() {
+        if (lease != null && lease.getTenant() != null) {
+            return lease.getTenant().getId();
+        }
+        return null;
+    }
+
+    @JsonProperty("propertyUnitId")
     public Long getPropertyUnitIdRef() {
-        return propertyUnit != null ? propertyUnit.getId() : null;
+        if (lease != null && lease.getPropertyUnit() != null) {
+            return lease.getPropertyUnit().getId();
+        }
+        return null;
+    }
+
+    @JsonProperty("leaseIdRef")
+    public Long getLeaseIdRef() {
+        return lease != null ? lease.getId() : null;
+    }
+
+    @JsonProperty("leaseStartDate")
+    public LocalDate getLeaseStartDate() {
+        return lease != null ? lease.getStartDate() : null;
+    }
+
+    @JsonProperty("leaseEndDate")
+    public LocalDate getLeaseEndDate() {
+        return lease != null ? lease.getEndDate() : null;
+    }
+
+    @JsonProperty("monthlyRent")
+    public BigDecimal getMonthlyRent() {
+        return lease != null ? lease.getMonthlyRent() : null;
     }
 
     public enum PaymentType {

@@ -29,7 +29,8 @@ import {
   People,
   Menu,
   Logout,
-  HelpOutline
+  HelpOutline,
+  Description
 } from '@mui/icons-material'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
@@ -37,6 +38,7 @@ import DashboardView from './components/DashboardView'
 import PropertyUnitsList from './components/PropertyUnitsList'
 import PaymentForm from './components/PaymentForm'
 import TenantsList from './components/TenantsList'
+import LeaseForm from './components/LeaseForm'
 import LoginPage from './components/LoginPage'
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
@@ -84,7 +86,8 @@ function AppContent() {
     { text: t('dashboardMenu'), icon: <Dashboard />, value: 0, tourId: 'nav-dashboard' },
     { text: t('propertiesMenu'), icon: <Home />, value: 1, tourId: 'nav-properties' },
     { text: t('tenantsMenu'), icon: <People />, value: 2, tourId: 'nav-tenants' },
-    { text: t('paymentsMenu'), icon: <Payment />, value: 3, tourId: 'nav-payments' }
+    { text: t('leasesMenu') || 'Contratos', icon: <Description />, value: 3, tourId: 'nav-leases' },
+    { text: t('paymentsMenu'), icon: <Payment />, value: 4, tourId: 'nav-payments' }
   ], [t])
 
   const handleDrawerToggle = useCallback(() => {
@@ -384,7 +387,7 @@ function AppContent() {
 
   const handleNavigateToPayment = useCallback((paymentId) => {
     setSelectedPaymentId(paymentId)
-    setSelectedView(3) // Payments view
+    setSelectedView(4) // Payments view
   }, [])
 
   const currentViewTitle = useMemo(() => {
@@ -396,6 +399,8 @@ function AppContent() {
       case 2:
         return t('tenantsTitle')
       case 3:
+        return t('leasesTitle') || 'Contratos'
+      case 4:
         return t('registerPaymentTitle')
       default:
         return t('dashboardTitle')
@@ -411,6 +416,8 @@ function AppContent() {
       case 2:
         return ''
       case 3:
+        return ''
+      case 4:
         return ''
       default:
         return t('dashboardSubtitle')
@@ -440,6 +447,13 @@ function AppContent() {
           />
         )
       case 3:
+        return (
+          <LeaseForm
+            onNavigateToProperty={handleNavigateToProperty}
+            onNavigateToTenant={handleNavigateToTenant}
+          />
+        )
+      case 4:
         return (
           <PaymentForm
             onNavigateToProperty={handleNavigateToProperty}

@@ -20,7 +20,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/payments")
-@Tag(name = "Payments", description = "API for managing rental payments and calculations")
+@Tag(name = "Payments", description = "API for managing rental payments")
 public class PaymentController {
 
     private final PaymentService paymentService;
@@ -32,10 +32,10 @@ public class PaymentController {
     }
 
     @PostMapping
-    @Operation(summary = "Create a new payment", description = "Registers a new payment for a property unit")
+    @Operation(summary = "Create a new payment", description = "Registers a new payment for a lease contract")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "201", description = "Payment created successfully"),
-        @ApiResponse(responseCode = "400", description = "Invalid payment data")
+        @ApiResponse(responseCode = "400", description = "Invalid payment data or missing lease")
     })
     public ResponseEntity<Payment> createPayment(@Valid @RequestBody Payment payment) {
         Long ownerId = currentUserService.getCurrentUserId();
@@ -61,12 +61,30 @@ public class PaymentController {
         return ResponseEntity.ok(payments);
     }
 
+    @GetMapping("/lease/{leaseId}")
+    @Operation(summary = "Get payments by lease", description = "Retrieves all payments for a specific lease contract")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved payments for lease")
+    public ResponseEntity<List<Payment>> getPaymentsByLease(@PathVariable Long leaseId) {
+        Long ownerId = currentUserService.getCurrentUserId();
+        List<Payment> payments = paymentService.getPaymentsByLease(leaseId, ownerId);
+        return ResponseEntity.ok(payments);
+    }
+
     @GetMapping("/property-unit/{propertyUnitId}")
-    @Operation(summary = "Get payments by property unit", description = "Retrieves all payments for a specific property unit")
+    @Operation(summary = "Get payments by property unit", description = "Retrieves all payments for a specific property unit across all leases")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved payments for property unit")
     public ResponseEntity<List<Payment>> getPaymentsByPropertyUnit(@PathVariable Long propertyUnitId) {
         Long ownerId = currentUserService.getCurrentUserId();
         List<Payment> payments = paymentService.getPaymentsByPropertyUnit(propertyUnitId, ownerId);
+        return ResponseEntity.ok(payments);
+    }
+
+    @GetMapping("/tenant/{tenantId}")
+    @Operation(summary = "Get payments by tenant", description = "Retrieves all payments made by a specific tenant")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved payments for tenant")
+    public ResponseEntity<List<Payment>> getPaymentsByTenant(@PathVariable Long tenantId) {
+        Long ownerId = currentUserService.getCurrentUserId();
+        List<Payment> payments = paymentService.getPaymentsByTenant(tenantId, ownerId);
         return ResponseEntity.ok(payments);
     }
 
@@ -88,67 +106,51 @@ public class PaymentController {
         return ResponseEntity.noContent().build();
     }
 
-    // Advanced rent calculation endpoints
-
-    @GetMapping("/property-unit/{propertyUnitId}/adjusted-rent")
-    @Operation(summary = "Calculate adjusted rent", description = "Calculates the adjusted rent for a property unit based on lease terms and time elapsed")
-    @ApiResponse(responseCode = "200", description = "Adjusted rent calculated successfully")
-    public ResponseEntity<BigDecimal> calculateAdjustedRent(
-            @Parameter(description = "Property unit ID") @PathVariable Long propertyUnitId,
-            @Parameter(description = "Effective date for calculation (defaults to current date)")
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate effectiveDate) {
-
-        LocalDate calculationDate = effectiveDate != null ? effectiveDate : LocalDate.now();
-        Long ownerId = currentUserService.getCurrentUserId();
-        BigDecimal adjustedRent = paymentService.calculateAdjustedRent(propertyUnitId, calculationDate, ownerId);
-        return ResponseEntity.ok(adjustedRent);
-    }
-
-    @GetMapping("/property-unit/{propertyUnitId}/outstanding")
-    @Operation(summary = "Get outstanding payments", description = "Retrieves all outstanding (pending) payments for a property unit")
+    @GetMapping("/lease/{leaseId}/outstanding")
+    @Operation(summary = "Get outstanding payments", description = "Retrieves all outstanding (pending) payments for a lease")
     @ApiResponse(responseCode = "200", description = "Outstanding payments retrieved successfully")
-    public ResponseEntity<List<Payment>> getOutstandingPayments(@PathVariable Long propertyUnitId) {
+    public ResponseEntity<List<Payment>> getOutstandingPayments(@PathVariable Long leaseId) {
         Long ownerId = currentUserService.getCurrentUserId();
-        List<Payment> outstandingPayments = paymentService.getOutstandingPayments(propertyUnitId, ownerId);
+        List<Payment> outstandingPayments = paymentService.getOutstandingPaymentsByLease(leaseId, ownerId);
         return ResponseEntity.ok(outstandingPayments);
     }
 
-    @GetMapping("/property-unit/{propertyUnitId}/outstanding-amount")
-    @Operation(summary = "Calculate outstanding amount", description = "Calculates the total outstanding rent amount for a property unit")
+    @GetMapping("/lease/{leaseId}/outstanding-amount")
+    @Operation(summary = "Calculate outstanding amount", description = "Calculates the total outstanding rent amount for a lease")
     @ApiResponse(responseCode = "200", description = "Outstanding amount calculated successfully")
     public ResponseEntity<BigDecimal> calculateOutstandingAmount(
-            @Parameter(description = "Property unit ID") @PathVariable Long propertyUnitId,
+            @Parameter(description = "Lease ID") @PathVariable Long leaseId,
             @Parameter(description = "As of date for calculation (defaults to current date)")
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate asOfDate) {
 
         LocalDate calculationDate = asOfDate != null ? asOfDate : LocalDate.now();
         Long ownerId = currentUserService.getCurrentUserId();
-        BigDecimal outstandingAmount = paymentService.calculateOutstandingAmount(propertyUnitId, calculationDate, ownerId);
+        BigDecimal outstandingAmount = paymentService.calculateOutstandingAmount(leaseId, calculationDate, ownerId);
         return ResponseEntity.ok(outstandingAmount);
     }
 
-    @GetMapping("/property-unit/{propertyUnitId}/total-paid")
-    @Operation(summary = "Get total paid amount by payment type", description = "Calculates total amount paid for a specific payment type")
+    @GetMapping("/lease/{leaseId}/total-paid")
+    @Operation(summary = "Get total paid amount by payment type", description = "Calculates total amount paid for a specific payment type on a lease")
     @ApiResponse(responseCode = "200", description = "Total paid amount calculated successfully")
     public ResponseEntity<BigDecimal> getTotalPaidAmount(
-            @Parameter(description = "Property unit ID") @PathVariable Long propertyUnitId,
+            @Parameter(description = "Lease ID") @PathVariable Long leaseId,
             @Parameter(description = "Payment type") @RequestParam Payment.PaymentType paymentType) {
 
         Long ownerId = currentUserService.getCurrentUserId();
-        BigDecimal totalPaid = paymentService.getTotalPaidAmount(propertyUnitId, paymentType, ownerId);
+        BigDecimal totalPaid = paymentService.getTotalPaidAmountByLease(leaseId, paymentType, ownerId);
         return ResponseEntity.ok(totalPaid);
     }
 
-    @GetMapping("/property-unit/{propertyUnitId}/history")
-    @Operation(summary = "Get payment history", description = "Retrieves payment history for a property unit within a date range")
+    @GetMapping("/lease/{leaseId}/history")
+    @Operation(summary = "Get payment history", description = "Retrieves payment history for a lease within a date range")
     @ApiResponse(responseCode = "200", description = "Payment history retrieved successfully")
     public ResponseEntity<List<Payment>> getPaymentHistory(
-            @Parameter(description = "Property unit ID") @PathVariable Long propertyUnitId,
+            @Parameter(description = "Lease ID") @PathVariable Long leaseId,
             @Parameter(description = "Start date") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @Parameter(description = "End date") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
 
         Long ownerId = currentUserService.getCurrentUserId();
-        List<Payment> paymentHistory = paymentService.getPaymentHistory(propertyUnitId, startDate, endDate, ownerId);
+        List<Payment> paymentHistory = paymentService.getPaymentHistory(leaseId, startDate, endDate, ownerId);
         return ResponseEntity.ok(paymentHistory);
     }
 }

@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
 @RestController
@@ -62,10 +63,12 @@ public class PropertyUnitController {
         return ResponseEntity.ok(propertyUnits);
     }
 
-    @GetMapping("/tenant/{tenantId}")
-    public ResponseEntity<List<PropertyUnit>> getPropertyUnitsByTenant(@PathVariable Long tenantId) {
+    @GetMapping("/with-leases")
+    @Operation(summary = "Get all property units with leases", description = "Retrieves all property units with their associated leases")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved property units with leases")
+    public ResponseEntity<List<PropertyUnit>> getAllPropertyUnitsWithLeases() {
         Long ownerId = currentUserService.getCurrentUserId();
-        List<PropertyUnit> propertyUnits = propertyUnitService.getPropertyUnitsByTenant(tenantId, ownerId);
+        List<PropertyUnit> propertyUnits = propertyUnitService.getAllPropertyUnitsWithLeases(ownerId);
         return ResponseEntity.ok(propertyUnits);
     }
 
@@ -80,6 +83,8 @@ public class PropertyUnitController {
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "Update a property unit", description = "Updates an existing property unit")
+    @ApiResponse(responseCode = "200", description = "Property unit updated successfully")
     public ResponseEntity<PropertyUnit> updatePropertyUnit(@PathVariable @NonNull Long id, @Valid @RequestBody PropertyUnit propertyUnit) {
         Long ownerId = currentUserService.getCurrentUserId();
         PropertyUnit updatedPropertyUnit = propertyUnitService.updatePropertyUnit(id, propertyUnit, ownerId);
@@ -87,6 +92,8 @@ public class PropertyUnitController {
     }
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "Delete a property unit", description = "Deletes a property unit (only if no leases exist)")
+    @ApiResponse(responseCode = "204", description = "Property unit deleted successfully")
     public ResponseEntity<Void> deletePropertyUnit(@PathVariable @NonNull Long id) {
         Long ownerId = currentUserService.getCurrentUserId();
         propertyUnitService.deletePropertyUnit(id, ownerId);

@@ -89,7 +89,8 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
       setError(null)
       const response = await axios.get(`${API_BASE_URL}/property-units`)
       // Transform API response to match expected format
-      const transformedData = response.data.map(property => {
+      const dataArray = Array.isArray(response.data) ? response.data : []
+      const transformedData = dataArray.map(property => {
         const lastPayment = property.payments && property.payments.length > 0
           ? property.payments.sort((a, b) => new Date(b.paymentDate) - new Date(a.paymentDate))[0]
           : null

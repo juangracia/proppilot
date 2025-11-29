@@ -45,9 +45,9 @@ const DashboardView = memo(({ onNavigate }) => {
           axios.get(`${API_BASE_URL}/tenants`),
           axios.get(`${API_BASE_URL}/payments`)
         ])
-        setPropertyUnits(propertiesRes.data)
-        setTenants(tenantsRes.data)
-        setPayments(paymentsRes.data)
+        setPropertyUnits(Array.isArray(propertiesRes.data) ? propertiesRes.data : [])
+        setTenants(Array.isArray(tenantsRes.data) ? tenantsRes.data : [])
+        setPayments(Array.isArray(paymentsRes.data) ? paymentsRes.data : [])
       } catch (error) {
         console.error('Error fetching dashboard data:', error)
       } finally {
