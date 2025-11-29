@@ -228,15 +228,17 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
     setActiveTab(newValue)
   }, [])
 
-  // Transform payments for display with property and tenant info
+  // Transform payments for display - use API response fields directly
   const displayPayments = useMemo(() => {
     return payments.map(payment => {
-      const property = propertyUnits.find(p => p.id === payment.propertyUnitId)
+      // Find property for navigation IDs only (API already provides propertyAddress and tenantName)
+      const property = propertyUnits.find(p => p.id === payment.propertyUnitIdRef)
       return {
         ...payment,
-        propertyAddress: property?.address || 'Unknown',
-        tenantName: property?.tenant?.fullName || 'Unknown',
-        propertyId: property?.id,
+        // Use API fields directly, fallback to lookup only if not present
+        propertyAddress: payment.propertyAddress || property?.address || 'Unknown',
+        tenantName: payment.tenantName || property?.tenant?.fullName || 'Sin inquilino',
+        propertyId: payment.propertyUnitIdRef || property?.id,
         tenantId: property?.tenant?.id
       }
     })
