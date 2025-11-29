@@ -32,9 +32,18 @@ public class CorsConfig implements WebMvcConfigurer {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        List<String> origins = Arrays.asList(corsOrigins.split(","));
-        configuration.setAllowedOrigins(origins);
-        configuration.setAllowedOriginPatterns(Arrays.asList("http://localhost:*", "https://*.railway.app", "https://proppilot.com", "https://www.proppilot.com"));
+        // Use only allowedOriginPatterns to support wildcards and special schemes
+        configuration.setAllowedOriginPatterns(Arrays.asList(
+            "http://localhost:*",
+            "https://localhost",
+            "https://localhost:*",
+            "capacitor://localhost",
+            "ionic://localhost",
+            "https://*.railway.app",
+            "https://proppilot.com",
+            "https://www.proppilot.com",
+            "https://www.proppilot.live"
+        ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
