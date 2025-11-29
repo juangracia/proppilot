@@ -30,7 +30,7 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     public Payment createPayment(@NonNull Payment payment, @NonNull Long ownerId) {
         // Get property unit ID from transient field or from nested object
-        Long propUnitId = payment.getPropertyUnitId();
+        Long propUnitId = payment.getInputPropertyUnitId();
         if (propUnitId == null && payment.getPropertyUnit() != null) {
             propUnitId = payment.getPropertyUnit().getId();
         }

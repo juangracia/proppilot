@@ -52,7 +52,7 @@ public class Payment {
 
     @Transient
     @com.fasterxml.jackson.annotation.JsonProperty("propertyUnitId")
-    private Long propertyUnitId;
+    private Long inputPropertyUnitId;
 
     public enum PaymentType {
         RENT,
