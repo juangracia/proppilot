@@ -898,9 +898,9 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
                                   </Typography>
                                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                     <Chip
-                                      label={t(`status${payment.status.charAt(0).toUpperCase()}${payment.status.slice(1)}`)}
+                                      label={payment.status === 'PAID' ? t('paid') : t('pending')}
                                       size="small"
-                                      color={payment.status === 'completed' ? 'success' : 'warning'}
+                                      color={payment.status === 'PAID' ? 'success' : 'warning'}
                                       sx={{ height: 20, fontSize: '0.7rem' }}
                                     />
                                     {onNavigateToPayment && (

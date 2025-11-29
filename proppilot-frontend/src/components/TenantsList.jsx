@@ -71,6 +71,7 @@ const TenantsList = memo(function TenantsList({ onNavigateToProperty, onNavigate
   const [tenantToDelete, setTenantToDelete] = useState(null)
   const [detailDialogOpen, setDetailDialogOpen] = useState(false)
   const [selectedTenant, setSelectedTenant] = useState(null)
+  const [allPayments, setAllPayments] = useState([])
 
   // Auto-open detail dialog when initialTenantId is provided
   useEffect(() => {
@@ -105,8 +106,12 @@ const TenantsList = memo(function TenantsList({ onNavigateToProperty, onNavigate
   const loadTenants = useCallback(async () => {
     try {
       setLoading(true)
-      const response = await axios.get(`${API_BASE_URL}/tenants`)
-      setTenants(response.data)
+      const [tenantsRes, paymentsRes] = await Promise.all([
+        axios.get(`${API_BASE_URL}/tenants`),
+        axios.get(`${API_BASE_URL}/payments`)
+      ])
+      setTenants(tenantsRes.data)
+      setAllPayments(paymentsRes.data)
     } catch (error) {
       console.error('Error loading tenants:', error)
       showSnackbar(t('errorOccurred'), 'error')
@@ -285,11 +290,17 @@ const TenantsList = memo(function TenantsList({ onNavigateToProperty, onNavigate
   }, [])
 
   const tenantPayments = useMemo(() => {
-    if (!selectedTenant) return []
-    // Payments are not included in tenant API response
-    // They would need to be fetched separately if needed
-    return []
-  }, [selectedTenant])
+    if (!selectedTenant || !selectedTenant.propertyId) return []
+    return allPayments
+      .filter(p => p.propertyUnitIdRef === selectedTenant.propertyId)
+      .sort((a, b) => new Date(b.paymentDate) - new Date(a.paymentDate))
+  }, [selectedTenant, allPayments])
+
+  const computedPaymentStatus = useMemo(() => {
+    if (tenantPayments.length === 0) return 'onTime'
+    const hasPending = tenantPayments.some(p => p.status === 'PENDING')
+    return hasPending ? 'late' : 'onTime'
+  }, [tenantPayments])
 
   if (loading) {
     return (
@@ -763,9 +774,9 @@ const TenantsList = memo(function TenantsList({ onNavigateToProperty, onNavigate
               {/* Status Chip */}
               <Box sx={{ mb: 3 }}>
                 <Chip
-                  icon={selectedTenant.paymentStatus === 'onTime' ? <CheckCircle /> : <Warning />}
-                  label={t(selectedTenant.paymentStatus)}
-                  color={selectedTenant.paymentStatus === 'onTime' ? 'success' : 'error'}
+                  icon={computedPaymentStatus === 'onTime' ? <CheckCircle /> : <Warning />}
+                  label={t(computedPaymentStatus)}
+                  color={computedPaymentStatus === 'onTime' ? 'success' : 'error'}
                   sx={{ fontWeight: 500 }}
                 />
               </Box>
@@ -889,9 +900,9 @@ const TenantsList = memo(function TenantsList({ onNavigateToProperty, onNavigate
                               </Typography>
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                 <Chip
-                                  label={t(`status${payment.status.charAt(0).toUpperCase()}${payment.status.slice(1)}`)}
+                                  label={t(payment.status === 'PAID' ? 'paid' : 'pending')}
                                   size="small"
-                                  color={payment.status === 'completed' ? 'success' : 'warning'}
+                                  color={payment.status === 'PAID' ? 'success' : 'warning'}
                                   sx={{ height: 20, fontSize: '0.7rem' }}
                                 />
                                 {onNavigateToPayment && (
@@ -902,7 +913,7 @@ const TenantsList = memo(function TenantsList({ onNavigateToProperty, onNavigate
                           }
                           secondary={
                             <Typography variant="caption" color="text.secondary">
-                              {payment.date} • {t(`method${payment.method.charAt(0).toUpperCase()}${payment.method.slice(1)}`)}
+                              {payment.paymentDate} • {payment.paymentType}
                             </Typography>
                           }
                         />

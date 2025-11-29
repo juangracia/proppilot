@@ -47,6 +47,14 @@ public class Tenant {
         return propertyUnits.get(0).getAddress();
     }
 
+    @JsonProperty("propertyId")
+    public Long getPropertyId() {
+        if (propertyUnits == null || propertyUnits.isEmpty()) {
+            return null;
+        }
+        return propertyUnits.get(0).getId();
+    }
+
     @JsonProperty("monthlyRent")
     public BigDecimal getMonthlyRent() {
         if (propertyUnits == null || propertyUnits.isEmpty()) {
