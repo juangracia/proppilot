@@ -54,6 +54,25 @@ public class Payment {
     @com.fasterxml.jackson.annotation.JsonProperty("propertyUnitId")
     private Long inputPropertyUnitId;
 
+    // Computed JSON properties for API responses
+    @com.fasterxml.jackson.annotation.JsonProperty("propertyAddress")
+    public String getPropertyAddress() {
+        return propertyUnit != null ? propertyUnit.getAddress() : null;
+    }
+
+    @com.fasterxml.jackson.annotation.JsonProperty("tenantName")
+    public String getTenantName() {
+        if (propertyUnit != null && propertyUnit.getTenant() != null) {
+            return propertyUnit.getTenant().getFullName();
+        }
+        return null;
+    }
+
+    @com.fasterxml.jackson.annotation.JsonProperty("propertyUnitIdRef")
+    public Long getPropertyUnitIdRef() {
+        return propertyUnit != null ? propertyUnit.getId() : null;
+    }
+
     public enum PaymentType {
         RENT,
         DEPOSIT,

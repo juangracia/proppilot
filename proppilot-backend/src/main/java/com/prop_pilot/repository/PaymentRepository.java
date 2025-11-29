@@ -24,16 +24,16 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     @Query("SELECT p FROM Payment p WHERE p.propertyUnit.id = :propertyUnitId AND p.paymentDate BETWEEN :startDate AND :endDate")
     List<Payment> findByPropertyUnitIdAndPaymentDateBetween(@Param("propertyUnitId") Long propertyUnitId, @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 
-    // Owner-filtered queries - filter payments through property ownership
-    @Query("SELECT p FROM Payment p WHERE p.propertyUnit.owner.id = :ownerId")
+    // Owner-filtered queries - filter payments through property ownership (with eager fetch)
+    @Query("SELECT p FROM Payment p JOIN FETCH p.propertyUnit pu LEFT JOIN FETCH pu.tenant WHERE pu.owner.id = :ownerId ORDER BY p.paymentDate DESC")
     List<Payment> findByPropertyOwnerId(@Param("ownerId") Long ownerId);
 
-    @Query("SELECT p FROM Payment p WHERE p.id = :paymentId AND p.propertyUnit.owner.id = :ownerId")
+    @Query("SELECT p FROM Payment p JOIN FETCH p.propertyUnit pu LEFT JOIN FETCH pu.tenant WHERE p.id = :paymentId AND pu.owner.id = :ownerId")
     Optional<Payment> findByIdAndPropertyOwnerId(@Param("paymentId") Long paymentId, @Param("ownerId") Long ownerId);
 
-    @Query("SELECT p FROM Payment p WHERE p.propertyUnit.id = :propertyUnitId AND p.propertyUnit.owner.id = :ownerId")
+    @Query("SELECT p FROM Payment p JOIN FETCH p.propertyUnit pu LEFT JOIN FETCH pu.tenant WHERE pu.id = :propertyUnitId AND pu.owner.id = :ownerId ORDER BY p.paymentDate DESC")
     List<Payment> findByPropertyUnitIdAndOwnerId(@Param("propertyUnitId") Long propertyUnitId, @Param("ownerId") Long ownerId);
 
-    @Query("SELECT p FROM Payment p WHERE p.propertyUnit.id = :propertyUnitId AND p.status = :status AND p.propertyUnit.owner.id = :ownerId")
+    @Query("SELECT p FROM Payment p JOIN FETCH p.propertyUnit pu LEFT JOIN FETCH pu.tenant WHERE pu.id = :propertyUnitId AND p.status = :status AND pu.owner.id = :ownerId ORDER BY p.paymentDate DESC")
     List<Payment> findByPropertyUnitIdAndStatusAndOwnerId(@Param("propertyUnitId") Long propertyUnitId, @Param("status") Payment.PaymentStatus status, @Param("ownerId") Long ownerId);
 }

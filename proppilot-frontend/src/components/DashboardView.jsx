@@ -75,15 +75,14 @@ const DashboardView = memo(({ onNavigate }) => {
       .sort((a, b) => new Date(b.paymentDate) - new Date(a.paymentDate))
       .slice(0, 5)
       .map(p => {
-        const property = propertyUnits.find(prop => prop.id === p.propertyUnitId)
         return {
-          tenant: property?.tenant?.fullName || 'Unknown',
-          property: property?.address || 'Unknown',
+          tenant: p.tenantName || 'Sin inquilino',
+          property: p.propertyAddress || 'Unknown',
           amount: p.amount,
           date: p.paymentDate
         }
       })
-  }, [payments, propertyUnits])
+  }, [payments])
 
   // Get next pending payment
   const nextPaymentDue = useMemo(() => {
@@ -96,19 +95,18 @@ const DashboardView = memo(({ onNavigate }) => {
     }
 
     const next = pendingPayments[0]
-    const property = propertyUnits.find(prop => prop.id === next.propertyUnitId)
     const dueDate = new Date(next.paymentDate)
     const today = new Date()
     const daysUntil = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24))
 
     return {
       amount: next.amount,
-      tenant: property?.tenant?.fullName || 'Unknown',
-      property: property?.address || 'Unknown',
+      tenant: next.tenantName || 'Sin inquilino',
+      property: next.propertyAddress || 'Unknown',
       dueDate: next.paymentDate,
       daysUntil: Math.max(0, daysUntil)
     }
-  }, [payments, propertyUnits])
+  }, [payments])
 
   const stats = useMemo(() => [
     {
