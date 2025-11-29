@@ -22,6 +22,21 @@ public class Payment {
     @JsonBackReference("lease-payments")
     private Lease lease;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "property_unit_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private PropertyUnit propertyUnit;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tenant_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private Tenant tenant;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private User owner;
+
     @Column(nullable = false, precision = 10, scale = 2)
     @NotNull(message = "Payment amount is required")
     @DecimalMin(value = "0.01", message = "Payment amount must be greater than 0")

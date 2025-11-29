@@ -13,11 +13,12 @@ import {
   Button,
   Divider
 } from '@mui/material'
+import GoogleIcon from '@mui/icons-material/Google'
 import { useAuth } from '../contexts/AuthContext'
 import { useLanguage } from '../contexts/LanguageContext'
 
 const LoginPage = () => {
-  const { loginWithGoogle, loginWithLocalUser, isLocalDev } = useAuth()
+  const { loginWithGoogle, loginWithGoogleNative, loginWithLocalUser, isLocalDev, isNative } = useAuth()
   const { t, language } = useLanguage()
   const [error, setError] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -50,6 +51,24 @@ const LoginPage = () => {
     setError(language === 'es' ? 'Error con Google. Por favor intente de nuevo.' : 'Google sign-in error. Please try again.')
   }
 
+  // Handle native Google Sign-In for mobile apps
+  const handleNativeGoogleSignIn = async () => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const result = await loginWithGoogleNative()
+      // Handle both old boolean return and new object return
+      if (result === false || (result && result.success === false)) {
+        const errorMsg = result?.error || (language === 'es' ? 'Error al iniciar sesion. Por favor intente de nuevo.' : 'Login failed. Please try again.')
+        setError(errorMsg)
+      }
+    } catch (err) {
+      console.error('Native Google Sign-In error:', err)
+      setError(language === 'es' ? 'Error con Google. Por favor intente de nuevo.' : 'Google sign-in error. Please try again.')
+    }
+    setIsLoading(false)
+  }
+
   const handleLocalLogin = async (e) => {
     e.preventDefault()
     if (!localEmail.trim()) {
@@ -70,6 +89,117 @@ const LoginPage = () => {
     { email: 'bob@test.local', name: 'Bob Test' },
     { email: 'charlie@test.local', name: 'Charlie Test' }
   ]
+
+  // Render the appropriate login UI based on platform
+  const renderLoginUI = () => {
+    if (isLoading) {
+      return (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+          <CircularProgress />
+        </Box>
+      )
+    }
+
+    // Local development mode (web only, not native)
+    if (isLocalDev) {
+      return (
+        <Box>
+          <Alert severity="info" sx={{ mb: 2, textAlign: 'left' }}>
+            Local Dev Mode - No Google OAuth required
+          </Alert>
+
+          <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+            Quick Login (Test Users):
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: 'center', mb: 2 }}>
+            {quickLoginUsers.map((user) => (
+              <Button
+                key={user.email}
+                variant="outlined"
+                size="small"
+                onClick={() => loginWithLocalUser(user.email, user.name)}
+              >
+                {user.name}
+              </Button>
+            ))}
+          </Box>
+
+          <Divider sx={{ my: 2 }}>or</Divider>
+
+          <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+            Custom User:
+          </Typography>
+          <Box component="form" onSubmit={handleLocalLogin} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <TextField
+              label="Email"
+              type="email"
+              size="small"
+              value={localEmail}
+              onChange={(e) => setLocalEmail(e.target.value)}
+              placeholder="user@test.local"
+              required
+            />
+            <TextField
+              label="Name (optional)"
+              size="small"
+              value={localName}
+              onChange={(e) => setLocalName(e.target.value)}
+              placeholder="Test User"
+            />
+            <Button type="submit" variant="contained" fullWidth>
+              Login as Local User
+            </Button>
+          </Box>
+        </Box>
+      )
+    }
+
+    // Native mobile app - use native Google Auth button
+    if (isNative) {
+      return (
+        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+          <Button
+            variant="outlined"
+            size="large"
+            startIcon={<GoogleIcon />}
+            onClick={handleNativeGoogleSignIn}
+            sx={{
+              py: 1.5,
+              px: 3,
+              borderRadius: 2,
+              textTransform: 'none',
+              fontSize: '1rem',
+              borderColor: '#dadce0',
+              color: '#3c4043',
+              backgroundColor: '#fff',
+              '&:hover': {
+                backgroundColor: '#f8f9fa',
+                borderColor: '#dadce0',
+              },
+            }}
+          >
+            {language === 'es' ? 'Iniciar sesion con Google' : 'Sign in with Google'}
+          </Button>
+        </Box>
+      )
+    }
+
+    // Web production - use standard Google OAuth component
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+        <GoogleLogin
+          onSuccess={handleGoogleSuccess}
+          onError={handleGoogleError}
+          useOneTap
+          theme="outline"
+          size="large"
+          text="signin_with"
+          shape="rectangular"
+          locale={language}
+        />
+      </Box>
+    )
+  }
 
   return (
     <ThemeProvider theme={theme}>
@@ -157,73 +287,7 @@ const LoginPage = () => {
             </Alert>
           )}
 
-          {isLoading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
-              <CircularProgress />
-            </Box>
-          ) : isLocalDev ? (
-            <Box>
-              <Alert severity="info" sx={{ mb: 2, textAlign: 'left' }}>
-                Local Dev Mode - No Google OAuth required
-              </Alert>
-
-              <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
-                Quick Login (Test Users):
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: 'center', mb: 2 }}>
-                {quickLoginUsers.map((user) => (
-                  <Button
-                    key={user.email}
-                    variant="outlined"
-                    size="small"
-                    onClick={() => loginWithLocalUser(user.email, user.name)}
-                  >
-                    {user.name}
-                  </Button>
-                ))}
-              </Box>
-
-              <Divider sx={{ my: 2 }}>or</Divider>
-
-              <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
-                Custom User:
-              </Typography>
-              <Box component="form" onSubmit={handleLocalLogin} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <TextField
-                  label="Email"
-                  type="email"
-                  size="small"
-                  value={localEmail}
-                  onChange={(e) => setLocalEmail(e.target.value)}
-                  placeholder="user@test.local"
-                  required
-                />
-                <TextField
-                  label="Name (optional)"
-                  size="small"
-                  value={localName}
-                  onChange={(e) => setLocalName(e.target.value)}
-                  placeholder="Test User"
-                />
-                <Button type="submit" variant="contained" fullWidth>
-                  Login as Local User
-                </Button>
-              </Box>
-            </Box>
-          ) : (
-            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={handleGoogleError}
-                useOneTap
-                theme="outline"
-                size="large"
-                text="signin_with"
-                shape="rectangular"
-                locale={language}
-              />
-            </Box>
-          )}
+          {renderLoginUI()}
 
           <Typography variant="caption" color="text.secondary" sx={{ mt: 3, display: 'block' }}>
             {language === 'es'

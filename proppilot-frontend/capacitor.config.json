@@ -1,0 +1,14 @@
+{
+  "appId": "com.proppilot.app",
+  "appName": "PropPilot",
+  "webDir": "dist",
+  "plugins": {
+    "GoogleAuth": {
+      "scopes": ["profile", "email"],
+      "serverClientId": "686454629506-d068i9m0tm2nvue7rdbjfgpm3ivvmggb.apps.googleusercontent.com",
+      "androidClientId": "686454629506-lrr8eeee1hq2rgcjjdtrjqeg14v630b5.apps.googleusercontent.com",
+      "iosClientId": "686454629506-s0jdgf6qm8nhethccglg9539g7ukot8c.apps.googleusercontent.com",
+      "forceCodeForRefreshToken": true
+    }
+  }
+}
