@@ -29,9 +29,15 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     public Payment createPayment(@NonNull Payment payment, @NonNull Long ownerId) {
+        // Get property unit ID from transient field or from nested object
+        Long propUnitId = payment.getPropertyUnitId();
+        if (propUnitId == null && payment.getPropertyUnit() != null) {
+            propUnitId = payment.getPropertyUnit().getId();
+        }
+
         // Validate property unit exists and belongs to the owner
-        if (payment.getPropertyUnit() != null && payment.getPropertyUnit().getId() != null) {
-            Long propertyUnitId = payment.getPropertyUnit().getId();
+        if (propUnitId != null) {
+            final Long propertyUnitId = propUnitId;
             PropertyUnit propertyUnit = propertyUnitRepository.findByIdAndOwnerId(propertyUnitId, ownerId)
                     .orElseThrow(() -> new ResourceNotFoundException("Property unit not found with id: " + propertyUnitId));
             payment.setPropertyUnit(propertyUnit);

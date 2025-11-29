@@ -50,6 +50,10 @@ public class Payment {
     @Column
     private String appliedIndex;
 
+    @Transient
+    @com.fasterxml.jackson.annotation.JsonProperty("propertyUnitId")
+    private Long propertyUnitId;
+
     public enum PaymentType {
         RENT,
         DEPOSIT,

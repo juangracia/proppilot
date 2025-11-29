@@ -303,16 +303,25 @@ const DashboardView = memo(({ onNavigate }) => {
       <Grid container spacing={{ xs: 2, sm: 3 }}>
         {/* Recent Payments */}
         <Grid size={{ xs: 12, md: 8 }}>
-          <Paper sx={{ p: { xs: 2, sm: 3 }, height: 'fit-content' }}>
+          <Paper
+            onClick={() => onNavigate(3)}
+            sx={{
+              p: { xs: 2, sm: 3 },
+              height: 'fit-content',
+              cursor: 'pointer',
+              transition: 'transform 0.2s, box-shadow 0.2s',
+              '&:hover': {
+                transform: { xs: 'none', sm: 'translateY(-4px)' },
+                boxShadow: { xs: 2, sm: 4 }
+              }
+            }}
+          >
             <Typography
               variant="h6"
-              onClick={() => onNavigate(3)}
               sx={{
                 fontWeight: 600,
                 mb: { xs: 1.5, sm: 2 },
-                fontSize: { xs: '1rem', sm: '1.25rem' },
-                cursor: 'pointer',
-                '&:hover': { color: 'primary.main' }
+                fontSize: { xs: '1rem', sm: '1.25rem' }
               }}
             >
               {t('recentPayments')}
