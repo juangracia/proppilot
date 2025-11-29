@@ -252,12 +252,12 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
             onChange={handleTabChange}
             sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}
           >
-            <Tab label={t('registerPaymentTitle')} sx={{ textTransform: 'none' }} />
             <Tab label={t('paymentHistory')} sx={{ textTransform: 'none' }} />
+            <Tab label={t('registerPaymentTitle')} sx={{ textTransform: 'none' }} />
           </Tabs>
 
-          {/* Tab 0: Register Payment */}
-          {activeTab === 0 && (
+          {/* Tab 1: Register Payment */}
+          {activeTab === 1 && (
             <>
               {error && (
                 <Alert severity="error" sx={{ mb: 2 }}>
@@ -310,9 +310,10 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
                     required
                     error={!!validationErrors.amount}
                     helperText={validationErrors.amount}
+                    placeholder="0.00"
                     inputProps={{ step: '0.01', min: '0.01', max: '999999.99' }}
                     InputProps={{
-                      startAdornment: <Typography sx={{ mr: 1 }}>{t(`currencySymbol.${currency}`)}</Typography>
+                      startAdornment: <Typography sx={{ mr: 1, color: 'text.secondary' }}>{currency}</Typography>
                     }}
                   />
                   <FormControlLabel
@@ -481,8 +482,8 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
             </>
           )}
 
-          {/* Tab 1: Payment History */}
-          {activeTab === 1 && (
+          {/* Tab 0: Payment History */}
+          {activeTab === 0 && (
             <Box>
               {/* Empty State */}
               {payments.length === 0 && (

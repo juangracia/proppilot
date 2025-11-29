@@ -636,6 +636,7 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
                 onChange={(e) => setNewProperty(prev => ({ ...prev, address: e.target.value }))}
                 fullWidth
                 required
+                placeholder={t('addressPlaceholder')}
               />
               <TextField
                 select
@@ -656,8 +657,9 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
                 onChange={(e) => setNewProperty(prev => ({ ...prev, baseRentAmount: e.target.value }))}
                 fullWidth
                 required
+                placeholder={t('baseRentPlaceholder')}
                 InputProps={{
-                  startAdornment: <InputAdornment position="start">{t(`currencySymbol.${currency}`)}</InputAdornment>,
+                  startAdornment: <InputAdornment position="start">{currency}</InputAdornment>,
                 }}
               />
               <DatePicker
@@ -964,6 +966,7 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
                 label={t('addressLabel')}
                 value={editFormData.address}
                 onChange={(e) => setEditFormData(prev => ({ ...prev, address: e.target.value }))}
+                placeholder={t('addressPlaceholder')}
                 fullWidth
                 required
               />
@@ -986,8 +989,9 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
                 onChange={(e) => setEditFormData(prev => ({ ...prev, baseRentAmount: e.target.value }))}
                 fullWidth
                 required
+                placeholder={t('baseRentPlaceholder')}
                 InputProps={{
-                  startAdornment: <InputAdornment position="start">{t(`currencySymbol.${currency}`)}</InputAdornment>,
+                  startAdornment: <InputAdornment position="start">{currency}</InputAdornment>,
                 }}
               />
               <DatePicker

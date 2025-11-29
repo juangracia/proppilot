@@ -306,10 +306,13 @@ const DashboardView = memo(({ onNavigate }) => {
           <Paper sx={{ p: { xs: 2, sm: 3 }, height: 'fit-content' }}>
             <Typography
               variant="h6"
+              onClick={() => onNavigate(3)}
               sx={{
                 fontWeight: 600,
                 mb: { xs: 1.5, sm: 2 },
-                fontSize: { xs: '1rem', sm: '1.25rem' }
+                fontSize: { xs: '1rem', sm: '1.25rem' },
+                cursor: 'pointer',
+                '&:hover': { color: 'primary.main' }
               }}
             >
               {t('recentPayments')}
