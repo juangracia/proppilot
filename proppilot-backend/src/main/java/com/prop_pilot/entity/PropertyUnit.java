@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,6 +33,9 @@ public class PropertyUnit {
     @DecimalMin(value = "0.01", message = "Base rent amount must be greater than 0")
     @Digits(integer = 8, fraction = 2, message = "Base rent amount must have at most 8 digits and 2 decimal places")
     private BigDecimal baseRentAmount;
+
+    @Column(name = "lease_start_date")
+    private LocalDate leaseStartDate;
 
     @OneToMany(mappedBy = "propertyUnit", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
