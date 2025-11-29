@@ -36,10 +36,10 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     );
 
     @Query("SELECT p FROM Payment p " +
-           "LEFT JOIN FETCH p.lease l " +
-           "LEFT JOIN FETCH l.propertyUnit pu " +
-           "LEFT JOIN FETCH l.tenant t " +
-           "WHERE l IS NULL OR l.owner.id = :ownerId " +
+           "JOIN FETCH p.lease l " +
+           "JOIN FETCH l.propertyUnit pu " +
+           "JOIN FETCH l.tenant t " +
+           "WHERE l.owner.id = :ownerId " +
            "ORDER BY p.paymentDate DESC")
     List<Payment> findByOwnerId(@Param("ownerId") Long ownerId);
 
