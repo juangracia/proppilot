@@ -23,7 +23,9 @@ import {
   TrendingUp,
   TrendingDown,
   ChevronRight,
-  Schedule
+  Schedule,
+  Description,
+  EventNote
 } from '@mui/icons-material'
 import { useLanguage } from '../contexts/LanguageContext'
 import { API_BASE_URL } from '../config/api'
@@ -35,19 +37,22 @@ const DashboardView = memo(({ onNavigate }) => {
   const [propertyUnits, setPropertyUnits] = useState([])
   const [tenants, setTenants] = useState([])
   const [payments, setPayments] = useState([])
+  const [leases, setLeases] = useState([])
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true)
-        const [propertiesRes, tenantsRes, paymentsRes] = await Promise.all([
+        const [propertiesRes, tenantsRes, paymentsRes, leasesRes] = await Promise.all([
           axios.get(`${API_BASE_URL}/property-units`),
           axios.get(`${API_BASE_URL}/tenants`),
-          axios.get(`${API_BASE_URL}/payments`)
+          axios.get(`${API_BASE_URL}/payments`),
+          axios.get(`${API_BASE_URL}/leases`)
         ])
         setPropertyUnits(Array.isArray(propertiesRes.data) ? propertiesRes.data : [])
         setTenants(Array.isArray(tenantsRes.data) ? tenantsRes.data : [])
         setPayments(Array.isArray(paymentsRes.data) ? paymentsRes.data : [])
+        setLeases(Array.isArray(leasesRes.data) ? leasesRes.data : [])
       } catch (error) {
         console.error('Error fetching dashboard data:', error)
       } finally {
@@ -65,8 +70,16 @@ const DashboardView = memo(({ onNavigate }) => {
     const activeTenants = tenants.length
     const monthlyRevenue = propertyUnits.reduce((sum, p) => sum + (parseFloat(p.baseRentAmount) || 0), 0)
     const outstandingPayments = payments.filter(p => p.status === 'PENDING').length
-    return { totalProperties, vacantProperties, occupiedProperties, activeTenants, monthlyRevenue, outstandingPayments }
-  }, [propertyUnits, tenants, payments])
+    const activeLeases = leases.filter(l => l.status === 'ACTIVE').length
+    const expiringLeases = leases.filter(l => {
+      if (l.status !== 'ACTIVE') return false
+      const endDate = new Date(l.endDate)
+      const today = new Date()
+      const daysUntilExpiry = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24))
+      return daysUntilExpiry <= 60 && daysUntilExpiry >= 0
+    }).length
+    return { totalProperties, vacantProperties, occupiedProperties, activeTenants, monthlyRevenue, outstandingPayments, activeLeases, expiringLeases }
+  }, [propertyUnits, tenants, payments, leases])
 
   // Get recent completed payments
   const recentPaymentsData = useMemo(() => {
@@ -83,6 +96,21 @@ const DashboardView = memo(({ onNavigate }) => {
         }
       })
   }, [payments])
+
+  // Get upcoming expiring contracts (within 60 days)
+  const upcomingExpiringContracts = useMemo(() => {
+    return leases
+      .filter(l => l.status === 'ACTIVE')
+      .map(l => {
+        const endDate = new Date(l.endDate)
+        const today = new Date()
+        const daysUntilExpiry = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24))
+        return { ...l, daysUntilExpiry }
+      })
+      .filter(l => l.daysUntilExpiry <= 60 && l.daysUntilExpiry >= 0)
+      .sort((a, b) => a.daysUntilExpiry - b.daysUntilExpiry)
+      .slice(0, 3)
+  }, [leases])
 
   // Get next pending payment
   const nextPaymentDue = useMemo(() => {
@@ -137,21 +165,32 @@ const DashboardView = memo(({ onNavigate }) => {
       trendPositive: true
     },
     {
+      title: t('activeLeases') || 'Contratos Activos',
+      value: dashboardStats.activeLeases.toString(),
+      change: dashboardStats.expiringLeases > 0
+        ? `${dashboardStats.expiringLeases} ${t('expiringSoon') || 'por vencer'}`
+        : t('allGood') || 'todos vigentes',
+      icon: <Description sx={{ fontSize: 40, color: '#9C27B0' }} />,
+      color: '#9C27B0',
+      navigateTo: 3,
+      trendPositive: dashboardStats.expiringLeases === 0
+    },
+    {
       title: t('outstandingPayments'),
       value: dashboardStats.outstandingPayments.toString(),
       change: `${dashboardStats.outstandingPayments} ${t('overdue')}`,
       icon: <Warning sx={{ fontSize: 40, color: '#F44336' }} />,
       color: '#F44336',
-      navigateTo: 1,
+      navigateTo: 4,
       trendPositive: false
     }
   ], [t, formatCurrency, dashboardStats])
 
   const quickActions = useMemo(() => [
-    { title: t('addNewTenant'), icon: <Add />, color: 'primary', navigateTo: 2 },
-    { title: t('registerPayment'), icon: <Payment />, color: 'secondary', navigateTo: 3 },
     { title: t('addProperty'), icon: <Home />, color: 'primary', navigateTo: 1 },
-    { title: t('viewOutstanding'), icon: <Warning />, color: 'error', navigateTo: 1 }
+    { title: t('addNewTenant'), icon: <Add />, color: 'primary', navigateTo: 2 },
+    { title: t('createLease') || 'Crear Contrato', icon: <Description />, color: 'secondary', navigateTo: 3 },
+    { title: t('registerPayment'), icon: <Payment />, color: 'secondary', navigateTo: 4 }
   ], [t])
 
   const handleStatClick = useCallback((navigateTo) => {
@@ -159,6 +198,10 @@ const DashboardView = memo(({ onNavigate }) => {
   }, [onNavigate])
 
   const handlePaymentClick = useCallback(() => {
+    onNavigate && onNavigate(4)
+  }, [onNavigate])
+
+  const handleContractClick = useCallback(() => {
     onNavigate && onNavigate(3)
   }, [onNavigate])
 
@@ -298,11 +341,70 @@ const DashboardView = memo(({ onNavigate }) => {
         </Paper>
       )}
 
+      {/* Expiring Contracts Alert */}
+      {upcomingExpiringContracts.length > 0 && (
+        <Paper
+          sx={{
+            p: { xs: 2, sm: 3 },
+            mb: { xs: 3, sm: 4 },
+            background: 'linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%)',
+            color: 'white',
+            cursor: 'pointer',
+            transition: 'transform 0.2s, box-shadow 0.2s',
+            '&:hover': {
+              transform: { xs: 'none', sm: 'translateY(-2px)' },
+              boxShadow: 4
+            }
+          }}
+          onClick={handleContractClick}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.5, sm: 2 }, mb: 2 }}>
+            <EventNote sx={{ fontSize: { xs: 28, sm: 32 } }} />
+            <Typography variant="h6" sx={{ fontWeight: 600, fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+              {t('expiringContracts') || 'Contratos por Vencer'}
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+            {upcomingExpiringContracts.map((contract, index) => (
+              <Box
+                key={index}
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  bgcolor: 'rgba(255,255,255,0.1)',
+                  borderRadius: 1,
+                  p: 1.5
+                }}
+              >
+                <Box>
+                  <Typography sx={{ fontWeight: 500, fontSize: { xs: '0.875rem', sm: '1rem' } }}>
+                    {contract.tenantName || 'Inquilino'}
+                  </Typography>
+                  <Typography sx={{ opacity: 0.8, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                    {contract.propertyAddress || 'Propiedad'}
+                  </Typography>
+                </Box>
+                <Chip
+                  label={`${contract.daysUntilExpiry} ${t('daysLabel') || 'días'}`}
+                  sx={{
+                    bgcolor: contract.daysUntilExpiry <= 30 ? 'rgba(244,67,54,0.3)' : 'rgba(255,255,255,0.2)',
+                    color: 'white',
+                    fontWeight: 600,
+                    fontSize: { xs: '0.7rem', sm: '0.75rem' }
+                  }}
+                />
+              </Box>
+            ))}
+          </Box>
+        </Paper>
+      )}
+
       <Grid container spacing={{ xs: 2, sm: 3 }}>
         {/* Recent Payments */}
         <Grid size={{ xs: 12, md: 8 }}>
           <Paper
-            onClick={() => onNavigate(3)}
+            onClick={handlePaymentClick}
             sx={{
               p: { xs: 2, sm: 3 },
               height: 'fit-content',

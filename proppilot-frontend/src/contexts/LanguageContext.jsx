@@ -193,6 +193,10 @@ export const LanguageProvider = ({ children }) => {
       noActiveLeasesDesc: 'Crea un contrato primero para poder registrar pagos',
       leaseSummary: 'Resumen del Contrato',
       property: 'Propiedad',
+      expiringContracts: 'Contratos por Vencer',
+      expiringSoon: 'por vencer',
+      allGood: 'todos vigentes',
+      daysLabel: 'días',
 
       // Payment Types
       rentPayment: 'Pago de Alquiler',
@@ -497,6 +501,10 @@ export const LanguageProvider = ({ children }) => {
       noActiveLeasesDesc: 'Create a lease first to register payments',
       leaseSummary: 'Lease Summary',
       property: 'Property',
+      expiringContracts: 'Expiring Contracts',
+      expiringSoon: 'expiring soon',
+      allGood: 'all current',
+      daysLabel: 'days',
 
       // Payment Types
       rentPayment: 'Rent Payment',
