@@ -22,10 +22,12 @@ public class Lease {
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "property_unit_id", nullable = false)
+    @JsonIgnore
     private PropertyUnit propertyUnit;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "tenant_id", nullable = false)
+    @JsonIgnore
     private Tenant tenant;
 
     @Column(nullable = false)
@@ -93,6 +95,16 @@ public class Lease {
     @JsonProperty("tenantPhone")
     public String getTenantPhone() {
         return tenant != null ? tenant.getPhone() : null;
+    }
+
+    @JsonProperty("propertyUnitIdRef")
+    public Long getPropertyUnitIdRef() {
+        return propertyUnit != null ? propertyUnit.getId() : null;
+    }
+
+    @JsonProperty("tenantIdRef")
+    public Long getTenantIdRef() {
+        return tenant != null ? tenant.getId() : null;
     }
 
     public boolean isActive() {

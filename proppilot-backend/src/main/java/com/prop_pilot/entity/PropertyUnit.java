@@ -47,6 +47,7 @@ public class PropertyUnit {
     private User owner;
 
     @Transient
+    @JsonIgnore
     public Lease getActiveLease() {
         if (leases == null) return null;
         return leases.stream()
