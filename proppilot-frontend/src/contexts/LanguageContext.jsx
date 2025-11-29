@@ -63,8 +63,10 @@ export const LanguageProvider = ({ children }) => {
       leaseStartHelper: 'Fecha de inicio del contrato de alquiler',
 
       // Dialog Actions
-      cancel: 'CANCELAR',
+      cancel: 'Cancelar',
+      create: 'Crear',
       addPropertyAction: 'AGREGAR PROPIEDAD',
+      propertyType: 'Tipo de Propiedad',
 
       // Messages
       totalUnits: 'Total: {count} unidade{plural} de propiedad',
@@ -371,8 +373,10 @@ export const LanguageProvider = ({ children }) => {
       leaseStartHelper: 'Lease contract start date',
 
       // Dialog Actions
-      cancel: 'CANCEL',
+      cancel: 'Cancel',
+      create: 'Create',
       addPropertyAction: 'ADD PROPERTY',
+      propertyType: 'Property Type',
 
       // Messages
       totalUnits: 'Total: {count} property unit{plural}',

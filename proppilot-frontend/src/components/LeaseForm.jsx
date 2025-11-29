@@ -25,7 +25,9 @@ import {
   DialogContent,
   DialogActions,
   Avatar,
-  IconButton
+  IconButton,
+  InputAdornment,
+  Tooltip
 } from '@mui/material'
 import Grid from '@mui/material/Grid'
 import {
@@ -38,7 +40,8 @@ import {
   TrendingUp,
   CheckCircle,
   Cancel,
-  OpenInNew
+  OpenInNew,
+  Add as AddIcon
 } from '@mui/icons-material'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
@@ -71,6 +74,16 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
   const [success, setSuccess] = useState(null)
   const [detailDialogOpen, setDetailDialogOpen] = useState(false)
   const [selectedLease, setSelectedLease] = useState(null)
+
+  // Inline creation dialogs
+  const [newTenantDialogOpen, setNewTenantDialogOpen] = useState(false)
+  const [newPropertyDialogOpen, setNewPropertyDialogOpen] = useState(false)
+  const [newTenantData, setNewTenantData] = useState({ fullName: '', nationalId: '', email: '', phone: '' })
+  const [newPropertyData, setNewPropertyData] = useState({ address: '', type: '', baseRentAmount: '' })
+  const [newTenantErrors, setNewTenantErrors] = useState({})
+  const [newPropertyErrors, setNewPropertyErrors] = useState({})
+  const [creatingTenant, setCreatingTenant] = useState(false)
+  const [creatingProperty, setCreatingProperty] = useState(false)
 
   const adjustmentIndices = useMemo(() => [
     { value: 'ICL', label: 'ICL (Índice Contratos de Locación)' },
@@ -217,6 +230,65 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
     }
   }
 
+  // Inline creation handlers
+  const handleCreateTenant = async () => {
+    const errors = {}
+    if (!newTenantData.fullName.trim()) errors.fullName = t('fullNameRequired') || 'Nombre completo requerido'
+    if (!newTenantData.nationalId.trim()) errors.nationalId = t('nationalIdRequired') || 'DNI/CUIT requerido'
+
+    if (Object.keys(errors).length > 0) {
+      setNewTenantErrors(errors)
+      return
+    }
+
+    setCreatingTenant(true)
+    try {
+      const response = await axios.post(`${API_BASE_URL}/tenants`, newTenantData)
+      setTenants(prev => [...prev, response.data])
+      setFormData(prev => ({ ...prev, tenantId: response.data.id }))
+      setNewTenantDialogOpen(false)
+      setNewTenantData({ fullName: '', nationalId: '', email: '', phone: '' })
+      setNewTenantErrors({})
+    } catch (err) {
+      console.error('Error creating tenant:', err)
+      setNewTenantErrors({ submit: err.response?.data?.message || 'Error al crear inquilino' })
+    } finally {
+      setCreatingTenant(false)
+    }
+  }
+
+  const handleCreateProperty = async () => {
+    const errors = {}
+    if (!newPropertyData.address.trim()) errors.address = t('addressRequired') || 'Dirección requerida'
+    if (!newPropertyData.type) errors.type = t('typeRequired') || 'Tipo requerido'
+    if (!newPropertyData.baseRentAmount || parseFloat(newPropertyData.baseRentAmount) <= 0) {
+      errors.baseRentAmount = t('rentPositive') || 'El alquiler debe ser mayor a 0'
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setNewPropertyErrors(errors)
+      return
+    }
+
+    setCreatingProperty(true)
+    try {
+      const response = await axios.post(`${API_BASE_URL}/property-units`, {
+        ...newPropertyData,
+        baseRentAmount: parseFloat(newPropertyData.baseRentAmount)
+      })
+      setPropertyUnits(prev => [...prev, response.data])
+      handlePropertyChange(response.data.id)
+      setNewPropertyDialogOpen(false)
+      setNewPropertyData({ address: '', type: '', baseRentAmount: '' })
+      setNewPropertyErrors({})
+    } catch (err) {
+      console.error('Error creating property:', err)
+      setNewPropertyErrors({ submit: err.response?.data?.message || 'Error al crear propiedad' })
+    } finally {
+      setCreatingProperty(false)
+    }
+  }
+
   const selectedPropertyUnit = useMemo(() =>
     propertyUnits.find(unit => unit.id === parseInt(formData.propertyUnitId))
   , [propertyUnits, formData.propertyUnitId])
@@ -283,47 +355,67 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                 <Box component="form" onSubmit={handleSubmit}>
                   <Grid container spacing={{ xs: 2, sm: 3 }}>
                     <Grid size={{ xs: 12, md: 6 }}>
-                      <FormControl fullWidth required error={!!validationErrors.propertyUnitId}>
-                        <InputLabel>{t('selectProperty') || 'Seleccionar Propiedad'}</InputLabel>
-                        <Select
-                          value={formData.propertyUnitId}
-                          onChange={(e) => handlePropertyChange(e.target.value)}
-                          label={t('selectProperty') || 'Seleccionar Propiedad'}
-                        >
-                          {propertyUnits.map((unit) => (
-                            <MenuItem key={unit.id} value={unit.id}>
-                              {unit.address} ({unit.type})
-                            </MenuItem>
-                          ))}
-                        </Select>
-                        {validationErrors.propertyUnitId && (
-                          <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.75 }}>
-                            {validationErrors.propertyUnitId}
-                          </Typography>
-                        )}
-                      </FormControl>
+                      <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+                        <FormControl fullWidth required error={!!validationErrors.propertyUnitId}>
+                          <InputLabel>{t('selectProperty') || 'Seleccionar Propiedad'}</InputLabel>
+                          <Select
+                            value={formData.propertyUnitId}
+                            onChange={(e) => handlePropertyChange(e.target.value)}
+                            label={t('selectProperty') || 'Seleccionar Propiedad'}
+                          >
+                            {propertyUnits.map((unit) => (
+                              <MenuItem key={unit.id} value={unit.id}>
+                                {unit.address} ({unit.type})
+                              </MenuItem>
+                            ))}
+                          </Select>
+                          {validationErrors.propertyUnitId && (
+                            <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.75 }}>
+                              {validationErrors.propertyUnitId}
+                            </Typography>
+                          )}
+                        </FormControl>
+                        <Tooltip title={t('addProperty') || 'Agregar Propiedad'}>
+                          <IconButton
+                            onClick={() => setNewPropertyDialogOpen(true)}
+                            sx={{ mt: 1, bgcolor: 'primary.main', color: 'white', '&:hover': { bgcolor: 'primary.dark' } }}
+                          >
+                            <AddIcon />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
                     </Grid>
 
                     <Grid size={{ xs: 12, md: 6 }}>
-                      <FormControl fullWidth required error={!!validationErrors.tenantId}>
-                        <InputLabel>{t('selectTenant') || 'Seleccionar Inquilino'}</InputLabel>
-                        <Select
-                          value={formData.tenantId}
-                          onChange={(e) => setFormData(prev => ({ ...prev, tenantId: e.target.value }))}
-                          label={t('selectTenant') || 'Seleccionar Inquilino'}
-                        >
-                          {tenants.map((tenant) => (
-                            <MenuItem key={tenant.id} value={tenant.id}>
-                              {tenant.fullName} - {tenant.nationalId}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                        {validationErrors.tenantId && (
-                          <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.75 }}>
-                            {validationErrors.tenantId}
-                          </Typography>
-                        )}
-                      </FormControl>
+                      <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+                        <FormControl fullWidth required error={!!validationErrors.tenantId}>
+                          <InputLabel>{t('selectTenant') || 'Seleccionar Inquilino'}</InputLabel>
+                          <Select
+                            value={formData.tenantId}
+                            onChange={(e) => setFormData(prev => ({ ...prev, tenantId: e.target.value }))}
+                            label={t('selectTenant') || 'Seleccionar Inquilino'}
+                          >
+                            {tenants.map((tenant) => (
+                              <MenuItem key={tenant.id} value={tenant.id}>
+                                {tenant.fullName} - {tenant.nationalId}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                          {validationErrors.tenantId && (
+                            <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.75 }}>
+                              {validationErrors.tenantId}
+                            </Typography>
+                          )}
+                        </FormControl>
+                        <Tooltip title={t('addTenant') || 'Agregar Inquilino'}>
+                          <IconButton
+                            onClick={() => setNewTenantDialogOpen(true)}
+                            sx={{ mt: 1, bgcolor: 'primary.main', color: 'white', '&:hover': { bgcolor: 'primary.dark' } }}
+                          >
+                            <AddIcon />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
                     </Grid>
 
                     <Grid size={{ xs: 12, md: 6 }}>
@@ -737,6 +829,158 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
               </DialogActions>
             </>
           )}
+        </Dialog>
+
+        {/* New Property Dialog */}
+        <Dialog
+          open={newPropertyDialogOpen}
+          onClose={() => {
+            setNewPropertyDialogOpen(false)
+            setNewPropertyData({ address: '', type: '', baseRentAmount: '' })
+            setNewPropertyErrors({})
+          }}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Home sx={{ color: 'primary.main' }} />
+              <Typography variant="h6">{t('addProperty') || 'Agregar Propiedad'}</Typography>
+            </Box>
+            <IconButton onClick={() => setNewPropertyDialogOpen(false)}>
+              <Close />
+            </IconButton>
+          </DialogTitle>
+          <DialogContent dividers>
+            {newPropertyErrors.submit && (
+              <Alert severity="error" sx={{ mb: 2 }}>{newPropertyErrors.submit}</Alert>
+            )}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+              <TextField
+                label={t('address') || 'Dirección'}
+                value={newPropertyData.address}
+                onChange={(e) => setNewPropertyData(prev => ({ ...prev, address: e.target.value }))}
+                fullWidth
+                required
+                error={!!newPropertyErrors.address}
+                helperText={newPropertyErrors.address}
+              />
+              <TextField
+                select
+                label={t('propertyType') || 'Tipo de Propiedad'}
+                value={newPropertyData.type}
+                onChange={(e) => setNewPropertyData(prev => ({ ...prev, type: e.target.value }))}
+                fullWidth
+                required
+                error={!!newPropertyErrors.type}
+                helperText={newPropertyErrors.type}
+              >
+                <MenuItem value="Apartment">{t('apartment') || 'Departamento'}</MenuItem>
+                <MenuItem value="House">{t('house') || 'Casa'}</MenuItem>
+                <MenuItem value="Commercial">{t('commercial') || 'Comercial'}</MenuItem>
+              </TextField>
+              <TextField
+                label={t('baseRent') || 'Alquiler Base'}
+                type="number"
+                value={newPropertyData.baseRentAmount}
+                onChange={(e) => setNewPropertyData(prev => ({ ...prev, baseRentAmount: e.target.value }))}
+                fullWidth
+                required
+                error={!!newPropertyErrors.baseRentAmount}
+                helperText={newPropertyErrors.baseRentAmount}
+                inputProps={{ step: '0.01', min: '0.01' }}
+                InputProps={{
+                  startAdornment: <Typography sx={{ mr: 1, color: 'text.secondary' }}>{currency}</Typography>
+                }}
+              />
+            </Box>
+          </DialogContent>
+          <DialogActions sx={{ px: 3, py: 2 }}>
+            <Button onClick={() => setNewPropertyDialogOpen(false)} disabled={creatingProperty}>
+              {t('cancel') || 'Cancelar'}
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleCreateProperty}
+              disabled={creatingProperty}
+              startIcon={creatingProperty ? <CircularProgress size={20} color="inherit" /> : <AddIcon />}
+            >
+              {t('create') || 'Crear'}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* New Tenant Dialog */}
+        <Dialog
+          open={newTenantDialogOpen}
+          onClose={() => {
+            setNewTenantDialogOpen(false)
+            setNewTenantData({ fullName: '', nationalId: '', email: '', phone: '' })
+            setNewTenantErrors({})
+          }}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Person sx={{ color: 'primary.main' }} />
+              <Typography variant="h6">{t('addTenant') || 'Agregar Inquilino'}</Typography>
+            </Box>
+            <IconButton onClick={() => setNewTenantDialogOpen(false)}>
+              <Close />
+            </IconButton>
+          </DialogTitle>
+          <DialogContent dividers>
+            {newTenantErrors.submit && (
+              <Alert severity="error" sx={{ mb: 2 }}>{newTenantErrors.submit}</Alert>
+            )}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+              <TextField
+                label={t('fullName') || 'Nombre Completo'}
+                value={newTenantData.fullName}
+                onChange={(e) => setNewTenantData(prev => ({ ...prev, fullName: e.target.value }))}
+                fullWidth
+                required
+                error={!!newTenantErrors.fullName}
+                helperText={newTenantErrors.fullName}
+              />
+              <TextField
+                label={t('nationalId') || 'DNI/CUIT'}
+                value={newTenantData.nationalId}
+                onChange={(e) => setNewTenantData(prev => ({ ...prev, nationalId: e.target.value }))}
+                fullWidth
+                required
+                error={!!newTenantErrors.nationalId}
+                helperText={newTenantErrors.nationalId}
+              />
+              <TextField
+                label={t('email') || 'Email'}
+                type="email"
+                value={newTenantData.email}
+                onChange={(e) => setNewTenantData(prev => ({ ...prev, email: e.target.value }))}
+                fullWidth
+              />
+              <TextField
+                label={t('phone') || 'Teléfono'}
+                value={newTenantData.phone}
+                onChange={(e) => setNewTenantData(prev => ({ ...prev, phone: e.target.value }))}
+                fullWidth
+              />
+            </Box>
+          </DialogContent>
+          <DialogActions sx={{ px: 3, py: 2 }}>
+            <Button onClick={() => setNewTenantDialogOpen(false)} disabled={creatingTenant}>
+              {t('cancel') || 'Cancelar'}
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleCreateTenant}
+              disabled={creatingTenant}
+              startIcon={creatingTenant ? <CircularProgress size={20} color="inherit" /> : <AddIcon />}
+            >
+              {t('create') || 'Crear'}
+            </Button>
+          </DialogActions>
         </Dialog>
       </Box>
     </LocalizationProvider>
