@@ -64,14 +64,14 @@ const DashboardView = memo(({ onNavigate }) => {
     const vacantProperties = totalProperties - occupiedProperties
     const activeTenants = tenants.length
     const monthlyRevenue = propertyUnits.reduce((sum, p) => sum + (parseFloat(p.baseRentAmount) || 0), 0)
-    const outstandingPayments = payments.filter(p => p.status === 'PENDING' || p.status === 'OVERDUE').length
+    const outstandingPayments = payments.filter(p => p.status === 'PENDING').length
     return { totalProperties, vacantProperties, occupiedProperties, activeTenants, monthlyRevenue, outstandingPayments }
   }, [propertyUnits, tenants, payments])
 
   // Get recent completed payments
   const recentPaymentsData = useMemo(() => {
     return payments
-      .filter(p => p.status === 'COMPLETED')
+      .filter(p => p.status === 'PAID')
       .sort((a, b) => new Date(b.paymentDate) - new Date(a.paymentDate))
       .slice(0, 5)
       .map(p => {

@@ -240,7 +240,7 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
       address: property.address,
       type: property.type,
       baseRentAmount: property.monthlyRent.toString(),
-      leaseStartDate: property.leaseStart ? new Date(property.leaseStart) : null
+      leaseStartDate: property.leaseStart ? new Date(property.leaseStart + 'T00:00:00') : null
     })
     setOpenEditDialog(true)
   }, [])

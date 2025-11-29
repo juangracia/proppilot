@@ -48,7 +48,8 @@ public class TenantController {
     )
     public ResponseEntity<Tenant> createTenant(@Valid @RequestBody Tenant tenant) {
         try {
-            Tenant createdTenant = tenantService.createTenant(tenant);
+            Long ownerId = currentUserService.getCurrentUserId();
+            Tenant createdTenant = tenantService.createTenant(tenant, ownerId);
             return new ResponseEntity<>(createdTenant, HttpStatus.CREATED);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();

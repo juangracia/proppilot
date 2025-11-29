@@ -7,7 +7,7 @@ import java.util.Optional;
 
 public interface TenantService {
 
-    Tenant createTenant(Tenant tenant);
+    Tenant createTenant(Tenant tenant, @NonNull Long ownerId);
 
     List<Tenant> getAllTenants(@NonNull Long ownerId);
 

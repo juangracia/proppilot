@@ -30,6 +30,11 @@ public class Tenant {
     @Column(nullable = false)
     private String phone;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id")
+    @JsonIgnore
+    private User owner;
+
     @OneToMany(mappedBy = "tenant", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JsonIgnore
     private List<PropertyUnit> propertyUnits = new ArrayList<>();

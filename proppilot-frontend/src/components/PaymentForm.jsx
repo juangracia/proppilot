@@ -542,10 +542,10 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
                           </TableCell>
                           <TableCell>
                             <Chip
-                              icon={payment.status === 'COMPLETED' ? <CheckCircle /> : <Schedule />}
-                              label={payment.status === 'COMPLETED' ? t('paid') : t('pending')}
+                              icon={payment.status === 'PAID' ? <CheckCircle /> : <Schedule />}
+                              label={payment.status === 'PAID' ? t('paid') : t('pending')}
                               size="small"
-                              color={payment.status === 'COMPLETED' ? 'success' : 'warning'}
+                              color={payment.status === 'PAID' ? 'success' : 'warning'}
                               sx={{ '& .MuiChip-icon': { fontSize: 16 } }}
                             />
                           </TableCell>
@@ -577,10 +577,10 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
                         {payment.propertyAddress}
                       </Typography>
                       <Chip
-                        icon={payment.status === 'COMPLETED' ? <CheckCircle /> : <Schedule />}
-                        label={payment.status === 'COMPLETED' ? t('paid') : t('pending')}
+                        icon={payment.status === 'PAID' ? <CheckCircle /> : <Schedule />}
+                        label={payment.status === 'PAID' ? t('paid') : t('pending')}
                         size="small"
-                        color={payment.status === 'COMPLETED' ? 'success' : 'warning'}
+                        color={payment.status === 'PAID' ? 'success' : 'warning'}
                         sx={{ '& .MuiChip-icon': { fontSize: 14 }, ml: 1, flexShrink: 0 }}
                       />
                     </Box>
@@ -621,7 +621,7 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
             <>
               <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <Avatar sx={{ bgcolor: selectedPayment.status === 'COMPLETED' ? 'success.main' : 'warning.main', width: 48, height: 48 }}>
+                  <Avatar sx={{ bgcolor: selectedPayment.status === 'PAID' ? 'success.main' : 'warning.main', width: 48, height: 48 }}>
                     <Receipt />
                   </Avatar>
                   <Box>
@@ -641,9 +641,9 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
                 {/* Status */}
                 <Box sx={{ mb: 3 }}>
                   <Chip
-                    icon={selectedPayment.status === 'COMPLETED' ? <CheckCircle /> : <Schedule />}
-                    label={selectedPayment.status === 'COMPLETED' ? (t('paid') || 'Pagado') : (t('pending') || 'Pendiente')}
-                    color={selectedPayment.status === 'COMPLETED' ? 'success' : 'warning'}
+                    icon={selectedPayment.status === 'PAID' ? <CheckCircle /> : <Schedule />}
+                    label={selectedPayment.status === 'PAID' ? (t('paid') || 'Pagado') : (t('pending') || 'Pendiente')}
+                    color={selectedPayment.status === 'PAID' ? 'success' : 'warning'}
                     sx={{ fontWeight: 500 }}
                   />
                 </Box>
