@@ -72,9 +72,11 @@ public class PropertyUnitServiceImpl implements PropertyUnitService {
     public void deletePropertyUnit(@NonNull Long id, @NonNull Long ownerId) {
         PropertyUnit propertyUnit = getPropertyUnitById(id, ownerId);
 
-        // Don't allow deletion if there are active leases
-        if (propertyUnit.getLeases() != null && !propertyUnit.getLeases().isEmpty()) {
-            throw new BusinessLogicException("Cannot delete property unit with existing leases");
+        long leaseCount = leaseRepository.countByPropertyUnitIdAndDeletedFalse(id);
+        if (leaseCount > 0) {
+            throw new BusinessLogicException(
+                    "No se puede eliminar la propiedad porque tiene " + leaseCount + " contrato(s) activo(s). " +
+                    "Debes eliminar primero los contratos antes de poder eliminar la propiedad.");
         }
 
         propertyUnitRepository.delete(propertyUnit);

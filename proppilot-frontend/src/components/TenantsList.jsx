@@ -267,7 +267,8 @@ const TenantsList = memo(function TenantsList({ onNavigateToProperty, onNavigate
       } catch (error) {
         console.error('Error deleting tenant:', error)
         setTenants(originalTenants)
-        showSnackbar(t('failedToDeleteTenant'), 'error')
+        const errorMessage = error.response?.data?.message || t('failedToDeleteTenant')
+        showSnackbar(errorMessage, 'error')
       }
       setPendingDelete(null)
     }, 5000)

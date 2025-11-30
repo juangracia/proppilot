@@ -2,11 +2,12 @@ package com.prop_pilot.service.impl;
 
 import com.prop_pilot.entity.Tenant;
 import com.prop_pilot.entity.User;
+import com.prop_pilot.exception.BusinessLogicException;
+import com.prop_pilot.exception.ResourceNotFoundException;
 import com.prop_pilot.repository.LeaseRepository;
 import com.prop_pilot.repository.TenantRepository;
 import com.prop_pilot.repository.UserRepository;
 import com.prop_pilot.service.TenantService;
-import com.prop_pilot.exception.ResourceNotFoundException;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 
@@ -91,6 +92,14 @@ public class TenantServiceImpl implements TenantService {
     public void deleteTenant(@NonNull Long id, @NonNull Long ownerId) {
         Tenant tenant = tenantRepository.findByIdAndOwnerId(id, ownerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Tenant not found with id: " + id));
+
+        long leaseCount = leaseRepository.countByTenantIdAndDeletedFalse(id);
+        if (leaseCount > 0) {
+            throw new BusinessLogicException(
+                    "No se puede eliminar el inquilino porque tiene " + leaseCount + " contrato(s) activo(s). " +
+                    "Debes eliminar primero los contratos antes de poder eliminar el inquilino.");
+        }
+
         tenantRepository.delete(tenant);
     }
 

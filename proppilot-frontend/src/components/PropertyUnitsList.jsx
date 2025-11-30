@@ -381,7 +381,8 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
       fetchPropertyUnits()
     } catch (err) {
       console.error('Error deleting property:', err)
-      setError(t('failedToDeleteProperty'))
+      const errorMessage = err.response?.data?.message || t('failedToDeleteProperty')
+      setError(errorMessage)
     } finally {
       setDeleteLoading(false)
     }
