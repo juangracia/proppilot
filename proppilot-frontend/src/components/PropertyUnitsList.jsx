@@ -484,14 +484,15 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
                 }}
                 onClick={() => handleViewDetails(property)}
               >
-                <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+                <CardContent sx={{ p: { xs: 2, sm: 3 }, pr: { xs: 2.5, sm: 3 } }}>
                   {/* Property Type and Status */}
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: { xs: 1.5, sm: 2 } }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: { xs: 1.5, sm: 2 }, gap: 1, overflow: 'hidden' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0, flex: '0 1 auto' }}>
                       <Avatar sx={{
                         bgcolor: 'primary.main',
                         width: { xs: 28, sm: 32 },
-                        height: { xs: 28, sm: 32 }
+                        height: { xs: 28, sm: 32 },
+                        flexShrink: 0
                       }}>
                         {React.cloneElement(getTypeIcon(property.type), {
                           sx: { fontSize: { xs: 16, sm: 20 } }
@@ -500,22 +501,23 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
                       <Typography
                         variant="body2"
                         color="text.secondary"
-                        sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                        sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, whiteSpace: 'nowrap' }}
                       >
                         {t(property.type.toLowerCase())}
                       </Typography>
                     </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0 }}>
                       {property.hasPendingPayment && (
                         <Chip
-                          icon={<Warning sx={{ fontSize: 14 }} />}
+                          icon={<Warning sx={{ fontSize: 12 }} />}
                           label={t('paymentOverdue')}
                           size="small"
                           color="error"
                           sx={{
-                            fontSize: { xs: '0.65rem', sm: '0.7rem' },
-                            height: { xs: 20, sm: 24 },
-                            '& .MuiChip-icon': { fontSize: 14 }
+                            fontSize: { xs: '0.6rem', sm: '0.7rem' },
+                            height: { xs: 18, sm: 24 },
+                            '& .MuiChip-icon': { fontSize: 12 },
+                            '& .MuiChip-label': { px: 0.5 }
                           }}
                         />
                       )}
@@ -524,8 +526,9 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
                         color={getStatusColor(property.status)}
                         size="small"
                         sx={{
-                          fontSize: { xs: '0.7rem', sm: '0.75rem' },
-                          height: { xs: 20, sm: 24 }
+                          fontSize: { xs: '0.65rem', sm: '0.75rem' },
+                          height: { xs: 18, sm: 24 },
+                          '& .MuiChip-label': { px: { xs: 0.75, sm: 1 } }
                         }}
                       />
                     </Box>

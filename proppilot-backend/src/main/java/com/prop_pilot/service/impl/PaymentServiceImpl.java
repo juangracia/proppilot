@@ -62,8 +62,6 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         payment.setLease(lease);
-        payment.setPropertyUnit(lease.getPropertyUnit());
-        payment.setTenant(lease.getTenant());
         payment.setOwner(lease.getOwner());
         return paymentRepository.save(payment);
     }

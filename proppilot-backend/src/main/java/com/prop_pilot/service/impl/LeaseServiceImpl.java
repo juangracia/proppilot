@@ -75,8 +75,13 @@ public class LeaseServiceImpl implements LeaseService {
         if (lease.getStartDate() == null || lease.getEndDate() == null) {
             throw new BusinessLogicException("Start date and end date are required");
         }
-        if (lease.getEndDate().isBefore(lease.getStartDate())) {
+        if (!lease.getEndDate().isAfter(lease.getStartDate())) {
             throw new BusinessLogicException("End date must be after start date");
+        }
+        // Minimum lease duration: 30 days
+        long daysBetween = java.time.temporal.ChronoUnit.DAYS.between(lease.getStartDate(), lease.getEndDate());
+        if (daysBetween < 30) {
+            throw new BusinessLogicException("Lease must be at least 30 days long");
         }
 
         // Check for overlapping leases on the same property
@@ -159,8 +164,13 @@ public class LeaseServiceImpl implements LeaseService {
             LocalDate newStartDate = lease.getStartDate() != null ? lease.getStartDate() : existingLease.getStartDate();
             LocalDate newEndDate = lease.getEndDate() != null ? lease.getEndDate() : existingLease.getEndDate();
 
-            if (newEndDate.isBefore(newStartDate)) {
+            if (!newEndDate.isAfter(newStartDate)) {
                 throw new BusinessLogicException("End date must be after start date");
+            }
+            // Minimum lease duration: 30 days
+            long daysBetween = java.time.temporal.ChronoUnit.DAYS.between(newStartDate, newEndDate);
+            if (daysBetween < 30) {
+                throw new BusinessLogicException("Lease must be at least 30 days long");
             }
 
             if (hasOverlappingLease(existingLease.getPropertyUnit().getId(), newStartDate, newEndDate, id)) {

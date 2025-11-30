@@ -18,22 +18,13 @@ public class Payment {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "lease_id", nullable = true)
+    @JoinColumn(name = "lease_id", nullable = false)
+    @NotNull(message = "Lease is required for payment")
     @JsonBackReference("lease-payments")
     private Lease lease;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "property_unit_id")
-    @com.fasterxml.jackson.annotation.JsonIgnore
-    private PropertyUnit propertyUnit;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "tenant_id")
-    @com.fasterxml.jackson.annotation.JsonIgnore
-    private Tenant tenant;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "owner_id")
+    @JoinColumn(name = "owner_id", nullable = false)
     @com.fasterxml.jackson.annotation.JsonIgnore
     private User owner;
 

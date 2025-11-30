@@ -686,7 +686,7 @@ function AppContent() {
               pb: { xs: 3, sm: 4 },
             }}
           >
-            <Container maxWidth="xl" sx={{ px: { xs: 1, sm: 2 } }}>
+            <Container maxWidth="xl" sx={{ px: { xs: 2, sm: 3 } }}>
               {content}
             </Container>
           </Box>

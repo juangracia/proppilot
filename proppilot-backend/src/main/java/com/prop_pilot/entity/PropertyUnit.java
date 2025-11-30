@@ -71,7 +71,7 @@ public class PropertyUnit {
     private List<Lease> leases = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "owner_id")
+    @JoinColumn(name = "owner_id", nullable = false)
     @JsonIgnore
     private User owner;
 
