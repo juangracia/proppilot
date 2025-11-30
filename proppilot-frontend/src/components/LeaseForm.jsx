@@ -311,9 +311,9 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
 
   const getStatusLabel = (status) => {
     switch (status) {
-      case 'ACTIVE': return t('active') || 'Activo'
-      case 'EXPIRED': return t('expired') || 'Vencido'
-      case 'TERMINATED': return t('terminated') || 'Terminado'
+      case 'ACTIVE': return t('leaseActive')
+      case 'EXPIRED': return t('leaseExpired')
+      case 'TERMINATED': return t('leaseTerminated')
       default: return status
     }
   }
