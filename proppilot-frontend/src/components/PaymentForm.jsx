@@ -398,7 +398,8 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
                       border: 1,
                       borderColor: 'divider',
                       borderRadius: 1,
-                      bgcolor: 'background.default'
+                      bgcolor: 'background.default',
+                      overflow: 'hidden'
                     }}>
                       <Typography
                         variant="subtitle2"
@@ -406,18 +407,24 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
                         color="primary"
                         sx={{ fontSize: { xs: '0.875rem', sm: '0.875rem' } }}
                       >
-                        {t('leaseDetails') || 'Detalles del Contrato'}
+                        {t('leaseDetails')}
                       </Typography>
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                         <Typography
                           variant="body2"
-                          sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
+                          sx={{
+                            fontSize: { xs: '0.8125rem', sm: '0.875rem' },
+                            wordBreak: 'break-word'
+                          }}
                         >
-                          <strong>{t('propertyInfo') || 'Propiedad'}:</strong> {selectedLease.propertyAddress}
+                          <strong>{t('propertyInfo')}:</strong> {selectedLease.propertyAddress}
                         </Typography>
                         <Typography
                           variant="body2"
-                          sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
+                          sx={{
+                            fontSize: { xs: '0.8125rem', sm: '0.875rem' },
+                            wordBreak: 'break-word'
+                          }}
                         >
                           <strong>{t('tenant')}:</strong> {selectedLease.tenantName}
                         </Typography>
@@ -425,19 +432,19 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
                           variant="body2"
                           sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
                         >
-                          <strong>{t('monthlyRent') || 'Alquiler Mensual'}:</strong> {formatCurrency(selectedLease.monthlyRent)}
+                          <strong>{t('monthlyRent')}:</strong> {formatCurrency(selectedLease.monthlyRent)}
                         </Typography>
                         <Typography
                           variant="body2"
                           sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
                         >
-                          <strong>{t('leasePeriod') || 'Período'}:</strong> {selectedLease.startDate} - {selectedLease.endDate}
+                          <strong>{t('leasePeriod')}:</strong> {selectedLease.startDate} - {selectedLease.endDate}
                         </Typography>
                         <Typography
                           variant="body2"
                           sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
                         >
-                          <strong>{t('adjustmentIndex') || 'Índice de Ajuste'}:</strong> {selectedLease.adjustmentIndex}
+                          <strong>{t('adjustmentIndex')}:</strong> {selectedLease.adjustmentIndex}
                         </Typography>
                       </Box>
                     </Box>
