@@ -52,7 +52,7 @@ import { useLanguage } from '../contexts/LanguageContext'
 import { API_BASE_URL } from '../config/api'
 
 const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTenant }) {
-  const { t, formatCurrency, currency } = useLanguage()
+  const { t, formatCurrency, currency, formatNumber } = useLanguage()
   const [activeTab, setActiveTab] = useState(0)
 
   const [formData, setFormData] = useState({
@@ -70,6 +70,7 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
   const [tenants, setTenants] = useState([])
   const [leases, setLeases] = useState([])
   const [loading, setLoading] = useState(false)
+  const [initialLoading, setInitialLoading] = useState(true)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
   const [detailDialogOpen, setDetailDialogOpen] = useState(false)
@@ -86,13 +87,14 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
   const [creatingProperty, setCreatingProperty] = useState(false)
 
   const adjustmentIndices = useMemo(() => [
-    { value: 'ICL', label: 'ICL (Índice Contratos de Locación)' },
-    { value: 'IPC', label: 'IPC (Índice Precios al Consumidor)' },
-    { value: 'NONE', label: 'Sin Ajuste' }
-  ], [])
+    { value: 'ICL', label: t('indexICL') },
+    { value: 'IPC', label: t('indexIPC') },
+    { value: 'NONE', label: t('indexFixed') }
+  ], [t])
 
   const fetchData = useCallback(async () => {
     try {
+      setInitialLoading(true)
       const [propertiesRes, tenantsRes, leasesRes] = await Promise.all([
         axios.get(`${API_BASE_URL}/property-units`),
         axios.get(`${API_BASE_URL}/tenants`),
@@ -103,6 +105,8 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
       setLeases(Array.isArray(leasesRes.data) ? leasesRes.data : [])
     } catch (error) {
       console.error('Error fetching data:', error)
+    } finally {
+      setInitialLoading(false)
     }
   }, [])
 
@@ -147,6 +151,13 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
       errors.endDate = t('endDateRequired') || 'Fecha de fin requerida'
     } else if (formData.startDate && formData.endDate <= formData.startDate) {
       errors.endDate = t('endDateAfterStart') || 'La fecha de fin debe ser posterior a la de inicio'
+    } else if (formData.startDate && formData.endDate) {
+      // Check minimum lease duration (at least 1 month)
+      const diffMs = formData.endDate - formData.startDate
+      const diffDays = diffMs / (1000 * 60 * 60 * 24)
+      if (diffDays < 30) {
+        errors.endDate = t('minLeaseDuration') || 'El contrato debe durar al menos 1 mes'
+      }
     }
 
     if (!formData.monthlyRent) {
@@ -155,6 +166,8 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
       const rent = parseFloat(formData.monthlyRent)
       if (isNaN(rent) || rent <= 0) {
         errors.monthlyRent = t('rentPositive') || 'El alquiler debe ser mayor a 0'
+      } else if (rent > 99999999) {
+        errors.monthlyRent = t('rentMaxExceeded') || 'El monto excede el límite permitido'
       }
     }
 
@@ -396,7 +409,7 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                           >
                             {tenants.map((tenant) => (
                               <MenuItem key={tenant.id} value={tenant.id}>
-                                {tenant.fullName} - {tenant.nationalId}
+                                {tenant.fullName} - {formatNumber(tenant.nationalId)}
                               </MenuItem>
                             ))}
                           </Select>
@@ -484,19 +497,21 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                       </TextField>
                     </Grid>
 
-                    <Grid size={{ xs: 12, md: 6 }}>
-                      <TextField
-                        select
-                        label={t('adjustmentFrequency') || 'Frecuencia de Ajuste'}
-                        value={formData.adjustmentFrequencyMonths}
-                        onChange={(e) => setFormData(prev => ({ ...prev, adjustmentFrequencyMonths: e.target.value }))}
-                        fullWidth
-                      >
-                        <MenuItem value={3}>Trimestral (3 meses)</MenuItem>
-                        <MenuItem value={6}>Semestral (6 meses)</MenuItem>
-                        <MenuItem value={12}>Anual (12 meses)</MenuItem>
-                      </TextField>
-                    </Grid>
+                    {formData.adjustmentIndex !== 'NONE' && (
+                      <Grid size={{ xs: 12, md: 6 }}>
+                        <TextField
+                          select
+                          label={t('adjustmentFrequency')}
+                          value={formData.adjustmentFrequencyMonths}
+                          onChange={(e) => setFormData(prev => ({ ...prev, adjustmentFrequencyMonths: e.target.value }))}
+                          fullWidth
+                        >
+                          <MenuItem value={3}>{t('quarterly') || 'Trimestral (3 meses)'}</MenuItem>
+                          <MenuItem value={6}>{t('semiannual') || 'Semestral (6 meses)'}</MenuItem>
+                          <MenuItem value={12}>{t('annual') || 'Anual (12 meses)'}</MenuItem>
+                        </TextField>
+                      </Grid>
+                    )}
 
                     {(selectedPropertyUnit || selectedTenant) && (
                       <Grid size={{ xs: 12 }}>
@@ -576,7 +591,11 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
           {/* Tab 0: Lease List */}
           {activeTab === 0 && (
             <Box>
-              {leases.length === 0 && (
+              {initialLoading ? (
+                <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+                  <CircularProgress />
+                </Box>
+              ) : leases.length === 0 ? (
                 <Paper
                   sx={{
                     p: 4,
@@ -588,15 +607,13 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                 >
                   <Description sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
                   <Typography variant="h6" color="text.secondary" gutterBottom>
-                    {t('noLeases') || 'No hay contratos'}
+                    {t('noLeases')}
                   </Typography>
                   <Typography variant="body2" color="text.disabled">
-                    {t('noLeasesDesc') || 'Los contratos aparecerán aquí una vez creados'}
+                    {t('noLeasesDesc')}
                   </Typography>
                 </Paper>
-              )}
-
-              {leases.length > 0 && (
+              ) : (
                 <>
                   <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
                     <TableContainer>

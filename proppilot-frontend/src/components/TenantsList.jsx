@@ -61,7 +61,7 @@ const isLeaseEndingSoon = (dateStr) => {
 }
 
 const TenantsList = memo(function TenantsList({ onNavigateToProperty, onNavigateToPayment, initialTenantId, onTenantViewed }) {
-  const { t, formatCurrency } = useLanguage()
+  const { t, formatCurrency, formatNumber } = useLanguage()
   const isMobile = useMediaQuery('(max-width:600px)')
   const [tenants, setTenants] = useState([])
   const [loading, setLoading] = useState(true)
@@ -397,7 +397,7 @@ const TenantsList = memo(function TenantsList({ onNavigateToProperty, onNavigate
                     <Box>
                       <Typography sx={{ fontWeight: 500, whiteSpace: 'nowrap' }}>{tenant.fullName}</Typography>
                       <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
-                        {t('nationalId')}: {tenant.nationalId}
+                        {t('nationalId')}: {formatNumber(tenant.nationalId)}
                       </Typography>
                     </Box>
                   </TableCell>
@@ -586,7 +586,7 @@ const TenantsList = memo(function TenantsList({ onNavigateToProperty, onNavigate
                   {t('nationalId')}
                 </Typography>
                 <Typography variant="body2" sx={{ fontSize: '0.875rem' }}>
-                  {tenant.nationalId}
+                  {formatNumber(tenant.nationalId)}
                 </Typography>
               </Box>
               <Box>
@@ -722,7 +722,7 @@ const TenantsList = memo(function TenantsList({ onNavigateToProperty, onNavigate
           </Typography>
           {tenantToDelete && (
             <Typography variant="body2" sx={{ mt: 1, fontWeight: 'bold' }}>
-              {tenantToDelete.fullName} ({tenantToDelete.nationalId})
+              {tenantToDelete.fullName} ({formatNumber(tenantToDelete.nationalId)})
             </Typography>
           )}
         </DialogContent>
@@ -762,7 +762,7 @@ const TenantsList = memo(function TenantsList({ onNavigateToProperty, onNavigate
                     {selectedTenant.fullName}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {t('nationalId')}: {selectedTenant.nationalId}
+                    {t('nationalId')}: {formatNumber(selectedTenant.nationalId)}
                   </Typography>
                 </Box>
               </Box>

@@ -21,12 +21,12 @@ export const LanguageProvider = ({ children }) => {
       appSubtitle: 'Gestión de Propiedades de Alquiler',
 
       // Tabs
-      propertyUnits: 'UNIDADES DE PROPIEDAD',
+      propertyUnits: 'PROPIEDADES',
       registerPayment: 'Registrar Pago',
       tenants: 'INQUILINOS',
 
       // Property List
-      propertyUnitsTitle: 'Unidades de Propiedad',
+      propertyUnitsTitle: 'Propiedades',
       addProperty: 'Agregar Propiedad',
       searchPlaceholder: 'Buscar por dirección...',
 
@@ -77,7 +77,7 @@ export const LanguageProvider = ({ children }) => {
       propertyType: 'Tipo de Propiedad',
 
       // Messages
-      totalUnits: 'Total: {count} unidade{plural} de propiedad',
+      totalUnits: 'Total: {count} propiedad{plural}',
       loading: 'Cargando...',
       errorOccurred: 'Ocurrió un error',
 
@@ -125,7 +125,7 @@ export const LanguageProvider = ({ children }) => {
 
       // Payment Form
       registerPaymentTitle: 'Registrar Pago',
-      propertyUnitLabel: 'Unidad de Propiedad',
+      propertyUnitLabel: 'Propiedad',
       paymentAmountLabel: 'Monto del Pago',
       paymentDateLabel: 'Fecha de Pago',
       paymentTypeLabel: 'Tipo de Pago',
@@ -144,14 +144,14 @@ export const LanguageProvider = ({ children }) => {
       emailRequired: 'El email es requerido',
       emailInvalid: 'El formato del email no es válido',
       phoneRequired: 'El teléfono es requerido',
-      propertyUnitRequired: 'La unidad de propiedad es requerida',
+      propertyUnitRequired: 'La propiedad es requerida',
       amountRequired: 'El monto del pago es requerido',
       amountPositive: 'El monto del pago debe ser mayor a 0',
       amountExceeded: 'El monto del pago no puede exceder 999,999.99',
       dateRequired: 'La fecha de pago es requerida',
       dateFuture: 'La fecha de pago no puede ser futura',
       descriptionLength: 'La descripción no puede exceder 500 caracteres',
-      failedToLoadProperties: 'Error al cargar las unidades de propiedad. Por favor asegúrese de que el servidor backend esté funcionando.',
+      failedToLoadProperties: 'Error al cargar las propiedades. Por favor asegúrese de que el servidor esté funcionando.',
 
       // Selectors
       language: 'Idioma',
@@ -185,6 +185,18 @@ export const LanguageProvider = ({ children }) => {
       indexIPC: 'IPC (Índice de Precios al Consumidor)',
       indexFixed: 'Fijo (Sin ajuste)',
       indexCustom: 'Personalizado',
+      quarterly: 'Trimestral (3 meses)',
+      semiannual: 'Semestral (6 meses)',
+      annual: 'Anual (12 meses)',
+      minLeaseDuration: 'El contrato debe durar al menos 1 mes',
+      rentMaxExceeded: 'El monto excede el límite permitido',
+      propertyRequired: 'Propiedad requerida',
+      tenantRequired: 'Inquilino requerido',
+      startDateRequired: 'Fecha de inicio requerida',
+      endDateRequired: 'Fecha de fin requerida',
+      endDateAfterStart: 'La fecha de fin debe ser posterior a la de inicio',
+      rentRequired: 'Alquiler mensual requerido',
+      rentPositive: 'El alquiler debe ser mayor a 0',
       leaseCreatedSuccess: '¡Contrato creado exitosamente!',
       failedToCreateLease: 'Error al crear el contrato',
       leaseUpdatedSuccess: '¡Contrato actualizado exitosamente!',
@@ -313,9 +325,11 @@ export const LanguageProvider = ({ children }) => {
       tourSidebarNavTitle: 'Navegación',
       tourSidebarNav: 'Usa el menú lateral para navegar entre las diferentes secciones de la aplicación.',
       tourNavPropertiesTitle: 'Propiedades',
-      tourNavProperties: 'Gestiona todas tus unidades de propiedad. Agrega, edita o elimina propiedades y asigna inquilinos.',
+      tourNavProperties: 'Gestiona todas tus propiedades. Agrega, edita o elimina propiedades con sus direcciones y tipos.',
       tourNavTenantsTitle: 'Inquilinos',
-      tourNavTenants: 'Administra la información de tus inquilinos. Mantén un registro de sus datos de contacto y contratos.',
+      tourNavTenants: 'Administra la información de tus inquilinos. Mantén un registro de sus datos de contacto.',
+      tourNavLeasesTitle: 'Contratos',
+      tourNavLeases: 'Crea y administra contratos de alquiler. Vincula propiedades con inquilinos, define montos y ajustes.',
       tourNavPaymentsTitle: 'Pagos',
       tourNavPayments: 'Registra y da seguimiento a los pagos de alquiler. Mantén un historial completo de todas las transacciones.',
       tourLanguageSelectorTitle: 'Idioma y Moneda',
@@ -503,6 +517,18 @@ export const LanguageProvider = ({ children }) => {
       indexIPC: 'IPC (Consumer Price Index)',
       indexFixed: 'Fixed (No adjustment)',
       indexCustom: 'Custom',
+      quarterly: 'Quarterly (3 months)',
+      semiannual: 'Semiannual (6 months)',
+      annual: 'Annual (12 months)',
+      minLeaseDuration: 'Lease must be at least 1 month',
+      rentMaxExceeded: 'Amount exceeds maximum allowed',
+      propertyRequired: 'Property is required',
+      tenantRequired: 'Tenant is required',
+      startDateRequired: 'Start date is required',
+      endDateRequired: 'End date is required',
+      endDateAfterStart: 'End date must be after start date',
+      rentRequired: 'Monthly rent is required',
+      rentPositive: 'Rent must be greater than 0',
       leaseCreatedSuccess: 'Lease created successfully!',
       failedToCreateLease: 'Failed to create lease',
       leaseUpdatedSuccess: 'Lease updated successfully!',
@@ -631,9 +657,11 @@ export const LanguageProvider = ({ children }) => {
       tourSidebarNavTitle: 'Navigation',
       tourSidebarNav: 'Use the sidebar menu to navigate between the different sections of the application.',
       tourNavPropertiesTitle: 'Properties',
-      tourNavProperties: 'Manage all your property units. Add, edit, or delete properties and assign tenants.',
+      tourNavProperties: 'Manage all your properties. Add, edit, or delete properties with their addresses and types.',
       tourNavTenantsTitle: 'Tenants',
-      tourNavTenants: 'Manage your tenant information. Keep track of their contact details and contracts.',
+      tourNavTenants: 'Manage your tenant information. Keep track of their contact details.',
+      tourNavLeasesTitle: 'Leases',
+      tourNavLeases: 'Create and manage rental contracts. Link properties with tenants, set amounts and adjustments.',
       tourNavPaymentsTitle: 'Payments',
       tourNavPayments: 'Record and track rent payments. Maintain a complete history of all transactions.',
       tourLanguageSelectorTitle: 'Language & Currency',
@@ -677,6 +705,12 @@ export const LanguageProvider = ({ children }) => {
     return `${symbol}${formattedAmount}`
   }
 
+  const formatNumber = (number) => {
+    if (!number && number !== 0) return ''
+    const numStr = String(number).replace(/\D/g, '')
+    return new Intl.NumberFormat(language === 'es' ? 'es-AR' : 'en-US', { useGrouping: true }).format(numStr)
+  }
+
   const value = {
     language,
     setLanguage,
@@ -684,6 +718,7 @@ export const LanguageProvider = ({ children }) => {
     setCurrency,
     t,
     formatCurrency,
+    formatNumber,
     availableLanguages: [
       { code: 'es', name: 'Español' },
       { code: 'en', name: 'English' }

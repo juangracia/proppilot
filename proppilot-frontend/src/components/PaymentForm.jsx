@@ -69,6 +69,7 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
   const [validationErrors, setValidationErrors] = useState({})
   const [leases, setLeases] = useState([])
   const [loading, setLoading] = useState(false)
+  const [initialLoading, setInitialLoading] = useState(true)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
   const [detailDialogOpen, setDetailDialogOpen] = useState(false)
@@ -85,6 +86,7 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
 
   const fetchData = useCallback(async () => {
     try {
+      setInitialLoading(true)
       const [leasesRes, paymentsRes] = await Promise.all([
         axios.get(`${API_BASE_URL}/leases/active`),
         axios.get(`${API_BASE_URL}/payments`)
@@ -93,6 +95,8 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
       setPayments(Array.isArray(paymentsRes.data) ? paymentsRes.data : [])
     } catch (error) {
       console.error('Error fetching data:', error)
+    } finally {
+      setInitialLoading(false)
     }
   }, [])
 
@@ -255,7 +259,11 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
                 </Alert>
               )}
 
-              {leases.length === 0 ? (
+              {initialLoading ? (
+                <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+                  <CircularProgress />
+                </Box>
+              ) : leases.length === 0 ? (
                 <Paper
                   sx={{
                     p: 4,
@@ -267,10 +275,10 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
                 >
                   <Description sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
                   <Typography variant="h6" color="text.secondary" gutterBottom>
-                    {t('noActiveLeases') || 'No hay contratos activos'}
+                    {t('noActiveLeases')}
                   </Typography>
                   <Typography variant="body2" color="text.disabled">
-                    {t('noActiveLeasesDesc') || 'Primero debes crear un contrato de alquiler para registrar pagos'}
+                    {t('noActiveLeasesDesc')}
                   </Typography>
                 </Paper>
               ) : loading ? (
@@ -491,8 +499,11 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
           {/* Tab 0: Payment History */}
           {activeTab === 0 && (
             <Box>
-              {/* Empty State */}
-              {payments.length === 0 && (
+              {initialLoading ? (
+                <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+                  <CircularProgress />
+                </Box>
+              ) : payments.length === 0 ? (
                 <Paper
                   sx={{
                     p: 4,
@@ -504,16 +515,13 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
                 >
                   <PaymentIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
                   <Typography variant="h6" color="text.secondary" gutterBottom>
-                    {t('noPayments') || 'No payments found'}
+                    {t('noPayments')}
                   </Typography>
                   <Typography variant="body2" color="text.disabled">
-                    {t('noPaymentsDesc') || 'Payment history will appear here once payments are registered'}
+                    {t('noPaymentsDesc')}
                   </Typography>
                 </Paper>
-              )}
-
-              {/* Desktop/Tablet Table View */}
-              {payments.length > 0 && (
+              ) : (
               <>
               <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
                 <TableContainer>
