@@ -30,6 +30,15 @@ public interface LeaseService {
 
     void deleteLease(@NonNull Long id, @NonNull Long ownerId);
 
+    // Soft delete operations
+    void softDeleteLease(@NonNull Long id, @NonNull Long ownerId);
+
+    void restoreLease(@NonNull Long id, @NonNull Long ownerId);
+
+    List<Lease> getDeletedLeases(@NonNull Long ownerId);
+
+    void permanentlyDeleteLease(@NonNull Long id, @NonNull Long ownerId);
+
     boolean hasOverlappingLease(@NonNull Long propertyUnitId, @NonNull LocalDate startDate,
                                 @NonNull LocalDate endDate, Long excludeLeaseId);
 }

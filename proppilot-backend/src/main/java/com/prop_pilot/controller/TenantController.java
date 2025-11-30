@@ -15,6 +15,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -160,5 +161,16 @@ public class TenantController {
         Optional<Tenant> tenant = tenantService.getTenantByEmail(email, ownerId);
         return tenant.map(t -> new ResponseEntity<>(t, HttpStatus.OK))
                     .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+    }
+
+    @GetMapping("/{id}/can-delete")
+    @Operation(summary = "Check if tenant can be deleted", description = "Checks if tenant has any associated contracts")
+    @ApiResponse(responseCode = "200", description = "Check completed")
+    public ResponseEntity<Map<String, Object>> canDeleteTenant(
+            @Parameter(description = "Tenant ID", required = true)
+            @PathVariable @NonNull Long id) {
+        Long ownerId = currentUserService.getCurrentUserId();
+        Map<String, Object> result = tenantService.canDelete(id, ownerId);
+        return ResponseEntity.ok(result);
     }
 }

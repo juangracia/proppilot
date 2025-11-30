@@ -5,6 +5,7 @@ import com.prop_pilot.entity.User;
 import org.springframework.lang.NonNull;
 
 import java.util.List;
+import java.util.Map;
 
 public interface PropertyUnitService {
 
@@ -21,4 +22,6 @@ public interface PropertyUnitService {
     void deletePropertyUnit(@NonNull Long id, @NonNull Long ownerId);
 
     List<PropertyUnit> searchPropertyUnits(String address, @NonNull Long ownerId);
+
+    Map<String, Object> canDelete(@NonNull Long id, @NonNull Long ownerId);
 }

@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -108,13 +109,13 @@ public class LeaseServiceImpl implements LeaseService {
 
     @Override
     public Lease getLeaseById(@NonNull Long id, @NonNull Long ownerId) {
-        return leaseRepository.findByIdAndOwnerId(id, ownerId)
+        return leaseRepository.findByIdAndOwnerIdAndDeletedFalse(id, ownerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Lease not found with id: " + id));
     }
 
     @Override
     public List<Lease> getAllLeases(@NonNull Long ownerId) {
-        return leaseRepository.findByOwnerId(ownerId);
+        return leaseRepository.findByOwnerIdAndDeletedFalse(ownerId);
     }
 
     @Override
@@ -123,7 +124,7 @@ public class LeaseServiceImpl implements LeaseService {
         propertyUnitRepository.findByIdAndOwnerId(propertyUnitId, ownerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Property unit not found with id: " + propertyUnitId));
 
-        return leaseRepository.findByPropertyUnitIdAndOwnerId(propertyUnitId, ownerId);
+        return leaseRepository.findByPropertyUnitIdAndOwnerIdAndDeletedFalse(propertyUnitId, ownerId);
     }
 
     @Override
@@ -132,7 +133,7 @@ public class LeaseServiceImpl implements LeaseService {
         tenantRepository.findByIdAndOwnerId(tenantId, ownerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Tenant not found with id: " + tenantId));
 
-        return leaseRepository.findByTenantIdAndOwnerId(tenantId, ownerId);
+        return leaseRepository.findByTenantIdAndOwnerIdAndDeletedFalse(tenantId, ownerId);
     }
 
     @Override
@@ -210,6 +211,47 @@ public class LeaseServiceImpl implements LeaseService {
             throw new BusinessLogicException("Cannot delete lease with existing payments. Terminate the lease instead.");
         }
 
+        leaseRepository.delete(lease);
+    }
+
+    @Override
+    @Transactional
+    public void softDeleteLease(@NonNull Long id, @NonNull Long ownerId) {
+        Lease lease = getLeaseById(id, ownerId);
+        lease.setDeleted(true);
+        lease.setDeletedAt(LocalDateTime.now());
+        leaseRepository.save(lease);
+    }
+
+    @Override
+    @Transactional
+    public void restoreLease(@NonNull Long id, @NonNull Long ownerId) {
+        Lease lease = leaseRepository.findByIdAndOwnerIdAndDeletedTrue(id, ownerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Deleted lease not found with id: " + id));
+
+        // Check for overlapping leases before restoring
+        if (lease.getStatus() == Lease.LeaseStatus.ACTIVE &&
+            hasOverlappingLease(lease.getPropertyUnit().getId(), lease.getStartDate(), lease.getEndDate(), id)) {
+            throw new BusinessLogicException("Cannot restore lease: there is already an active lease for this property during the specified period");
+        }
+
+        lease.setDeleted(false);
+        lease.setDeletedAt(null);
+        leaseRepository.save(lease);
+    }
+
+    @Override
+    public List<Lease> getDeletedLeases(@NonNull Long ownerId) {
+        return leaseRepository.findByOwnerIdAndDeletedTrue(ownerId);
+    }
+
+    @Override
+    @Transactional
+    public void permanentlyDeleteLease(@NonNull Long id, @NonNull Long ownerId) {
+        Lease lease = leaseRepository.findByIdAndOwnerIdAndDeletedTrue(id, ownerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Deleted lease not found with id: " + id));
+
+        // Only allow permanent deletion of already soft-deleted leases
         leaseRepository.delete(lease);
     }
 

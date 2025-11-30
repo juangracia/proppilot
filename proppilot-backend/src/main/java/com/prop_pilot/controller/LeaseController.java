@@ -121,11 +121,38 @@ public class LeaseController {
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Delete lease", description = "Deletes a lease (only if no payments exist)")
-    @ApiResponse(responseCode = "204", description = "Lease deleted successfully")
+    @Operation(summary = "Soft delete lease", description = "Soft deletes a lease (can be restored later)")
+    @ApiResponse(responseCode = "204", description = "Lease soft deleted successfully")
     public ResponseEntity<Void> deleteLease(@PathVariable Long id) {
         Long ownerId = currentUserService.getCurrentUserId();
-        leaseService.deleteLease(id, ownerId);
+        leaseService.softDeleteLease(id, ownerId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/deleted")
+    @Operation(summary = "Get deleted leases", description = "Retrieves all soft-deleted leases for the current landlord")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved deleted leases")
+    public ResponseEntity<List<Lease>> getDeletedLeases() {
+        Long ownerId = currentUserService.getCurrentUserId();
+        List<Lease> leases = leaseService.getDeletedLeases(ownerId);
+        return ResponseEntity.ok(leases);
+    }
+
+    @PostMapping("/{id}/restore")
+    @Operation(summary = "Restore lease", description = "Restores a soft-deleted lease")
+    @ApiResponse(responseCode = "200", description = "Lease restored successfully")
+    public ResponseEntity<Void> restoreLease(@PathVariable Long id) {
+        Long ownerId = currentUserService.getCurrentUserId();
+        leaseService.restoreLease(id, ownerId);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/{id}/permanent")
+    @Operation(summary = "Permanently delete lease", description = "Permanently deletes a soft-deleted lease (cannot be restored)")
+    @ApiResponse(responseCode = "204", description = "Lease permanently deleted")
+    public ResponseEntity<Void> permanentlyDeleteLease(@PathVariable Long id) {
+        Long ownerId = currentUserService.getCurrentUserId();
+        leaseService.permanentlyDeleteLease(id, ownerId);
         return ResponseEntity.noContent().build();
     }
 }

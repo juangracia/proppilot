@@ -41,7 +41,10 @@ import {
   CheckCircle,
   Cancel,
   OpenInNew,
-  Add as AddIcon
+  Add as AddIcon,
+  Delete,
+  Restore,
+  DeleteForever
 } from '@mui/icons-material'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
@@ -75,6 +78,14 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
   const [success, setSuccess] = useState(null)
   const [detailDialogOpen, setDetailDialogOpen] = useState(false)
   const [selectedLease, setSelectedLease] = useState(null)
+  const [deletedLeases, setDeletedLeases] = useState([])
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [leaseToDelete, setLeaseToDelete] = useState(null)
+  const [confirmDeleteStep, setConfirmDeleteStep] = useState(0)
+  const [permanentDeleteDialogOpen, setPermanentDeleteDialogOpen] = useState(false)
+  const [leaseToPermDelete, setLeaseToPermDelete] = useState(null)
+  const [restoreDialogOpen, setRestoreDialogOpen] = useState(false)
+  const [leaseToRestore, setLeaseToRestore] = useState(null)
 
   // Inline creation dialogs
   const [newTenantDialogOpen, setNewTenantDialogOpen] = useState(false)
@@ -95,14 +106,16 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
   const fetchData = useCallback(async () => {
     try {
       setInitialLoading(true)
-      const [propertiesRes, tenantsRes, leasesRes] = await Promise.all([
+      const [propertiesRes, tenantsRes, leasesRes, deletedLeasesRes] = await Promise.all([
         axios.get(`${API_BASE_URL}/property-units`),
         axios.get(`${API_BASE_URL}/tenants`),
-        axios.get(`${API_BASE_URL}/leases`)
+        axios.get(`${API_BASE_URL}/leases`),
+        axios.get(`${API_BASE_URL}/leases/deleted`)
       ])
       setPropertyUnits(Array.isArray(propertiesRes.data) ? propertiesRes.data : [])
       setTenants(Array.isArray(tenantsRes.data) ? tenantsRes.data : [])
       setLeases(Array.isArray(leasesRes.data) ? leasesRes.data : [])
+      setDeletedLeases(Array.isArray(deletedLeasesRes.data) ? deletedLeasesRes.data : [])
     } catch (error) {
       console.error('Error fetching data:', error)
     } finally {
@@ -242,6 +255,75 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
     }
   }
 
+  const openDeleteDialog = useCallback((lease) => {
+    setLeaseToDelete(lease)
+    setConfirmDeleteStep(lease.status === 'ACTIVE' ? 0 : 1)
+    setDeleteDialogOpen(true)
+  }, [])
+
+  const handleCloseDeleteDialog = useCallback(() => {
+    setDeleteDialogOpen(false)
+    setLeaseToDelete(null)
+    setConfirmDeleteStep(0)
+  }, [])
+
+  const handleDeleteLease = async () => {
+    if (!leaseToDelete) return
+
+    try {
+      await axios.delete(`${API_BASE_URL}/leases/${leaseToDelete.id}`)
+      setLeases(prev => prev.filter(l => l.id !== leaseToDelete.id))
+      setDeletedLeases(prev => [...prev, { ...leaseToDelete, deleted: true, deletedAt: new Date().toISOString() }])
+      handleCloseDeleteDialog()
+      setDetailDialogOpen(false)
+      setSuccess(t('leaseDeletedSuccess'))
+    } catch (err) {
+      console.error('Error deleting lease:', err)
+      setError(err.response?.data?.message || t('failedToDeleteLease'))
+    }
+  }
+
+  const openRestoreDialog = useCallback((lease) => {
+    setLeaseToRestore(lease)
+    setRestoreDialogOpen(true)
+  }, [])
+
+  const handleRestoreLease = async () => {
+    if (!leaseToRestore) return
+
+    try {
+      await axios.post(`${API_BASE_URL}/leases/${leaseToRestore.id}/restore`)
+      setDeletedLeases(prev => prev.filter(l => l.id !== leaseToRestore.id))
+      setLeases(prev => [...prev, { ...leaseToRestore, deleted: false, deletedAt: null }])
+      setRestoreDialogOpen(false)
+      setLeaseToRestore(null)
+      setSuccess(t('leaseRestoredSuccess'))
+    } catch (err) {
+      console.error('Error restoring lease:', err)
+      setError(err.response?.data?.message || t('failedToRestoreLease'))
+    }
+  }
+
+  const openPermanentDeleteDialog = useCallback((lease) => {
+    setLeaseToPermDelete(lease)
+    setPermanentDeleteDialogOpen(true)
+  }, [])
+
+  const handlePermanentDelete = async () => {
+    if (!leaseToPermDelete) return
+
+    try {
+      await axios.delete(`${API_BASE_URL}/leases/${leaseToPermDelete.id}/permanent`)
+      setDeletedLeases(prev => prev.filter(l => l.id !== leaseToPermDelete.id))
+      setPermanentDeleteDialogOpen(false)
+      setLeaseToPermDelete(null)
+      setSuccess(t('leasePermanentlyDeleted'))
+    } catch (err) {
+      console.error('Error permanently deleting lease:', err)
+      setError(err.response?.data?.message || t('failedToPermanentlyDelete'))
+    }
+  }
+
   // Inline creation handlers
   const handleCreateTenant = async () => {
     const errors = {}
@@ -339,9 +421,27 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
             value={activeTab}
             onChange={handleTabChange}
             sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}
+            variant="scrollable"
+            scrollButtons="auto"
           >
             <Tab label={t('leaseList') || 'Contratos'} sx={{ textTransform: 'none' }} />
             <Tab label={t('newLease') || 'Nuevo Contrato'} sx={{ textTransform: 'none' }} />
+            <Tab
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  {t('deletedContractsMenu') || 'Eliminados'}
+                  {deletedLeases.length > 0 && (
+                    <Chip
+                      label={deletedLeases.length}
+                      size="small"
+                      color="error"
+                      sx={{ height: 20, fontSize: '0.7rem' }}
+                    />
+                  )}
+                </Box>
+              }
+              sx={{ textTransform: 'none' }}
+            />
           </Tabs>
 
           {/* Tab 1: Create Lease */}
@@ -694,6 +794,136 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
               )}
             </Box>
           )}
+
+          {/* Tab 2: Deleted Contracts */}
+          {activeTab === 2 && (
+            <Box>
+              {initialLoading ? (
+                <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+                  <CircularProgress />
+                </Box>
+              ) : deletedLeases.length === 0 ? (
+                <Paper
+                  sx={{
+                    p: 4,
+                    textAlign: 'center',
+                    bgcolor: 'background.default',
+                    border: '2px dashed',
+                    borderColor: 'divider'
+                  }}
+                >
+                  <Delete sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
+                  <Typography variant="h6" color="text.secondary" gutterBottom>
+                    {t('noDeletedContracts') || 'No hay contratos eliminados'}
+                  </Typography>
+                  <Typography variant="body2" color="text.disabled">
+                    {t('noDeletedContractsDesc') || 'Los contratos eliminados aparecerán aquí'}
+                  </Typography>
+                </Paper>
+              ) : (
+                <>
+                  <Alert severity="info" sx={{ mb: 3 }}>
+                    {t('deletedContractsInfo') || 'Estos contratos han sido eliminados pero pueden ser restaurados o eliminados permanentemente.'}
+                  </Alert>
+                  <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+                    <TableContainer>
+                      <Table>
+                        <TableHead>
+                          <TableRow>
+                            <TableCell>{t('propertyInfo') || 'Propiedad'}</TableCell>
+                            <TableCell>{t('tenant')}</TableCell>
+                            <TableCell>{t('leasePeriod') || 'Período'}</TableCell>
+                            <TableCell>{t('deletedAt') || 'Eliminado'}</TableCell>
+                            <TableCell align="center">{t('actions')}</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {deletedLeases.map((lease) => (
+                            <TableRow key={lease.id} sx={{ opacity: 0.8 }}>
+                              <TableCell>{lease.propertyAddress}</TableCell>
+                              <TableCell>{lease.tenantName}</TableCell>
+                              <TableCell>{lease.startDate} - {lease.endDate}</TableCell>
+                              <TableCell>
+                                {lease.deletedAt ? new Date(lease.deletedAt).toLocaleDateString() : '-'}
+                              </TableCell>
+                              <TableCell align="center">
+                                <Tooltip title={t('restoreLease') || 'Restaurar'}>
+                                  <IconButton
+                                    color="primary"
+                                    onClick={() => openRestoreDialog(lease)}
+                                    size="small"
+                                  >
+                                    <Restore />
+                                  </IconButton>
+                                </Tooltip>
+                                <Tooltip title={t('permanentlyDelete') || 'Eliminar permanentemente'}>
+                                  <IconButton
+                                    color="error"
+                                    onClick={() => openPermanentDeleteDialog(lease)}
+                                    size="small"
+                                  >
+                                    <DeleteForever />
+                                  </IconButton>
+                                </Tooltip>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </Box>
+
+                  <Box sx={{ display: { xs: 'block', sm: 'none' } }}>
+                    {deletedLeases.map((lease) => (
+                      <Paper
+                        key={lease.id}
+                        variant="outlined"
+                        sx={{
+                          p: 2,
+                          mb: 2,
+                          opacity: 0.9,
+                          bgcolor: 'action.hover'
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                            {lease.propertyAddress}
+                          </Typography>
+                          <Box sx={{ display: 'flex', gap: 0.5 }}>
+                            <IconButton
+                              color="primary"
+                              onClick={() => openRestoreDialog(lease)}
+                              size="small"
+                            >
+                              <Restore fontSize="small" />
+                            </IconButton>
+                            <IconButton
+                              color="error"
+                              onClick={() => openPermanentDeleteDialog(lease)}
+                              size="small"
+                            >
+                              <DeleteForever fontSize="small" />
+                            </IconButton>
+                          </Box>
+                        </Box>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                          {lease.tenantName}
+                        </Typography>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Typography variant="body2" color="text.secondary">
+                            {lease.startDate} - {lease.endDate}
+                          </Typography>
+                          <Typography variant="caption" color="text.disabled">
+                            {t('deletedAt')}: {lease.deletedAt ? new Date(lease.deletedAt).toLocaleDateString() : '-'}
+                          </Typography>
+                        </Box>
+                      </Paper>
+                    ))}
+                  </Box>
+                </>
+              )}
+            </Box>
+          )}
         </Paper>
 
         {/* Lease Detail Dialog */}
@@ -830,18 +1060,28 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                 </Paper>
               </DialogContent>
               <DialogActions sx={{ px: 3, py: 2, justifyContent: 'space-between' }}>
-                {selectedLease.status === 'ACTIVE' && (
-                  <Button
-                    color="error"
-                    startIcon={<Cancel />}
-                    onClick={() => handleTerminateLease(selectedLease.id)}
-                  >
-                    {t('terminateLease') || 'Terminar Contrato'}
-                  </Button>
-                )}
-                <Button onClick={() => setDetailDialogOpen(false)}>
-                  {t('close') || 'Cerrar'}
+                <Button
+                  color="error"
+                  startIcon={<Delete />}
+                  onClick={() => openDeleteDialog(selectedLease)}
+                >
+                  {t('delete')}
                 </Button>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  {selectedLease.status === 'ACTIVE' && (
+                    <Button
+                      color="warning"
+                      variant="outlined"
+                      startIcon={<Cancel />}
+                      onClick={() => handleTerminateLease(selectedLease.id)}
+                    >
+                      {t('terminateLease') || 'Terminar'}
+                    </Button>
+                  )}
+                  <Button onClick={() => setDetailDialogOpen(false)}>
+                    {t('close') || 'Cerrar'}
+                  </Button>
+                </Box>
               </DialogActions>
             </>
           )}
@@ -995,6 +1235,146 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
               startIcon={creatingTenant ? <CircularProgress size={20} color="inherit" /> : <AddIcon />}
             >
               {t('create') || 'Crear'}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog with Double Confirmation for Active Contracts */}
+        <Dialog
+          open={deleteDialogOpen}
+          onClose={handleCloseDeleteDialog}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>
+            {confirmDeleteStep === 0
+              ? (t('confirmDeleteActiveLease') || '¡Atención! Este es un contrato activo.')
+              : t('confirmDelete')}
+          </DialogTitle>
+          <DialogContent>
+            {confirmDeleteStep === 0 ? (
+              <Alert severity="warning" sx={{ mb: 2 }}>
+                {t('confirmDeleteActiveLeaseWarning') || 'Estás a punto de eliminar un contrato que está actualmente en vigencia. Esta acción puede afectar los registros de pagos y otros datos relacionados.'}
+              </Alert>
+            ) : (
+              <>
+                <Typography>
+                  {t('confirmDeleteLeaseMessage') || '¿Estás seguro de que deseas eliminar este contrato? El contrato podrá ser restaurado desde la pestaña "Eliminados".'}
+                </Typography>
+                {leaseToDelete && (
+                  <Box sx={{ mt: 2, p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      {leaseToDelete.propertyAddress}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {leaseToDelete.tenantName} • {leaseToDelete.startDate} - {leaseToDelete.endDate}
+                    </Typography>
+                  </Box>
+                )}
+              </>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseDeleteDialog}>
+              {t('cancel')}
+            </Button>
+            {confirmDeleteStep === 0 ? (
+              <Button
+                variant="contained"
+                color="warning"
+                onClick={() => setConfirmDeleteStep(1)}
+              >
+                {t('understand') || 'Entiendo, continuar'}
+              </Button>
+            ) : (
+              <Button
+                variant="contained"
+                color="error"
+                startIcon={<Delete />}
+                onClick={handleDeleteLease}
+              >
+                {t('delete')}
+              </Button>
+            )}
+          </DialogActions>
+        </Dialog>
+
+        {/* Restore Confirmation Dialog */}
+        <Dialog
+          open={restoreDialogOpen}
+          onClose={() => { setRestoreDialogOpen(false); setLeaseToRestore(null) }}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>
+            {t('confirmRestore') || 'Confirmar Restauración'}
+          </DialogTitle>
+          <DialogContent>
+            <Typography>
+              {t('confirmRestoreMessage') || '¿Estás seguro de que deseas restaurar este contrato?'}
+            </Typography>
+            {leaseToRestore && (
+              <Box sx={{ mt: 2, p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                  {leaseToRestore.propertyAddress}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {leaseToRestore.tenantName} • {leaseToRestore.startDate} - {leaseToRestore.endDate}
+                </Typography>
+              </Box>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => { setRestoreDialogOpen(false); setLeaseToRestore(null) }}>
+              {t('cancel')}
+            </Button>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<Restore />}
+              onClick={handleRestoreLease}
+            >
+              {t('restoreLease') || 'Restaurar'}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Permanent Delete Confirmation Dialog */}
+        <Dialog
+          open={permanentDeleteDialogOpen}
+          onClose={() => { setPermanentDeleteDialogOpen(false); setLeaseToPermDelete(null) }}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle sx={{ color: 'error.main' }}>
+            {t('confirmPermanentDelete') || '¡Eliminar Permanentemente!'}
+          </DialogTitle>
+          <DialogContent>
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {t('permanentDeleteWarning') || 'Esta acción no se puede deshacer. El contrato será eliminado permanentemente y no podrá ser recuperado.'}
+            </Alert>
+            {leaseToPermDelete && (
+              <Box sx={{ mt: 2, p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                  {leaseToPermDelete.propertyAddress}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {leaseToPermDelete.tenantName} • {leaseToPermDelete.startDate} - {leaseToPermDelete.endDate}
+                </Typography>
+              </Box>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => { setPermanentDeleteDialogOpen(false); setLeaseToPermDelete(null) }}>
+              {t('cancel')}
+            </Button>
+            <Button
+              variant="contained"
+              color="error"
+              startIcon={<DeleteForever />}
+              onClick={handlePermanentDelete}
+            >
+              {t('permanentlyDelete') || 'Eliminar Permanentemente'}
             </Button>
           </DialogActions>
         </Dialog>

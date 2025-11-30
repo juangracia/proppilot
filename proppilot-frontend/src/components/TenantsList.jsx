@@ -69,6 +69,8 @@ const TenantsList = memo(function TenantsList({ onNavigateToProperty, onNavigate
   const [editingTenant, setEditingTenant] = useState(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [tenantToDelete, setTenantToDelete] = useState(null)
+  const [deleteCheckResult, setDeleteCheckResult] = useState(null)
+  const [deleteLoading, setDeleteLoading] = useState(false)
   const [detailDialogOpen, setDetailDialogOpen] = useState(false)
   const [selectedTenant, setSelectedTenant] = useState(null)
   const [allPayments, setAllPayments] = useState([])
@@ -226,14 +228,26 @@ const TenantsList = memo(function TenantsList({ onNavigateToProperty, onNavigate
     }
   }
 
-  const openDeleteDialog = useCallback((tenant) => {
+  const openDeleteDialog = useCallback(async (tenant) => {
     setTenantToDelete(tenant)
+    setDeleteLoading(true)
+    setDeleteCheckResult(null)
     setDeleteDialogOpen(true)
-  }, [])
+    try {
+      const response = await axios.get(`${API_BASE_URL}/tenants/${tenant.id}/can-delete`)
+      setDeleteCheckResult(response.data)
+    } catch (err) {
+      console.error('Error checking delete status:', err)
+      setDeleteCheckResult({ canDelete: false, reason: t('errorOccurred') })
+    } finally {
+      setDeleteLoading(false)
+    }
+  }, [t])
 
   const handleCloseDeleteDialog = useCallback(() => {
     setDeleteDialogOpen(false)
     setTenantToDelete(null)
+    setDeleteCheckResult(null)
   }, [])
 
   const handleDelete = useCallback(async () => {
@@ -715,24 +729,42 @@ const TenantsList = memo(function TenantsList({ onNavigateToProperty, onNavigate
           }
         }}
       >
-        <DialogTitle>{t('confirmDelete')}</DialogTitle>
+        <DialogTitle>
+          {deleteCheckResult && !deleteCheckResult.canDelete
+            ? t('cannotDeleteTenant')
+            : t('confirmDelete')}
+        </DialogTitle>
         <DialogContent>
-          <Typography>
-            {t('confirmDeleteMessage')}
-          </Typography>
-          {tenantToDelete && (
-            <Typography variant="body2" sx={{ mt: 1, fontWeight: 'bold' }}>
-              {tenantToDelete.fullName} ({formatNumber(tenantToDelete.nationalId)})
-            </Typography>
+          {deleteLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+              <CircularProgress size={24} />
+            </Box>
+          ) : deleteCheckResult && !deleteCheckResult.canDelete ? (
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              {t('tenantHasContracts').replace('{count}', deleteCheckResult.leaseCount || 0)}
+            </Alert>
+          ) : (
+            <>
+              <Typography>
+                {t('confirmDeleteMessage')}
+              </Typography>
+              {tenantToDelete && (
+                <Typography variant="body2" sx={{ mt: 1, fontWeight: 'bold' }}>
+                  {tenantToDelete.fullName} ({formatNumber(tenantToDelete.nationalId)})
+                </Typography>
+              )}
+            </>
           )}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDeleteDialog}>
-            {t('cancel')}
+            {deleteCheckResult && !deleteCheckResult.canDelete ? t('close') : t('cancel')}
           </Button>
-          <Button onClick={handleDelete} color="error" variant="contained">
-            {t('delete')}
-          </Button>
+          {deleteCheckResult?.canDelete && (
+            <Button onClick={handleDelete} color="error" variant="contained">
+              {t('delete')}
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
 
@@ -930,20 +962,32 @@ const TenantsList = memo(function TenantsList({ onNavigateToProperty, onNavigate
                 )}
               </Paper>
             </DialogContent>
-            <DialogActions sx={{ px: 3, py: 2 }}>
-              <Button onClick={handleCloseDetailDialog}>
-                {t('close')}
-              </Button>
+            <DialogActions sx={{ px: 3, py: 2, justifyContent: 'space-between' }}>
               <Button
-                variant="outlined"
-                startIcon={<Edit />}
+                color="error"
+                startIcon={<Delete />}
                 onClick={() => {
                   handleCloseDetailDialog()
-                  openEditDialog(selectedTenant)
+                  openDeleteDialog(selectedTenant)
                 }}
               >
-                {t('edit')}
+                {t('delete')}
               </Button>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button onClick={handleCloseDetailDialog}>
+                  {t('close')}
+                </Button>
+                <Button
+                  variant="outlined"
+                  startIcon={<Edit />}
+                  onClick={() => {
+                    handleCloseDetailDialog()
+                    openEditDialog(selectedTenant)
+                  }}
+                >
+                  {t('edit')}
+                </Button>
+              </Box>
             </DialogActions>
           </>
         )}

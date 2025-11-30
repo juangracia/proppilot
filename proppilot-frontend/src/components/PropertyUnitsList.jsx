@@ -46,7 +46,8 @@ import {
   Garage,
   Description,
   Payment,
-  OpenInNew
+  OpenInNew,
+  Delete
 } from '@mui/icons-material'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
@@ -93,6 +94,10 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
     leaseStartDate: null
   })
   const [editLoading, setEditLoading] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [propertyToDelete, setPropertyToDelete] = useState(null)
+  const [deleteCheckResult, setDeleteCheckResult] = useState(null)
+  const [deleteLoading, setDeleteLoading] = useState(false)
 
   // Fetch property units from API
   const fetchPropertyUnits = useCallback(async () => {
@@ -344,6 +349,43 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
       setEditLoading(false)
     }
   }, [editFormData, editingProperty, handleCloseEditDialog, fetchPropertyUnits])
+
+  const handleDeleteClick = useCallback(async (property) => {
+    setPropertyToDelete(property)
+    setDeleteLoading(true)
+    try {
+      const response = await axios.get(`${API_BASE_URL}/property-units/${property.id}/can-delete`)
+      setDeleteCheckResult(response.data)
+    } catch (err) {
+      console.error('Error checking delete:', err)
+      setDeleteCheckResult({ canDelete: false, reason: t('errorOccurred') })
+    } finally {
+      setDeleteLoading(false)
+    }
+    setDeleteDialogOpen(true)
+  }, [t])
+
+  const handleCloseDeleteDialog = useCallback(() => {
+    setDeleteDialogOpen(false)
+    setPropertyToDelete(null)
+    setDeleteCheckResult(null)
+  }, [])
+
+  const handleConfirmDelete = useCallback(async () => {
+    if (!propertyToDelete || !deleteCheckResult?.canDelete) return
+
+    setDeleteLoading(true)
+    try {
+      await axios.delete(`${API_BASE_URL}/property-units/${propertyToDelete.id}`)
+      handleCloseDeleteDialog()
+      fetchPropertyUnits()
+    } catch (err) {
+      console.error('Error deleting property:', err)
+      setError(t('failedToDeleteProperty'))
+    } finally {
+      setDeleteLoading(false)
+    }
+  }, [propertyToDelete, deleteCheckResult, handleCloseDeleteDialog, fetchPropertyUnits, t])
 
   if (loading) {
     return (
@@ -1079,18 +1121,31 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
                   })()}
                 </Paper>
               </DialogContent>
-              <DialogActions sx={{ px: 3, py: 2 }}>
-                <Button onClick={handleCloseViewDialog}>{t('close')}</Button>
+              <DialogActions sx={{ px: 3, py: 2, justifyContent: 'space-between' }}>
                 <Button
                   variant="outlined"
-                  startIcon={<Edit />}
+                  color="error"
+                  startIcon={<Delete />}
                   onClick={() => {
                     handleCloseViewDialog()
-                    handleEdit(selectedProperty)
+                    handleDeleteClick(selectedProperty)
                   }}
                 >
-                  {t('edit')}
+                  {t('delete')}
                 </Button>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Button onClick={handleCloseViewDialog}>{t('close')}</Button>
+                  <Button
+                    variant="outlined"
+                    startIcon={<Edit />}
+                    onClick={() => {
+                      handleCloseViewDialog()
+                      handleEdit(selectedProperty)
+                    }}
+                  >
+                    {t('edit')}
+                  </Button>
+                </Box>
               </DialogActions>
             </>
           )}
@@ -1250,6 +1305,62 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
             >
               {editLoading ? <CircularProgress size={20} /> : t('saveChanges')}
             </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog
+          open={deleteDialogOpen}
+          onClose={handleCloseDeleteDialog}
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{
+            sx: {
+              m: { xs: 1, sm: 2 }
+            }
+          }}
+        >
+          <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {deleteCheckResult?.canDelete ? (
+              <>
+                <Warning color="warning" />
+                {t('confirmDeleteProperty')}
+              </>
+            ) : (
+              <>
+                <Warning color="error" />
+                {t('cannotDeleteProperty')}
+              </>
+            )}
+          </DialogTitle>
+          <DialogContent>
+            {deleteLoading ? (
+              <Box display="flex" justifyContent="center" py={3}>
+                <CircularProgress />
+              </Box>
+            ) : deleteCheckResult?.canDelete ? (
+              <Typography>
+                {t('confirmDeletePropertyMessage')}
+              </Typography>
+            ) : (
+              <Alert severity="error" sx={{ mt: 1 }}>
+                {t('propertyHasContracts', { count: deleteCheckResult?.leaseCount || 0 })}
+              </Alert>
+            )}
+          </DialogContent>
+          <DialogActions sx={{ px: 3, py: 2 }}>
+            <Button onClick={handleCloseDeleteDialog}>{t('cancel')}</Button>
+            {deleteCheckResult?.canDelete && (
+              <Button
+                onClick={handleConfirmDelete}
+                variant="contained"
+                color="error"
+                disabled={deleteLoading}
+                startIcon={deleteLoading ? <CircularProgress size={16} /> : <Delete />}
+              >
+                {t('delete')}
+              </Button>
+            )}
           </DialogActions>
         </Dialog>
       </Box>

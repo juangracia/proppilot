@@ -2,6 +2,7 @@ package com.prop_pilot.service.impl;
 
 import com.prop_pilot.entity.Tenant;
 import com.prop_pilot.entity.User;
+import com.prop_pilot.repository.LeaseRepository;
 import com.prop_pilot.repository.TenantRepository;
 import com.prop_pilot.repository.UserRepository;
 import com.prop_pilot.service.TenantService;
@@ -9,7 +10,9 @@ import com.prop_pilot.exception.ResourceNotFoundException;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -17,10 +20,12 @@ public class TenantServiceImpl implements TenantService {
 
     private final TenantRepository tenantRepository;
     private final UserRepository userRepository;
+    private final LeaseRepository leaseRepository;
 
-    public TenantServiceImpl(TenantRepository tenantRepository, UserRepository userRepository) {
+    public TenantServiceImpl(TenantRepository tenantRepository, UserRepository userRepository, LeaseRepository leaseRepository) {
         this.tenantRepository = tenantRepository;
         this.userRepository = userRepository;
+        this.leaseRepository = leaseRepository;
     }
 
     @Override
@@ -97,5 +102,27 @@ public class TenantServiceImpl implements TenantService {
     @Override
     public Optional<Tenant> getTenantByEmail(String email, @NonNull Long ownerId) {
         return tenantRepository.findByEmailAndOwnerId(email, ownerId);
+    }
+
+    @Override
+    public Map<String, Object> canDelete(@NonNull Long id, @NonNull Long ownerId) {
+        Map<String, Object> result = new HashMap<>();
+
+        tenantRepository.findByIdAndOwnerId(id, ownerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Tenant not found with id: " + id));
+
+        long leaseCount = leaseRepository.countByTenantIdAndDeletedFalse(id);
+
+        if (leaseCount > 0) {
+            result.put("canDelete", false);
+            result.put("reason", "Este inquilino tiene " + leaseCount + " contrato(s) asociado(s). Debes eliminar primero los contratos antes de poder eliminar el inquilino.");
+            result.put("leaseCount", leaseCount);
+        } else {
+            result.put("canDelete", true);
+            result.put("reason", null);
+            result.put("leaseCount", 0);
+        }
+
+        return result;
     }
 }

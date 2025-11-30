@@ -2,7 +2,9 @@ package com.prop_pilot.service;
 
 import com.prop_pilot.entity.Tenant;
 import org.springframework.lang.NonNull;
+
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface TenantService {
@@ -20,4 +22,6 @@ public interface TenantService {
     Optional<Tenant> getTenantByNationalId(String nationalId, @NonNull Long ownerId);
 
     Optional<Tenant> getTenantByEmail(String email, @NonNull Long ownerId);
+
+    Map<String, Object> canDelete(@NonNull Long id, @NonNull Long ownerId);
 }

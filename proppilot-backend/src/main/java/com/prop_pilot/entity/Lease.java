@@ -9,6 +9,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -63,6 +64,13 @@ public class Lease {
     @JoinColumn(name = "owner_id", nullable = false)
     @JsonIgnore
     private User owner;
+
+    // Soft delete fields
+    @Column(nullable = false)
+    private boolean deleted = false;
+
+    @Column
+    private LocalDateTime deletedAt;
 
     @Transient
     @JsonProperty("propertyUnitId")

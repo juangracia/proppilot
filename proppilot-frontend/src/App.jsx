@@ -521,6 +521,8 @@ function AppContent() {
               zIndex: (theme) => theme.zIndex.drawer + 1,
               backgroundColor: 'background.default',
               color: 'text.primary',
+              // iOS safe area support for Dynamic Island/notch
+              paddingTop: 'env(safe-area-inset-top)',
             }}
           >
             <Toolbar sx={{ minHeight: { xs: '56px', sm: '64px' }, px: { xs: 1, sm: 2 } }}>
@@ -680,7 +682,8 @@ function AppContent() {
               flexGrow: 1,
               p: { xs: 2, sm: 3 },
               width: { sm: `calc(100% - ${drawerWidth}px)` },
-              mt: { xs: '56px', sm: '64px' },
+              // Account for AppBar height plus iOS safe area
+              mt: { xs: 'calc(56px + env(safe-area-inset-top, 0px))', sm: 'calc(64px + env(safe-area-inset-top, 0px))' },
               backgroundColor: 'background.default',
               minHeight: '100vh',
               pb: { xs: 3, sm: 4 },

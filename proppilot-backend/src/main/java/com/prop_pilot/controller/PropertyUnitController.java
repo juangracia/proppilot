@@ -16,6 +16,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/property-units")
@@ -98,5 +99,14 @@ public class PropertyUnitController {
         Long ownerId = currentUserService.getCurrentUserId();
         propertyUnitService.deletePropertyUnit(id, ownerId);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/can-delete")
+    @Operation(summary = "Check if property can be deleted", description = "Checks if property has any associated contracts")
+    @ApiResponse(responseCode = "200", description = "Check completed")
+    public ResponseEntity<Map<String, Object>> canDeleteProperty(@PathVariable @NonNull Long id) {
+        Long ownerId = currentUserService.getCurrentUserId();
+        Map<String, Object> result = propertyUnitService.canDelete(id, ownerId);
+        return ResponseEntity.ok(result);
     }
 }
