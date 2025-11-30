@@ -18,10 +18,39 @@ public class PropertyUnit {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // Legacy address field - kept for backward compatibility
     @Column(nullable = false)
-    @NotBlank(message = "Address is required")
-    @Size(min = 5, max = 255, message = "Address must be between 5 and 255 characters")
+    @Size(max = 255)
     private String address;
+
+    // Structured address fields
+    @Column(name = "street")
+    @Size(max = 150, message = "Street name cannot exceed 150 characters")
+    private String street;
+
+    @Column(name = "street_number")
+    @Size(max = 20, message = "Street number cannot exceed 20 characters")
+    private String streetNumber;
+
+    @Column(name = "floor")
+    @Size(max = 10, message = "Floor cannot exceed 10 characters")
+    private String floor;
+
+    @Column(name = "apartment")
+    @Size(max = 20, message = "Apartment cannot exceed 20 characters")
+    private String apartment;
+
+    @Column(name = "city")
+    @Size(max = 100, message = "City cannot exceed 100 characters")
+    private String city;
+
+    @Column(name = "province")
+    @Size(max = 100, message = "Province cannot exceed 100 characters")
+    private String province;
+
+    @Column(name = "postal_code")
+    @Size(max = 20, message = "Postal code cannot exceed 20 characters")
+    private String postalCode;
 
     @Column(nullable = false)
     @NotBlank(message = "Property type is required")
@@ -73,5 +102,49 @@ public class PropertyUnit {
     public Long getActiveLeaseId() {
         Lease activeLease = getActiveLease();
         return activeLease != null ? activeLease.getId() : null;
+    }
+
+    /**
+     * Builds the full address from structured fields.
+     * If structured fields are not populated, returns the legacy address.
+     */
+    @com.fasterxml.jackson.annotation.JsonProperty("fullAddress")
+    public String getFullAddress() {
+        if (street == null || street.isBlank()) {
+            return address; // Return legacy address if no structured data
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(street);
+        if (streetNumber != null && !streetNumber.isBlank()) {
+            sb.append(" ").append(streetNumber);
+        }
+        if (floor != null && !floor.isBlank()) {
+            sb.append(", Piso ").append(floor);
+        }
+        if (apartment != null && !apartment.isBlank()) {
+            sb.append(", Depto ").append(apartment);
+        }
+        if (city != null && !city.isBlank()) {
+            sb.append(", ").append(city);
+        }
+        if (province != null && !province.isBlank()) {
+            sb.append(", ").append(province);
+        }
+        if (postalCode != null && !postalCode.isBlank()) {
+            sb.append(" (").append(postalCode).append(")");
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Updates the legacy address field from structured fields before persisting.
+     */
+    @PrePersist
+    @PreUpdate
+    public void updateAddressFromStructuredFields() {
+        if (street != null && !street.isBlank()) {
+            this.address = getFullAddress();
+        }
     }
 }

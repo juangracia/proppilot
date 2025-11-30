@@ -64,7 +64,13 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
   const [activeFilter, setActiveFilter] = useState(initialFilter)
   const [openAddDialog, setOpenAddDialog] = useState(false)
   const [newProperty, setNewProperty] = useState({
-    address: '',
+    street: '',
+    streetNumber: '',
+    floor: '',
+    apartment: '',
+    city: '',
+    province: 'Buenos Aires',
+    postalCode: '',
     type: '',
     baseRentAmount: '',
     leaseStartDate: null
@@ -75,7 +81,13 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
   const [editingProperty, setEditingProperty] = useState(null)
   const [openEditDialog, setOpenEditDialog] = useState(false)
   const [editFormData, setEditFormData] = useState({
-    address: '',
+    street: '',
+    streetNumber: '',
+    floor: '',
+    apartment: '',
+    city: '',
+    province: '',
+    postalCode: '',
     type: '',
     baseRentAmount: '',
     leaseStartDate: null
@@ -200,7 +212,13 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
     setAddLoading(true)
     try {
       const payload = {
-        address: newProperty.address,
+        street: newProperty.street,
+        streetNumber: newProperty.streetNumber,
+        floor: newProperty.floor || null,
+        apartment: newProperty.apartment || null,
+        city: newProperty.city,
+        province: newProperty.province,
+        postalCode: newProperty.postalCode || null,
         type: newProperty.type,
         baseRentAmount: parseFloat(newProperty.baseRentAmount),
         leaseStartDate: newProperty.leaseStartDate
@@ -210,7 +228,13 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
       await axios.post(`${API_BASE_URL}/property-units`, payload)
       setOpenAddDialog(false)
       setNewProperty({
-        address: '',
+        street: '',
+        streetNumber: '',
+        floor: '',
+        apartment: '',
+        city: '',
+        province: 'Buenos Aires',
+        postalCode: '',
         type: '',
         baseRentAmount: '',
         leaseStartDate: null
@@ -235,14 +259,39 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
     setSelectedProperty(null)
   }, [])
 
-  const handleEdit = useCallback((property) => {
+  const handleEdit = useCallback(async (property) => {
     setEditingProperty(property)
-    setEditFormData({
-      address: property.address,
-      type: property.type,
-      baseRentAmount: property.monthlyRent.toString(),
-      leaseStartDate: property.leaseStart ? new Date(property.leaseStart + 'T00:00:00') : null
-    })
+    // Fetch full property data to get structured fields
+    try {
+      const response = await axios.get(`${API_BASE_URL}/property-units/${property.id}`)
+      const fullProperty = response.data
+      setEditFormData({
+        street: fullProperty.street || '',
+        streetNumber: fullProperty.streetNumber || '',
+        floor: fullProperty.floor || '',
+        apartment: fullProperty.apartment || '',
+        city: fullProperty.city || '',
+        province: fullProperty.province || 'Buenos Aires',
+        postalCode: fullProperty.postalCode || '',
+        type: fullProperty.type || property.type,
+        baseRentAmount: (fullProperty.baseRentAmount || property.monthlyRent).toString(),
+        leaseStartDate: fullProperty.leaseStartDate ? new Date(fullProperty.leaseStartDate + 'T00:00:00') : (property.leaseStart ? new Date(property.leaseStart + 'T00:00:00') : null)
+      })
+    } catch (err) {
+      // Fallback to using legacy address if structured fields not available
+      setEditFormData({
+        street: '',
+        streetNumber: '',
+        floor: '',
+        apartment: '',
+        city: '',
+        province: 'Buenos Aires',
+        postalCode: '',
+        type: property.type,
+        baseRentAmount: property.monthlyRent.toString(),
+        leaseStartDate: property.leaseStart ? new Date(property.leaseStart + 'T00:00:00') : null
+      })
+    }
     setOpenEditDialog(true)
   }, [])
 
@@ -250,7 +299,13 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
     setOpenEditDialog(false)
     setEditingProperty(null)
     setEditFormData({
-      address: '',
+      street: '',
+      streetNumber: '',
+      floor: '',
+      apartment: '',
+      city: '',
+      province: '',
+      postalCode: '',
       type: '',
       baseRentAmount: '',
       leaseStartDate: null
@@ -258,14 +313,20 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
   }, [])
 
   const handleUpdateProperty = useCallback(async () => {
-    if (!editFormData.address || !editFormData.type || !editFormData.baseRentAmount) {
+    if (!editFormData.street || !editFormData.streetNumber || !editFormData.city || !editFormData.province || !editFormData.type || !editFormData.baseRentAmount) {
       return
     }
 
     setEditLoading(true)
     try {
       const payload = {
-        address: editFormData.address,
+        street: editFormData.street,
+        streetNumber: editFormData.streetNumber,
+        floor: editFormData.floor || null,
+        apartment: editFormData.apartment || null,
+        city: editFormData.city,
+        province: editFormData.province,
+        postalCode: editFormData.postalCode || null,
         type: editFormData.type,
         baseRentAmount: parseFloat(editFormData.baseRentAmount),
         leaseStartDate: editFormData.leaseStartDate
@@ -631,14 +692,99 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
           <DialogTitle>{t('addNewProperty')}</DialogTitle>
           <DialogContent>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+              {/* Address Fields */}
+              <Typography variant="subtitle2" color="text.secondary" sx={{ mt: 1 }}>
+                {t('addressSection')}
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+                <TextField
+                  label={t('streetLabel')}
+                  value={newProperty.street}
+                  onChange={(e) => setNewProperty(prev => ({ ...prev, street: e.target.value }))}
+                  required
+                  fullWidth
+                  sx={{ flex: { sm: 2 } }}
+                />
+                <TextField
+                  label={t('streetNumberLabel')}
+                  value={newProperty.streetNumber}
+                  onChange={(e) => setNewProperty(prev => ({ ...prev, streetNumber: e.target.value }))}
+                  required
+                  fullWidth
+                  sx={{ flex: { sm: 1 } }}
+                />
+              </Box>
+              <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+                <TextField
+                  label={t('floorLabel')}
+                  value={newProperty.floor}
+                  onChange={(e) => setNewProperty(prev => ({ ...prev, floor: e.target.value }))}
+                  fullWidth
+                  sx={{ flex: { sm: 1 } }}
+                />
+                <TextField
+                  label={t('apartmentLabel')}
+                  value={newProperty.apartment}
+                  onChange={(e) => setNewProperty(prev => ({ ...prev, apartment: e.target.value }))}
+                  fullWidth
+                  sx={{ flex: { sm: 1 } }}
+                />
+              </Box>
+              <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+                <TextField
+                  label={t('cityLabel')}
+                  value={newProperty.city}
+                  onChange={(e) => setNewProperty(prev => ({ ...prev, city: e.target.value }))}
+                  required
+                  fullWidth
+                  sx={{ flex: { sm: 1 } }}
+                />
+                <TextField
+                  label={t('postalCodeLabel')}
+                  value={newProperty.postalCode}
+                  onChange={(e) => setNewProperty(prev => ({ ...prev, postalCode: e.target.value }))}
+                  fullWidth
+                  sx={{ flex: { sm: 1 } }}
+                />
+              </Box>
               <TextField
-                label={t('addressLabel')}
-                value={newProperty.address}
-                onChange={(e) => setNewProperty(prev => ({ ...prev, address: e.target.value }))}
+                select
+                label={t('provinceLabel')}
+                value={newProperty.province}
+                onChange={(e) => setNewProperty(prev => ({ ...prev, province: e.target.value }))}
                 fullWidth
                 required
-                placeholder={t('addressPlaceholder')}
-              />
+              >
+                <MenuItem value="Buenos Aires">Buenos Aires</MenuItem>
+                <MenuItem value="CABA">CABA</MenuItem>
+                <MenuItem value="Córdoba">Córdoba</MenuItem>
+                <MenuItem value="Santa Fe">Santa Fe</MenuItem>
+                <MenuItem value="Mendoza">Mendoza</MenuItem>
+                <MenuItem value="Tucumán">Tucumán</MenuItem>
+                <MenuItem value="Entre Ríos">Entre Ríos</MenuItem>
+                <MenuItem value="Salta">Salta</MenuItem>
+                <MenuItem value="Misiones">Misiones</MenuItem>
+                <MenuItem value="Chaco">Chaco</MenuItem>
+                <MenuItem value="Corrientes">Corrientes</MenuItem>
+                <MenuItem value="Santiago del Estero">Santiago del Estero</MenuItem>
+                <MenuItem value="San Juan">San Juan</MenuItem>
+                <MenuItem value="Jujuy">Jujuy</MenuItem>
+                <MenuItem value="Río Negro">Río Negro</MenuItem>
+                <MenuItem value="Neuquén">Neuquén</MenuItem>
+                <MenuItem value="Formosa">Formosa</MenuItem>
+                <MenuItem value="Chubut">Chubut</MenuItem>
+                <MenuItem value="San Luis">San Luis</MenuItem>
+                <MenuItem value="Catamarca">Catamarca</MenuItem>
+                <MenuItem value="La Rioja">La Rioja</MenuItem>
+                <MenuItem value="La Pampa">La Pampa</MenuItem>
+                <MenuItem value="Santa Cruz">Santa Cruz</MenuItem>
+                <MenuItem value="Tierra del Fuego">Tierra del Fuego</MenuItem>
+              </TextField>
+
+              {/* Property Details */}
+              <Typography variant="subtitle2" color="text.secondary" sx={{ mt: 2 }}>
+                {t('propertyDetails')}
+              </Typography>
               <TextField
                 select
                 label={t('propertyTypeLabel')}
@@ -680,7 +826,7 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
             <Button
               onClick={handleAddProperty}
               variant="contained"
-              disabled={addLoading || !newProperty.address || !newProperty.type || !newProperty.baseRentAmount}
+              disabled={addLoading || !newProperty.street || !newProperty.streetNumber || !newProperty.city || !newProperty.province || !newProperty.type || !newProperty.baseRentAmount}
             >
               {addLoading ? <CircularProgress size={20} /> : t('addPropertyAction')}
             </Button>
@@ -963,14 +1109,99 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
           <DialogTitle>{t('editProperty')}</DialogTitle>
           <DialogContent>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+              {/* Address Fields */}
+              <Typography variant="subtitle2" color="text.secondary" sx={{ mt: 1 }}>
+                {t('addressSection')}
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+                <TextField
+                  label={t('streetLabel')}
+                  value={editFormData.street}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, street: e.target.value }))}
+                  required
+                  fullWidth
+                  sx={{ flex: { sm: 2 } }}
+                />
+                <TextField
+                  label={t('streetNumberLabel')}
+                  value={editFormData.streetNumber}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, streetNumber: e.target.value }))}
+                  required
+                  fullWidth
+                  sx={{ flex: { sm: 1 } }}
+                />
+              </Box>
+              <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+                <TextField
+                  label={t('floorLabel')}
+                  value={editFormData.floor}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, floor: e.target.value }))}
+                  fullWidth
+                  sx={{ flex: { sm: 1 } }}
+                />
+                <TextField
+                  label={t('apartmentLabel')}
+                  value={editFormData.apartment}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, apartment: e.target.value }))}
+                  fullWidth
+                  sx={{ flex: { sm: 1 } }}
+                />
+              </Box>
+              <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+                <TextField
+                  label={t('cityLabel')}
+                  value={editFormData.city}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, city: e.target.value }))}
+                  required
+                  fullWidth
+                  sx={{ flex: { sm: 1 } }}
+                />
+                <TextField
+                  label={t('postalCodeLabel')}
+                  value={editFormData.postalCode}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, postalCode: e.target.value }))}
+                  fullWidth
+                  sx={{ flex: { sm: 1 } }}
+                />
+              </Box>
               <TextField
-                label={t('addressLabel')}
-                value={editFormData.address}
-                onChange={(e) => setEditFormData(prev => ({ ...prev, address: e.target.value }))}
-                placeholder={t('addressPlaceholder')}
+                select
+                label={t('provinceLabel')}
+                value={editFormData.province}
+                onChange={(e) => setEditFormData(prev => ({ ...prev, province: e.target.value }))}
                 fullWidth
                 required
-              />
+              >
+                <MenuItem value="Buenos Aires">Buenos Aires</MenuItem>
+                <MenuItem value="CABA">CABA</MenuItem>
+                <MenuItem value="Córdoba">Córdoba</MenuItem>
+                <MenuItem value="Santa Fe">Santa Fe</MenuItem>
+                <MenuItem value="Mendoza">Mendoza</MenuItem>
+                <MenuItem value="Tucumán">Tucumán</MenuItem>
+                <MenuItem value="Entre Ríos">Entre Ríos</MenuItem>
+                <MenuItem value="Salta">Salta</MenuItem>
+                <MenuItem value="Misiones">Misiones</MenuItem>
+                <MenuItem value="Chaco">Chaco</MenuItem>
+                <MenuItem value="Corrientes">Corrientes</MenuItem>
+                <MenuItem value="Santiago del Estero">Santiago del Estero</MenuItem>
+                <MenuItem value="San Juan">San Juan</MenuItem>
+                <MenuItem value="Jujuy">Jujuy</MenuItem>
+                <MenuItem value="Río Negro">Río Negro</MenuItem>
+                <MenuItem value="Neuquén">Neuquén</MenuItem>
+                <MenuItem value="Formosa">Formosa</MenuItem>
+                <MenuItem value="Chubut">Chubut</MenuItem>
+                <MenuItem value="San Luis">San Luis</MenuItem>
+                <MenuItem value="Catamarca">Catamarca</MenuItem>
+                <MenuItem value="La Rioja">La Rioja</MenuItem>
+                <MenuItem value="La Pampa">La Pampa</MenuItem>
+                <MenuItem value="Santa Cruz">Santa Cruz</MenuItem>
+                <MenuItem value="Tierra del Fuego">Tierra del Fuego</MenuItem>
+              </TextField>
+
+              {/* Property Details */}
+              <Typography variant="subtitle2" color="text.secondary" sx={{ mt: 2 }}>
+                {t('propertyDetails')}
+              </Typography>
               <TextField
                 select
                 label={t('propertyTypeLabel')}
@@ -1012,7 +1243,7 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
             <Button
               onClick={handleUpdateProperty}
               variant="contained"
-              disabled={editLoading || !editFormData.address || !editFormData.type || !editFormData.baseRentAmount}
+              disabled={editLoading || !editFormData.street || !editFormData.streetNumber || !editFormData.city || !editFormData.province || !editFormData.type || !editFormData.baseRentAmount}
             >
               {editLoading ? <CircularProgress size={20} /> : t('saveChanges')}
             </Button>

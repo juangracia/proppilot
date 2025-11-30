@@ -120,27 +120,30 @@ function AppContent() {
           },
         },
         typography: {
-          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif',
+          fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif',
           h1: {
             fontSize: '2.5rem',
-            fontWeight: 600,
+            fontWeight: 700,
             lineHeight: 1.2,
+            letterSpacing: '-0.02em',
             '@media (max-width:600px)': {
               fontSize: '2rem',
             },
           },
           h2: {
             fontSize: '2rem',
-            fontWeight: 600,
+            fontWeight: 700,
             lineHeight: 1.2,
+            letterSpacing: '-0.01em',
             '@media (max-width:600px)': {
               fontSize: '1.75rem',
             },
           },
           h4: {
-            fontWeight: 600,
+            fontWeight: 700,
             fontSize: '1.75rem',
             lineHeight: 1.3,
+            letterSpacing: '-0.01em',
             '@media (max-width:600px)': {
               fontSize: '1.5rem',
             },
@@ -154,26 +157,42 @@ function AppContent() {
             },
           },
           h6: {
-            fontWeight: 500,
+            fontWeight: 600,
             fontSize: '1.25rem',
             lineHeight: 1.3,
             '@media (max-width:600px)': {
               fontSize: '1.125rem',
             },
           },
+          subtitle1: {
+            fontSize: '1rem',
+            fontWeight: 600,
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+          },
+          subtitle2: {
+            fontSize: '0.875rem',
+            fontWeight: 600,
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+          },
           body1: {
             fontSize: '1rem',
-            lineHeight: 1.5,
+            lineHeight: 1.6,
+            '@media (max-width:600px)': {
+              fontSize: '1rem',
+            },
+          },
+          body2: {
+            fontSize: '0.9375rem',
+            lineHeight: 1.6,
             '@media (max-width:600px)': {
               fontSize: '0.9375rem',
             },
           },
-          body2: {
-            fontSize: '0.875rem',
-            lineHeight: 1.5,
-            '@media (max-width:600px)': {
-              fontSize: '0.8125rem',
-            },
+          button: {
+            fontWeight: 600,
+            letterSpacing: '0.02em',
           },
         },
         breakpoints: {
@@ -360,7 +379,10 @@ function AppContent() {
               sx={{
                 '& .MuiListItemText-primary': {
                   color: 'inherit',
-                  fontWeight: selectedView === item.value ? 600 : 400
+                  fontWeight: selectedView === item.value ? 600 : 500,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  fontSize: '0.875rem'
                 }
               }}
             />
@@ -528,12 +550,13 @@ function AppContent() {
                   noWrap
                   component="div"
                   sx={{
-                    fontSize: { xs: '1.5rem', sm: '2rem' },
-                    fontWeight: 700,
-                    letterSpacing: '0.02em',
+                    fontSize: { xs: '1.25rem', sm: '1.5rem' },
+                    fontWeight: 600,
+                    letterSpacing: '0.05em',
                     fontFamily: 'inherit',
                     color: 'text.primary',
-                    lineHeight: 1.2
+                    lineHeight: 1.2,
+                    textTransform: 'uppercase'
                   }}
                 >
                   {currentViewTitle}

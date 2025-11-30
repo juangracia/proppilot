@@ -88,9 +88,8 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
   const adjustmentIndices = useMemo(() => [
     { value: 'ICL', label: 'ICL (Índice Contratos de Locación)' },
     { value: 'IPC', label: 'IPC (Índice Precios al Consumidor)' },
-    { value: 'FIXED', label: t('fixedRent') || 'Monto Fijo (sin ajuste)' },
-    { value: 'CUSTOM', label: t('customAdjustment') || 'Ajuste Personalizado' }
-  ], [t])
+    { value: 'NONE', label: 'Sin Ajuste' }
+  ], [])
 
   const fetchData = useCallback(async () => {
     try {

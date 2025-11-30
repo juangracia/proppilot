@@ -122,7 +122,6 @@ public class Lease {
     public enum AdjustmentIndex {
         ICL,    // Índice para Contratos de Locación (Argentina)
         IPC,    // Índice de Precios al Consumidor
-        FIXED,  // Sin ajuste (monto fijo)
-        CUSTOM  // Ajuste personalizado
+        NONE    // Sin ajuste (monto fijo)
     }
 }
