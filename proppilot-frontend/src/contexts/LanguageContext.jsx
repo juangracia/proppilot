@@ -179,7 +179,7 @@ export const LanguageProvider = ({ children }) => {
       adjustmentFrequency: 'Frecuencia de Ajuste (meses)',
       leaseStatus: 'Estado del Contrato',
       leaseDetails: 'Detalles del Contrato',
-      leasePeriod: 'Período',
+      leasePeriod: 'Período del Contrato',
       adjustmentInfo: 'Ajuste',
       leaseActive: 'Activo',
       leaseExpired: 'Vencido',
