@@ -338,6 +338,7 @@ export const LanguageProvider = ({ children }) => {
       viewPaymentsForTenant: 'Ver pagos de este inquilino',
       // Tenant filters
       searchTenantsPlaceholder: 'Buscar por nombre, email, teléfono...',
+      all: 'Todos',
       withLease: 'Con Contrato',
       withoutLease: 'Sin Contrato',
       noTenantsMatchFilter: 'No hay inquilinos que coincidan con los filtros',
@@ -744,6 +745,7 @@ export const LanguageProvider = ({ children }) => {
       viewPaymentsForTenant: 'View payments for this tenant',
       // Tenant filters
       searchTenantsPlaceholder: 'Search by name, email, phone...',
+      all: 'All',
       withLease: 'With Lease',
       withoutLease: 'Without Lease',
       noTenantsMatchFilter: 'No tenants match the current filters',
