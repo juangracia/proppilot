@@ -546,7 +546,7 @@ const DashboardView = memo(({ onNavigate, onNavigateToPayment }) => {
                   variant="outlined"
                   startIcon={action.icon}
                   color={action.color}
-                  onClick={() => handleStatClick(action.navigateTo)}
+                  onClick={() => handleStatClick(action)}
                   sx={{
                     justifyContent: 'flex-start',
                     py: { xs: 1.25, sm: 1.5 },
