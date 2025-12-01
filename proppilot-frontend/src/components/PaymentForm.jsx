@@ -29,7 +29,8 @@ import {
   Avatar,
   IconButton,
   Card,
-  Divider
+  Divider,
+  InputAdornment
 } from '@mui/material'
 import Grid from '@mui/material/Grid'
 import {
@@ -43,7 +44,9 @@ import {
   CalendarToday,
   Notes,
   OpenInNew,
-  Description
+  Description,
+  Search as SearchIcon,
+  Clear as ClearIcon
 } from '@mui/icons-material'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
@@ -53,9 +56,24 @@ import axios from 'axios'
 import { useLanguage } from '../contexts/LanguageContext'
 import { API_BASE_URL } from '../config/api'
 
-const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigateToTenant, initialPaymentId, onPaymentViewed }) {
+const PaymentForm = memo(function PaymentForm({
+  onNavigateToProperty,
+  onNavigateToTenant,
+  initialPaymentId,
+  onPaymentViewed,
+  initialStatusFilter,
+  initialPropertyFilter,
+  initialTenantFilter,
+  onFiltersCleared
+}) {
   const { t, formatCurrency, currency } = useLanguage()
   const [activeTab, setActiveTab] = useState(0)
+
+  // Filter states
+  const [statusFilter, setStatusFilter] = useState(initialStatusFilter || 'all')
+  const [searchTerm, setSearchTerm] = useState('')
+  const [propertyFilter, setPropertyFilter] = useState(initialPropertyFilter || null)
+  const [tenantFilter, setTenantFilter] = useState(initialTenantFilter || null)
 
   const [formData, setFormData] = useState({
     leaseId: '',
@@ -103,6 +121,19 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
   useEffect(() => {
     fetchData()
   }, [fetchData])
+
+  // Sync external filter changes
+  useEffect(() => {
+    if (initialStatusFilter) setStatusFilter(initialStatusFilter)
+  }, [initialStatusFilter])
+
+  useEffect(() => {
+    if (initialPropertyFilter) setPropertyFilter(initialPropertyFilter)
+  }, [initialPropertyFilter])
+
+  useEffect(() => {
+    if (initialTenantFilter) setTenantFilter(initialTenantFilter)
+  }, [initialTenantFilter])
 
   // Auto-open detail dialog when initialPaymentId is provided
   useEffect(() => {
@@ -219,16 +250,83 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
     setActiveTab(newValue)
   }, [])
 
-  // Transform payments for display
+  // Transform and filter payments for display
   const displayPayments = useMemo(() => {
-    return payments.map(payment => ({
+    let filtered = payments.map(payment => ({
       ...payment,
       propertyAddress: payment.propertyAddress || 'Unknown',
       tenantName: payment.tenantName || 'Sin inquilino',
       propertyId: payment.propertyUnitId,
       tenantId: payment.tenantId
     }))
+
+    // Apply status filter
+    if (statusFilter === 'paid') {
+      filtered = filtered.filter(p => p.status === 'PAID')
+    } else if (statusFilter === 'pending') {
+      filtered = filtered.filter(p => p.status === 'PENDING')
+    }
+
+    // Apply property filter
+    if (propertyFilter) {
+      filtered = filtered.filter(p => p.propertyId === propertyFilter)
+    }
+
+    // Apply tenant filter
+    if (tenantFilter) {
+      filtered = filtered.filter(p => p.tenantId === tenantFilter)
+    }
+
+    // Apply search term filter
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase()
+      filtered = filtered.filter(p =>
+        p.propertyAddress.toLowerCase().includes(term) ||
+        p.tenantName.toLowerCase().includes(term)
+      )
+    }
+
+    return filtered
+  }, [payments, statusFilter, propertyFilter, tenantFilter, searchTerm])
+
+  // Get counts for filter tabs
+  const statusCounts = useMemo(() => {
+    const all = payments.length
+    const paid = payments.filter(p => p.status === 'PAID').length
+    const pending = payments.filter(p => p.status === 'PENDING').length
+    return { all, paid, pending }
   }, [payments])
+
+  // Check if any filters are active (for showing clear button)
+  const hasActiveFilters = useMemo(() => {
+    return statusFilter !== 'all' || searchTerm || propertyFilter || tenantFilter
+  }, [statusFilter, searchTerm, propertyFilter, tenantFilter])
+
+  // Get the property/tenant name for filter chips
+  const activeFilterLabels = useMemo(() => {
+    const labels = []
+    if (propertyFilter) {
+      const payment = payments.find(p => p.propertyUnitId === propertyFilter)
+      if (payment) labels.push({ type: 'property', label: payment.propertyAddress })
+    }
+    if (tenantFilter) {
+      const payment = payments.find(p => p.tenantId === tenantFilter)
+      if (payment) labels.push({ type: 'tenant', label: payment.tenantName })
+    }
+    return labels
+  }, [propertyFilter, tenantFilter, payments])
+
+  const handleClearFilters = useCallback(() => {
+    setStatusFilter('all')
+    setSearchTerm('')
+    setPropertyFilter(null)
+    setTenantFilter(null)
+    onFiltersCleared?.()
+  }, [onFiltersCleared])
+
+  const handleStatusFilterChange = useCallback((event, newValue) => {
+    setStatusFilter(newValue)
+  }, [])
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
@@ -530,6 +628,126 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
                 </Paper>
               ) : (
               <>
+              {/* Filters Section */}
+              <Box sx={{ mb: 3 }}>
+                {/* Status Filter Tabs */}
+                <Box sx={{
+                  display: 'flex',
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  alignItems: { xs: 'stretch', sm: 'center' },
+                  justifyContent: 'space-between',
+                  gap: 2,
+                  mb: 2
+                }}>
+                  <Tabs
+                    value={statusFilter}
+                    onChange={handleStatusFilterChange}
+                    sx={{
+                      minHeight: 40,
+                      '& .MuiTab-root': { minHeight: 40, py: 1, px: 2 }
+                    }}
+                  >
+                    <Tab
+                      label={`${t('filterAll')} (${statusCounts.all})`}
+                      value="all"
+                      sx={{ textTransform: 'none' }}
+                    />
+                    <Tab
+                      label={`${t('paid')} (${statusCounts.paid})`}
+                      value="paid"
+                      sx={{ textTransform: 'none' }}
+                      icon={<CheckCircle sx={{ fontSize: 16 }} />}
+                      iconPosition="start"
+                    />
+                    <Tab
+                      label={`${t('pending')} (${statusCounts.pending})`}
+                      value="pending"
+                      sx={{ textTransform: 'none' }}
+                      icon={<Schedule sx={{ fontSize: 16 }} />}
+                      iconPosition="start"
+                    />
+                  </Tabs>
+
+                  {/* Search Field */}
+                  <TextField
+                    size="small"
+                    placeholder={t('searchPaymentsPlaceholder')}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    sx={{ minWidth: { xs: '100%', sm: 250 } }}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <SearchIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
+                        </InputAdornment>
+                      ),
+                      endAdornment: searchTerm && (
+                        <InputAdornment position="end">
+                          <IconButton size="small" onClick={() => setSearchTerm('')}>
+                            <ClearIcon sx={{ fontSize: 18 }} />
+                          </IconButton>
+                        </InputAdornment>
+                      )
+                    }}
+                  />
+                </Box>
+
+                {/* Active Filter Chips */}
+                {(activeFilterLabels.length > 0 || hasActiveFilters) && (
+                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+                    {activeFilterLabels.map((filter, index) => (
+                      <Chip
+                        key={index}
+                        label={filter.label}
+                        size="small"
+                        icon={filter.type === 'property' ? <Home sx={{ fontSize: 16 }} /> : <Person sx={{ fontSize: 16 }} />}
+                        onDelete={() => filter.type === 'property' ? setPropertyFilter(null) : setTenantFilter(null)}
+                        color="primary"
+                        variant="outlined"
+                      />
+                    ))}
+                    {hasActiveFilters && (
+                      <Button
+                        size="small"
+                        onClick={handleClearFilters}
+                        startIcon={<ClearIcon />}
+                        sx={{ textTransform: 'none' }}
+                      >
+                        {t('clearFilters')}
+                      </Button>
+                    )}
+                  </Box>
+                )}
+
+                {/* No Results Message */}
+                {displayPayments.length === 0 && hasActiveFilters && (
+                  <Paper
+                    sx={{
+                      p: 3,
+                      mt: 2,
+                      textAlign: 'center',
+                      bgcolor: 'background.default',
+                      border: '1px dashed',
+                      borderColor: 'divider'
+                    }}
+                  >
+                    <SearchIcon sx={{ fontSize: 40, color: 'text.disabled', mb: 1 }} />
+                    <Typography variant="body1" color="text.secondary">
+                      {t('noPaymentsMatchFilter')}
+                    </Typography>
+                    <Button
+                      size="small"
+                      onClick={handleClearFilters}
+                      sx={{ mt: 1, textTransform: 'none' }}
+                    >
+                      {t('clearFilters')}
+                    </Button>
+                  </Paper>
+                )}
+              </Box>
+
+              {displayPayments.length > 0 && (
+              <>
               <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
                 <TableContainer>
                   <Table>
@@ -622,6 +840,8 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
               </Box>
               </>
               )}
+              </>
+              )}
             </Box>
           )}
         </Paper>
@@ -697,13 +917,13 @@ const PaymentForm = memo(function PaymentForm({ onNavigateToProperty, onNavigate
                 {(selectedPayment.leaseStartDate || selectedPayment.leaseEndDate) && (
                   <>
                     <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, textTransform: 'uppercase', fontSize: '0.75rem' }}>
-                      {t('leaseInfo') || 'Contrato'}
+                      {t('leaseInfo')}
                     </Typography>
                     <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                         <Description sx={{ fontSize: 20, color: 'text.secondary' }} />
                         <Box>
-                          <Typography variant="caption" color="text.secondary">{t('leasePeriod') || 'Período'}</Typography>
+                          <Typography variant="caption" color="text.secondary">{t('leasePeriod')}</Typography>
                           <Typography variant="body2" sx={{ fontWeight: 500 }}>
                             {selectedPayment.leaseStartDate} - {selectedPayment.leaseEndDate}
                           </Typography>

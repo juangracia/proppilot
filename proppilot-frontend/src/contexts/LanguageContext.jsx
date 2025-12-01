@@ -212,6 +212,20 @@ export const LanguageProvider = ({ children }) => {
       confirmTerminateLease: '¿Estás seguro de que deseas terminar este contrato?',
       totalLeases: 'Total: {count} contrato{plural}',
 
+      // Termination & Reactivation
+      confirmTerminateStep1: '¿Terminar este contrato?',
+      confirmTerminateStep2: 'Confirmar terminación',
+      terminateWarningStep1: 'Terminar un contrato lo marcará como finalizado anticipadamente. Esta acción es reversible - podrás reactivar el contrato luego si es necesario.',
+      terminateWarningStep2: '¿Estás seguro de que deseas terminar este contrato? El inquilino ya no estará asociado a esta propiedad de forma activa.',
+      confirmTerminate: 'Sí, terminar contrato',
+      continue: 'Continuar',
+      reactivateLease: 'Reactivar',
+      confirmReactivate: 'Reactivar Contrato',
+      reactivateInfo: 'Reactivar este contrato lo volverá a marcar como activo (o vencido si la fecha de fin ya pasó). Asegúrate de que no haya otro contrato activo para esta propiedad en el mismo período.',
+      reactivate: 'Reactivar',
+      leaseReactivatedSuccess: '¡Contrato reactivado exitosamente!',
+      failedToReactivateLease: 'Error al reactivar el contrato',
+
       // Deletion Features
       deletedContracts: 'Contratos Eliminados',
       deletedContractsMenu: 'Eliminados',
@@ -249,6 +263,7 @@ export const LanguageProvider = ({ children }) => {
       noActiveLeases: 'No hay contratos activos',
       noActiveLeasesDesc: 'Crea un contrato primero para poder registrar pagos',
       leaseSummary: 'Resumen del Contrato',
+      leaseInfo: 'Contrato',
       property: 'Propiedad',
       expiringContracts: 'Contratos por Vencer',
       expiringSoon: 'por vencer',
@@ -311,6 +326,24 @@ export const LanguageProvider = ({ children }) => {
       filterOccupied: 'Ocupados',
       filterVacant: 'Vacantes',
       filterOverdue: 'Vencidos',
+      searchPaymentsPlaceholder: 'Buscar por propiedad o inquilino...',
+      clearFilters: 'Limpiar filtros',
+      noPaymentsMatchFilter: 'No hay pagos que coincidan con los filtros',
+      viewPaymentsForProperty: 'Ver pagos de esta propiedad',
+      viewPaymentsForTenant: 'Ver pagos de este inquilino',
+      // Tenant filters
+      searchTenantsPlaceholder: 'Buscar por nombre, email, teléfono...',
+      withLease: 'Con Contrato',
+      withoutLease: 'Sin Contrato',
+      noTenantsMatchFilter: 'No hay inquilinos que coincidan con los filtros',
+      // Lease filters
+      searchLeasesPlaceholder: 'Buscar por propiedad o inquilino...',
+      expiredLeases: 'Vencidos',
+      terminatedLeases: 'Terminados',
+      noLeasesMatchFilter: 'No hay contratos que coincidan con los filtros',
+      // Property filters
+      searchPropertiesPlaceholder: 'Buscar por dirección...',
+      noPropertiesMatchFilter: 'No hay propiedades que coincidan con los filtros',
 
       // Common
       viewDetails: 'Ver Detalles',
@@ -579,6 +612,20 @@ export const LanguageProvider = ({ children }) => {
       confirmTerminateLease: 'Are you sure you want to terminate this lease?',
       totalLeases: 'Total: {count} lease{plural}',
 
+      // Termination & Reactivation
+      confirmTerminateStep1: 'Terminate this lease?',
+      confirmTerminateStep2: 'Confirm termination',
+      terminateWarningStep1: 'Terminating a lease will mark it as ended early. This action is reversible - you can reactivate the lease later if needed.',
+      terminateWarningStep2: 'Are you sure you want to terminate this lease? The tenant will no longer be actively associated with this property.',
+      confirmTerminate: 'Yes, terminate lease',
+      continue: 'Continue',
+      reactivateLease: 'Reactivate',
+      confirmReactivate: 'Reactivate Lease',
+      reactivateInfo: 'Reactivating this lease will mark it as active again (or expired if the end date has passed). Make sure there is no other active lease for this property during the same period.',
+      reactivate: 'Reactivate',
+      leaseReactivatedSuccess: 'Lease reactivated successfully!',
+      failedToReactivateLease: 'Failed to reactivate lease',
+
       // Deletion Features
       deletedContracts: 'Deleted Contracts',
       deletedContractsMenu: 'Deleted',
@@ -617,6 +664,7 @@ export const LanguageProvider = ({ children }) => {
       noActiveLeases: 'No active leases',
       noActiveLeasesDesc: 'Create a lease first to register payments',
       leaseSummary: 'Lease Summary',
+      leaseInfo: 'Lease',
       property: 'Property',
       expiringContracts: 'Expiring Contracts',
       expiringSoon: 'expiring soon',
@@ -679,6 +727,24 @@ export const LanguageProvider = ({ children }) => {
       filterOccupied: 'Occupied',
       filterVacant: 'Vacant',
       filterOverdue: 'Overdue',
+      searchPaymentsPlaceholder: 'Search by property or tenant...',
+      clearFilters: 'Clear filters',
+      noPaymentsMatchFilter: 'No payments match the current filters',
+      viewPaymentsForProperty: 'View payments for this property',
+      viewPaymentsForTenant: 'View payments for this tenant',
+      // Tenant filters
+      searchTenantsPlaceholder: 'Search by name, email, phone...',
+      withLease: 'With Lease',
+      withoutLease: 'Without Lease',
+      noTenantsMatchFilter: 'No tenants match the current filters',
+      // Lease filters
+      searchLeasesPlaceholder: 'Search by property or tenant...',
+      expiredLeases: 'Expired',
+      terminatedLeases: 'Terminated',
+      noLeasesMatchFilter: 'No leases match the current filters',
+      // Property filters
+      searchPropertiesPlaceholder: 'Search by address...',
+      noPropertiesMatchFilter: 'No properties match the current filters',
 
       // Common
       viewDetails: 'View Details',
