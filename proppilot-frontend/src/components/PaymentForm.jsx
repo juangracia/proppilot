@@ -59,6 +59,7 @@ import { API_BASE_URL } from '../config/api'
 const PaymentForm = memo(function PaymentForm({
   onNavigateToProperty,
   onNavigateToTenant,
+  onNavigateToLease,
   initialPaymentId,
   onPaymentViewed,
   initialStatusFilter,
@@ -257,7 +258,8 @@ const PaymentForm = memo(function PaymentForm({
       propertyAddress: payment.propertyAddress || 'Unknown',
       tenantName: payment.tenantName || 'Sin inquilino',
       propertyId: payment.propertyUnitId,
-      tenantId: payment.tenantId
+      tenantId: payment.tenantId,
+      leaseId: payment.leaseIdRef
     }))
 
     // Apply status filter
@@ -919,15 +921,36 @@ const PaymentForm = memo(function PaymentForm({
                     <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, textTransform: 'uppercase', fontSize: '0.75rem' }}>
                       {t('leaseInfo')}
                     </Typography>
-                    <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
+                    <Paper
+                      variant="outlined"
+                      sx={{
+                        p: 2,
+                        mb: 2,
+                        cursor: onNavigateToLease && selectedPayment.leaseId ? 'pointer' : 'default',
+                        transition: 'all 0.2s',
+                        '&:hover': onNavigateToLease && selectedPayment.leaseId ? {
+                          borderColor: 'primary.main',
+                          bgcolor: 'action.hover'
+                        } : {}
+                      }}
+                      onClick={() => {
+                        if (onNavigateToLease && selectedPayment.leaseId) {
+                          setDetailDialogOpen(false)
+                          onNavigateToLease(selectedPayment.leaseId)
+                        }
+                      }}
+                    >
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                        <Description sx={{ fontSize: 20, color: 'text.secondary' }} />
-                        <Box>
+                        <Description sx={{ fontSize: 20, color: 'primary.main' }} />
+                        <Box sx={{ flex: 1 }}>
                           <Typography variant="caption" color="text.secondary">{t('leasePeriod')}</Typography>
                           <Typography variant="body2" sx={{ fontWeight: 500 }}>
                             {selectedPayment.leaseStartDate} - {selectedPayment.leaseEndDate}
                           </Typography>
                         </Box>
+                        {onNavigateToLease && selectedPayment.leaseId && (
+                          <OpenInNew sx={{ fontSize: 16, color: 'text.secondary' }} />
+                        )}
                       </Box>
                     </Paper>
                   </>

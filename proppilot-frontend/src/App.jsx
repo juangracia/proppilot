@@ -59,7 +59,11 @@ function AppContent() {
   const [anchorEl, setAnchorEl] = useState(null)
   const [selectedPropertyId, setSelectedPropertyId] = useState(null)
   const [selectedTenantId, setSelectedTenantId] = useState(null)
+  const [selectedLeaseId, setSelectedLeaseId] = useState(null)
   const [selectedPaymentId, setSelectedPaymentId] = useState(null)
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState(null)
+  const [paymentPropertyFilter, setPaymentPropertyFilter] = useState(null)
+  const [paymentTenantFilter, setPaymentTenantFilter] = useState(null)
   const { t, language } = useLanguage()
   const { user, logout, isAuthenticated, loading } = useAuth()
   const { startTour } = useTour()
@@ -407,8 +411,17 @@ function AppContent() {
     setSelectedView(2) // Tenants view
   }, [])
 
-  const handleNavigateToPayment = useCallback((paymentId) => {
-    setSelectedPaymentId(paymentId)
+  const handleNavigateToLease = useCallback((leaseId) => {
+    setSelectedLeaseId(leaseId)
+    setSelectedView(3) // Leases view
+  }, [])
+
+  const handleNavigateToPayment = useCallback((options = {}) => {
+    const { paymentId, statusFilter, propertyId, tenantId } = typeof options === 'object' ? options : { paymentId: options }
+    setSelectedPaymentId(paymentId || null)
+    setPaymentStatusFilter(statusFilter || null)
+    setPaymentPropertyFilter(propertyId || null)
+    setPaymentTenantFilter(tenantId || null)
     setSelectedView(4) // Payments view
   }, [])
 
@@ -449,7 +462,7 @@ function AppContent() {
   const content = useMemo(() => {
     switch (selectedView) {
       case 0:
-        return <DashboardView onNavigate={handleNavigate} />
+        return <DashboardView onNavigate={handleNavigate} onNavigateToPayment={handleNavigateToPayment} />
       case 1:
         return (
           <PropertyUnitsList
@@ -473,6 +486,8 @@ function AppContent() {
           <LeaseForm
             onNavigateToProperty={handleNavigateToProperty}
             onNavigateToTenant={handleNavigateToTenant}
+            initialLeaseId={selectedLeaseId}
+            onLeaseViewed={() => setSelectedLeaseId(null)}
           />
         )
       case 4:
@@ -480,14 +495,23 @@ function AppContent() {
           <PaymentForm
             onNavigateToProperty={handleNavigateToProperty}
             onNavigateToTenant={handleNavigateToTenant}
+            onNavigateToLease={handleNavigateToLease}
             initialPaymentId={selectedPaymentId}
             onPaymentViewed={() => setSelectedPaymentId(null)}
+            initialStatusFilter={paymentStatusFilter}
+            initialPropertyFilter={paymentPropertyFilter}
+            initialTenantFilter={paymentTenantFilter}
+            onFiltersCleared={() => {
+              setPaymentStatusFilter(null)
+              setPaymentPropertyFilter(null)
+              setPaymentTenantFilter(null)
+            }}
           />
         )
       default:
-        return <DashboardView onNavigate={handleNavigate} />
+        return <DashboardView onNavigate={handleNavigate} onNavigateToPayment={handleNavigateToPayment} />
     }
-  }, [selectedView, handleNavigate, handleNavigateToTenant, handleNavigateToProperty, handleNavigateToPayment, selectedPropertyId, selectedTenantId, selectedPaymentId])
+  }, [selectedView, handleNavigate, handleNavigateToTenant, handleNavigateToProperty, handleNavigateToLease, handleNavigateToPayment, selectedPropertyId, selectedTenantId, selectedLeaseId, selectedPaymentId, paymentStatusFilter, paymentPropertyFilter, paymentTenantFilter])
 
   // Update body theme attribute for CSS-based styling and persist preference
   useEffect(() => {

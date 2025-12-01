@@ -44,7 +44,9 @@ import {
   Add as AddIcon,
   Delete,
   Restore,
-  DeleteForever
+  DeleteForever,
+  Search,
+  Clear
 } from '@mui/icons-material'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
@@ -54,7 +56,7 @@ import axios from 'axios'
 import { useLanguage } from '../contexts/LanguageContext'
 import { API_BASE_URL } from '../config/api'
 
-const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTenant }) {
+const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTenant, initialLeaseId, onLeaseViewed }) {
   const { t, formatCurrency, currency, formatNumber } = useLanguage()
   const [activeTab, setActiveTab] = useState(0)
 
@@ -86,6 +88,11 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
   const [leaseToPermDelete, setLeaseToPermDelete] = useState(null)
   const [restoreDialogOpen, setRestoreDialogOpen] = useState(false)
   const [leaseToRestore, setLeaseToRestore] = useState(null)
+  const [terminateDialogOpen, setTerminateDialogOpen] = useState(false)
+  const [leaseToTerminate, setLeaseToTerminate] = useState(null)
+  const [terminateConfirmStep, setTerminateConfirmStep] = useState(0)
+  const [reactivateDialogOpen, setReactivateDialogOpen] = useState(false)
+  const [leaseToReactivate, setLeaseToReactivate] = useState(null)
 
   // Inline creation dialogs
   const [newTenantDialogOpen, setNewTenantDialogOpen] = useState(false)
@@ -96,6 +103,10 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
   const [newPropertyErrors, setNewPropertyErrors] = useState({})
   const [creatingTenant, setCreatingTenant] = useState(false)
   const [creatingProperty, setCreatingProperty] = useState(false)
+
+  // Filter state
+  const [searchQuery, setSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all') // 'all', 'ACTIVE', 'EXPIRED', 'TERMINATED'
 
   const adjustmentIndices = useMemo(() => [
     { value: 'ICL', label: t('indexICL') },
@@ -126,6 +137,20 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
   useEffect(() => {
     fetchData()
   }, [fetchData])
+
+  // Auto-select and show lease detail when initialLeaseId is provided
+  useEffect(() => {
+    if (initialLeaseId && leases.length > 0) {
+      const lease = leases.find(l => l.id === initialLeaseId)
+      if (lease) {
+        setSelectedLease(lease)
+        setDetailDialogOpen(true)
+        if (onLeaseViewed) {
+          onLeaseViewed()
+        }
+      }
+    }
+  }, [initialLeaseId, leases, onLeaseViewed])
 
   // Auto-fill rent and set default end date when property or start date changes
   const handlePropertyChange = useCallback((propertyId) => {
@@ -242,16 +267,59 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
     }
   }
 
-  const handleTerminateLease = async (leaseId) => {
+  const openTerminateDialog = useCallback((lease) => {
+    setLeaseToTerminate(lease)
+    setTerminateConfirmStep(0)
+    setTerminateDialogOpen(true)
+  }, [])
+
+  const handleCloseTerminateDialog = useCallback(() => {
+    setTerminateDialogOpen(false)
+    setLeaseToTerminate(null)
+    setTerminateConfirmStep(0)
+  }, [])
+
+  const handleConfirmTerminate = async () => {
+    if (!leaseToTerminate) return
+
     try {
-      await axios.post(`${API_BASE_URL}/leases/${leaseId}/terminate`)
+      await axios.post(`${API_BASE_URL}/leases/${leaseToTerminate.id}/terminate`)
       setLeases(prev => prev.map(l =>
-        l.id === leaseId ? { ...l, status: 'TERMINATED' } : l
+        l.id === leaseToTerminate.id ? { ...l, status: 'TERMINATED' } : l
       ))
+      handleCloseTerminateDialog()
       setDetailDialogOpen(false)
+      setSuccess(t('leaseTerminatedSuccess') || 'Contrato terminado exitosamente')
     } catch (err) {
       console.error('Error terminating lease:', err)
       setError(err.response?.data?.message || 'Error al terminar el contrato')
+    }
+  }
+
+  const openReactivateDialog = useCallback((lease) => {
+    setLeaseToReactivate(lease)
+    setReactivateDialogOpen(true)
+  }, [])
+
+  const handleCloseReactivateDialog = useCallback(() => {
+    setReactivateDialogOpen(false)
+    setLeaseToReactivate(null)
+  }, [])
+
+  const handleConfirmReactivate = async () => {
+    if (!leaseToReactivate) return
+
+    try {
+      await axios.post(`${API_BASE_URL}/leases/${leaseToReactivate.id}/reactivate`)
+      // Refresh leases to get the new status (could be ACTIVE or EXPIRED)
+      const leasesRes = await axios.get(`${API_BASE_URL}/leases`)
+      setLeases(Array.isArray(leasesRes.data) ? leasesRes.data : [])
+      handleCloseReactivateDialog()
+      setDetailDialogOpen(false)
+      setSuccess(t('leaseReactivatedSuccess') || 'Contrato reactivado exitosamente')
+    } catch (err) {
+      console.error('Error reactivating lease:', err)
+      setError(err.response?.data?.message || 'Error al reactivar el contrato')
     }
   }
 
@@ -393,6 +461,42 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
 
   const handleTabChange = useCallback((e, newValue) => {
     setActiveTab(newValue)
+  }, [])
+
+  // Filter counts
+  const filterCounts = useMemo(() => {
+    const active = leases.filter(l => l.status === 'ACTIVE').length
+    const expired = leases.filter(l => l.status === 'EXPIRED').length
+    const terminated = leases.filter(l => l.status === 'TERMINATED').length
+    return { all: leases.length, active, expired, terminated }
+  }, [leases])
+
+  // Filtered leases
+  const filteredLeases = useMemo(() => {
+    let filtered = leases
+
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(l => l.status === statusFilter)
+    }
+
+    // Apply search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase()
+      filtered = filtered.filter(l =>
+        l.propertyAddress?.toLowerCase().includes(query) ||
+        l.tenantName?.toLowerCase().includes(query)
+      )
+    }
+
+    return filtered
+  }, [leases, statusFilter, searchQuery])
+
+  const hasActiveFilters = statusFilter !== 'all' || searchQuery.trim() !== ''
+
+  const clearFilters = useCallback(() => {
+    setStatusFilter('all')
+    setSearchQuery('')
   }, [])
 
   const getStatusColor = (status) => {
@@ -715,6 +819,93 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                 </Paper>
               ) : (
                 <>
+                  {/* Filters */}
+                  <Box sx={{ mb: 2 }}>
+                    <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, alignItems: { xs: 'stretch', sm: 'center' }, justifyContent: 'space-between' }}>
+                      <Tabs
+                        value={statusFilter}
+                        onChange={(e, val) => setStatusFilter(val)}
+                        sx={{
+                          minHeight: 36,
+                          '& .MuiTab-root': { minHeight: 36, py: 0.5, textTransform: 'none', fontSize: '0.875rem' }
+                        }}
+                      >
+                        <Tab value="all" label={`${t('all')} (${filterCounts.all})`} />
+                        <Tab
+                          value="ACTIVE"
+                          icon={<CheckCircle sx={{ fontSize: 16 }} />}
+                          iconPosition="start"
+                          label={`${t('activeLeases') || 'Activos'} (${filterCounts.active})`}
+                        />
+                        <Tab
+                          value="EXPIRED"
+                          icon={<CalendarToday sx={{ fontSize: 16 }} />}
+                          iconPosition="start"
+                          label={`${t('expiredLeases') || 'Vencidos'} (${filterCounts.expired})`}
+                        />
+                        <Tab
+                          value="TERMINATED"
+                          icon={<Cancel sx={{ fontSize: 16 }} />}
+                          iconPosition="start"
+                          label={`${t('terminatedLeases') || 'Terminados'} (${filterCounts.terminated})`}
+                        />
+                      </Tabs>
+                      <TextField
+                        size="small"
+                        placeholder={t('searchLeasesPlaceholder') || 'Buscar por propiedad o inquilino...'}
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        sx={{ minWidth: { xs: '100%', sm: 280 } }}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <Search sx={{ fontSize: 20, color: 'text.secondary' }} />
+                            </InputAdornment>
+                          ),
+                          endAdornment: searchQuery && (
+                            <InputAdornment position="end">
+                              <IconButton size="small" onClick={() => setSearchQuery('')}>
+                                <Clear sx={{ fontSize: 18 }} />
+                              </IconButton>
+                            </InputAdornment>
+                          )
+                        }}
+                      />
+                    </Box>
+                    {hasActiveFilters && (
+                      <Box sx={{ mt: 1 }}>
+                        <Button
+                          size="small"
+                          startIcon={<Clear sx={{ fontSize: 16 }} />}
+                          onClick={clearFilters}
+                          sx={{ textTransform: 'none' }}
+                        >
+                          {t('clearFilters') || 'Limpiar filtros'}
+                        </Button>
+                      </Box>
+                    )}
+                  </Box>
+
+                  {/* Empty state for filtered results */}
+                  {filteredLeases.length === 0 && (
+                    <Paper sx={{ p: 4, textAlign: 'center' }}>
+                      <Description sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
+                      <Typography variant="h6" color="text.secondary" gutterBottom>
+                        {t('noLeasesMatchFilter') || 'No hay contratos que coincidan con los filtros'}
+                      </Typography>
+                      <Button
+                        size="small"
+                        startIcon={<Clear sx={{ fontSize: 16 }} />}
+                        onClick={clearFilters}
+                        sx={{ textTransform: 'none', mt: 1 }}
+                      >
+                        {t('clearFilters') || 'Limpiar filtros'}
+                      </Button>
+                    </Paper>
+                  )}
+
+                  {filteredLeases.length > 0 && (
+                  <>
                   <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
                     <TableContainer>
                       <Table>
@@ -728,7 +919,7 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                           </TableRow>
                         </TableHead>
                         <TableBody>
-                          {leases.map((lease) => (
+                          {filteredLeases.map((lease) => (
                             <TableRow
                               key={lease.id}
                               hover
@@ -754,7 +945,7 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                   </Box>
 
                   <Box sx={{ display: { xs: 'block', sm: 'none' } }}>
-                    {leases.map((lease) => (
+                    {filteredLeases.map((lease) => (
                       <Paper
                         key={lease.id}
                         variant="outlined"
@@ -790,6 +981,8 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                       </Paper>
                     ))}
                   </Box>
+                </>
+              )}
                 </>
               )}
             </Box>
@@ -1073,9 +1266,19 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                       color="warning"
                       variant="outlined"
                       startIcon={<Cancel />}
-                      onClick={() => handleTerminateLease(selectedLease.id)}
+                      onClick={() => openTerminateDialog(selectedLease)}
                     >
                       {t('terminateLease') || 'Terminar'}
+                    </Button>
+                  )}
+                  {selectedLease.status === 'TERMINATED' && (
+                    <Button
+                      color="success"
+                      variant="outlined"
+                      startIcon={<CheckCircle />}
+                      onClick={() => openReactivateDialog(selectedLease)}
+                    >
+                      {t('reactivateLease') || 'Reactivar'}
                     </Button>
                   )}
                   <Button onClick={() => setDetailDialogOpen(false)}>
@@ -1375,6 +1578,118 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
               onClick={handlePermanentDelete}
             >
               {t('permanentlyDelete') || 'Eliminar Permanentemente'}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Terminate Confirmation Dialog with Double Confirmation */}
+        <Dialog
+          open={terminateDialogOpen}
+          onClose={handleCloseTerminateDialog}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle sx={{ color: 'warning.main' }}>
+            {terminateConfirmStep === 0
+              ? (t('confirmTerminateStep1') || '¿Terminar este contrato?')
+              : (t('confirmTerminateStep2') || 'Confirmar terminación')}
+          </DialogTitle>
+          <DialogContent>
+            {terminateConfirmStep === 0 ? (
+              <>
+                <Alert severity="warning" sx={{ mb: 2 }}>
+                  {t('terminateWarningStep1') || 'Terminar un contrato lo marcará como finalizado anticipadamente. Esta acción es reversible - podrás reactivar el contrato luego si es necesario.'}
+                </Alert>
+                {leaseToTerminate && (
+                  <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      {leaseToTerminate.propertyAddress}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {leaseToTerminate.tenantName} • {leaseToTerminate.startDate} - {leaseToTerminate.endDate}
+                    </Typography>
+                  </Box>
+                )}
+              </>
+            ) : (
+              <>
+                <Alert severity="error" sx={{ mb: 2 }}>
+                  {t('terminateWarningStep2') || '¿Estás seguro de que deseas terminar este contrato? El inquilino ya no estará asociado a esta propiedad de forma activa.'}
+                </Alert>
+                {leaseToTerminate && (
+                  <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      {leaseToTerminate.propertyAddress}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {leaseToTerminate.tenantName} • {leaseToTerminate.startDate} - {leaseToTerminate.endDate}
+                    </Typography>
+                  </Box>
+                )}
+              </>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseTerminateDialog}>
+              {t('cancel')}
+            </Button>
+            {terminateConfirmStep === 0 ? (
+              <Button
+                variant="contained"
+                color="warning"
+                onClick={() => setTerminateConfirmStep(1)}
+              >
+                {t('continue') || 'Continuar'}
+              </Button>
+            ) : (
+              <Button
+                variant="contained"
+                color="error"
+                startIcon={<Cancel />}
+                onClick={handleConfirmTerminate}
+              >
+                {t('confirmTerminate') || 'Sí, terminar contrato'}
+              </Button>
+            )}
+          </DialogActions>
+        </Dialog>
+
+        {/* Reactivate Confirmation Dialog */}
+        <Dialog
+          open={reactivateDialogOpen}
+          onClose={handleCloseReactivateDialog}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle sx={{ color: 'success.main' }}>
+            {t('confirmReactivate') || 'Reactivar Contrato'}
+          </DialogTitle>
+          <DialogContent>
+            <Alert severity="info" sx={{ mb: 2 }}>
+              {t('reactivateInfo') || 'Reactivar este contrato lo volverá a marcar como activo (o vencido si la fecha de fin ya pasó). Asegúrate de que no haya otro contrato activo para esta propiedad en el mismo período.'}
+            </Alert>
+            {leaseToReactivate && (
+              <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                  {leaseToReactivate.propertyAddress}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {leaseToReactivate.tenantName} • {leaseToReactivate.startDate} - {leaseToReactivate.endDate}
+                </Typography>
+              </Box>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseReactivateDialog}>
+              {t('cancel')}
+            </Button>
+            <Button
+              variant="contained"
+              color="success"
+              startIcon={<CheckCircle />}
+              onClick={handleConfirmReactivate}
+            >
+              {t('reactivate') || 'Reactivar'}
             </Button>
           </DialogActions>
         </Dialog>
