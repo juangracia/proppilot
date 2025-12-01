@@ -31,7 +31,7 @@ import { useLanguage } from '../contexts/LanguageContext'
 import { API_BASE_URL } from '../config/api'
 import axios from 'axios'
 
-const DashboardView = memo(({ onNavigate }) => {
+const DashboardView = memo(({ onNavigate, onNavigateToPayment }) => {
   const { t, formatCurrency } = useLanguage()
   const [loading, setLoading] = useState(true)
   const [propertyUnits, setPropertyUnits] = useState([])
@@ -65,7 +65,11 @@ const DashboardView = memo(({ onNavigate }) => {
   // Calculate dashboard stats from real data
   const dashboardStats = useMemo(() => {
     const totalProperties = propertyUnits.length
-    const occupiedProperties = propertyUnits.filter(p => p.tenant).length
+    // A property is occupied if it has an active lease
+    const activeLeasePropertyIds = new Set(
+      leases.filter(l => l.status === 'ACTIVE').map(l => l.propertyUnitIdRef)
+    )
+    const occupiedProperties = propertyUnits.filter(p => activeLeasePropertyIds.has(p.id)).length
     const vacantProperties = totalProperties - occupiedProperties
     const activeTenants = tenants.length
     const monthlyRevenue = propertyUnits.reduce((sum, p) => sum + (parseFloat(p.baseRentAmount) || 0), 0)
@@ -182,6 +186,7 @@ const DashboardView = memo(({ onNavigate }) => {
       icon: <Warning sx={{ fontSize: 40, color: '#F44336' }} />,
       color: '#F44336',
       navigateTo: 4,
+      statusFilter: 'pending',
       trendPositive: false
     }
   ], [t, formatCurrency, dashboardStats])
@@ -193,13 +198,21 @@ const DashboardView = memo(({ onNavigate }) => {
     { title: t('registerPayment'), icon: <Payment />, color: 'secondary', navigateTo: 4 }
   ], [t])
 
-  const handleStatClick = useCallback((navigateTo) => {
-    onNavigate && onNavigate(navigateTo)
-  }, [onNavigate])
+  const handleStatClick = useCallback((stat) => {
+    if (stat.navigateTo === 4 && stat.statusFilter && onNavigateToPayment) {
+      onNavigateToPayment({ statusFilter: stat.statusFilter })
+    } else {
+      onNavigate && onNavigate(stat.navigateTo)
+    }
+  }, [onNavigate, onNavigateToPayment])
 
-  const handlePaymentClick = useCallback(() => {
-    onNavigate && onNavigate(4)
-  }, [onNavigate])
+  const handlePaymentClick = useCallback((statusFilter = null) => {
+    if (onNavigateToPayment) {
+      onNavigateToPayment({ statusFilter })
+    } else {
+      onNavigate && onNavigate(4)
+    }
+  }, [onNavigate, onNavigateToPayment])
 
   const handleContractClick = useCallback(() => {
     onNavigate && onNavigate(3)
@@ -224,7 +237,7 @@ const DashboardView = memo(({ onNavigate }) => {
         {stats.map((stat, index) => (
           <Grid size={{ xs: 12, sm: 6, lg: 3 }} key={index}>
             <Card
-              onClick={() => handleStatClick(stat.navigateTo)}
+              onClick={() => handleStatClick(stat)}
               sx={{
                 height: '100%',
                 cursor: 'pointer',
@@ -300,7 +313,7 @@ const DashboardView = memo(({ onNavigate }) => {
               boxShadow: 4
             }
           }}
-          onClick={handlePaymentClick}
+          onClick={() => handlePaymentClick('pending')}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.5, sm: 2 } }}>
@@ -404,7 +417,7 @@ const DashboardView = memo(({ onNavigate }) => {
         {/* Recent Payments */}
         <Grid size={{ xs: 12, md: 8 }}>
           <Paper
-            onClick={handlePaymentClick}
+            onClick={() => handlePaymentClick('paid')}
             sx={{
               p: { xs: 2, sm: 3 },
               height: 'fit-content',
