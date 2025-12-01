@@ -740,9 +740,11 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                           onChange={(e) => setFormData(prev => ({ ...prev, adjustmentFrequencyMonths: e.target.value }))}
                           fullWidth
                         >
-                          <MenuItem value={3}>{t('quarterly') || 'Trimestral (3 meses)'}</MenuItem>
-                          <MenuItem value={6}>{t('semiannual') || 'Semestral (6 meses)'}</MenuItem>
-                          <MenuItem value={12}>{t('annual') || 'Anual (12 meses)'}</MenuItem>
+                          <MenuItem value={1}>{t('monthly')}</MenuItem>
+                          <MenuItem value={2}>{t('bimonthly')}</MenuItem>
+                          <MenuItem value={3}>{t('quarterly')}</MenuItem>
+                          <MenuItem value={6}>{t('semiannual')}</MenuItem>
+                          <MenuItem value={12}>{t('annual')}</MenuItem>
                         </TextField>
                       </Grid>
                     )}
