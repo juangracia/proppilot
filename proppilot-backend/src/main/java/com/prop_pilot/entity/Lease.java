@@ -76,8 +76,8 @@ public class Lease {
     @JsonIgnore
     private User owner;
 
-    // Soft delete fields
-    @Column(nullable = false, columnDefinition = "boolean default false")
+    // Soft delete fields - nullable to support migration from existing data
+    @Column(columnDefinition = "boolean default false")
     private boolean deleted = false;
 
     @Column
