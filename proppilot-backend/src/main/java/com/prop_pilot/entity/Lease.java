@@ -77,7 +77,7 @@ public class Lease {
     private User owner;
 
     // Soft delete fields
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "boolean default false")
     private boolean deleted = false;
 
     @Column
