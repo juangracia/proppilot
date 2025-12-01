@@ -13,27 +13,33 @@ import java.util.Optional;
 @Repository
 public interface LeaseRepository extends JpaRepository<Lease, Long> {
 
-    // Non-deleted leases queries
-    List<Lease> findByOwnerIdAndDeletedFalse(Long ownerId);
+    // Non-deleted leases queries - with JOIN FETCH for tenants
+    @Query("SELECT DISTINCT l FROM Lease l LEFT JOIN FETCH l.tenants LEFT JOIN FETCH l.propertyUnit WHERE l.owner.id = :ownerId AND l.deleted = false")
+    List<Lease> findByOwnerIdAndDeletedFalse(@Param("ownerId") Long ownerId);
 
-    Optional<Lease> findByIdAndOwnerIdAndDeletedFalse(Long id, Long ownerId);
+    @Query("SELECT DISTINCT l FROM Lease l LEFT JOIN FETCH l.tenants LEFT JOIN FETCH l.propertyUnit WHERE l.id = :id AND l.owner.id = :ownerId AND l.deleted = false")
+    Optional<Lease> findByIdAndOwnerIdAndDeletedFalse(@Param("id") Long id, @Param("ownerId") Long ownerId);
 
     List<Lease> findByPropertyUnitIdAndDeletedFalse(Long propertyUnitId);
 
     List<Lease> findByPropertyUnitIdAndOwnerIdAndDeletedFalse(Long propertyUnitId, Long ownerId);
 
-    List<Lease> findByTenantIdAndDeletedFalse(Long tenantId);
+    @Query("SELECT l FROM Lease l JOIN l.tenants t WHERE t.id = :tenantId AND l.deleted = false")
+    List<Lease> findByTenantIdAndDeletedFalse(@Param("tenantId") Long tenantId);
 
-    List<Lease> findByTenantIdAndOwnerIdAndDeletedFalse(Long tenantId, Long ownerId);
+    @Query("SELECT l FROM Lease l JOIN l.tenants t WHERE t.id = :tenantId AND l.owner.id = :ownerId AND l.deleted = false")
+    List<Lease> findByTenantIdAndOwnerIdAndDeletedFalse(@Param("tenantId") Long tenantId, @Param("ownerId") Long ownerId);
 
     List<Lease> findByStatusAndDeletedFalse(Lease.LeaseStatus status);
 
     List<Lease> findByStatusAndOwnerIdAndDeletedFalse(Lease.LeaseStatus status, Long ownerId);
 
-    // Deleted leases queries
-    List<Lease> findByOwnerIdAndDeletedTrue(Long ownerId);
+    // Deleted leases queries - with JOIN FETCH for tenants
+    @Query("SELECT DISTINCT l FROM Lease l LEFT JOIN FETCH l.tenants LEFT JOIN FETCH l.propertyUnit WHERE l.owner.id = :ownerId AND l.deleted = true")
+    List<Lease> findByOwnerIdAndDeletedTrue(@Param("ownerId") Long ownerId);
 
-    Optional<Lease> findByIdAndOwnerIdAndDeletedTrue(Long id, Long ownerId);
+    @Query("SELECT DISTINCT l FROM Lease l LEFT JOIN FETCH l.tenants LEFT JOIN FETCH l.propertyUnit WHERE l.id = :id AND l.owner.id = :ownerId AND l.deleted = true")
+    Optional<Lease> findByIdAndOwnerIdAndDeletedTrue(@Param("id") Long id, @Param("ownerId") Long ownerId);
 
     // Include all for backward compatibility (used internally)
     List<Lease> findByOwnerId(Long ownerId);
@@ -44,16 +50,19 @@ public interface LeaseRepository extends JpaRepository<Lease, Long> {
 
     List<Lease> findByPropertyUnitIdAndOwnerId(Long propertyUnitId, Long ownerId);
 
-    List<Lease> findByTenantId(Long tenantId);
+    @Query("SELECT l FROM Lease l JOIN l.tenants t WHERE t.id = :tenantId")
+    List<Lease> findByTenantId(@Param("tenantId") Long tenantId);
 
-    List<Lease> findByTenantIdAndOwnerId(Long tenantId, Long ownerId);
+    @Query("SELECT l FROM Lease l JOIN l.tenants t WHERE t.id = :tenantId AND l.owner.id = :ownerId")
+    List<Lease> findByTenantIdAndOwnerId(@Param("tenantId") Long tenantId, @Param("ownerId") Long ownerId);
 
     List<Lease> findByStatus(Lease.LeaseStatus status);
 
     List<Lease> findByStatusAndOwnerId(Lease.LeaseStatus status, Long ownerId);
 
     // Count leases (for association checks)
-    long countByTenantIdAndDeletedFalse(Long tenantId);
+    @Query("SELECT COUNT(l) FROM Lease l JOIN l.tenants t WHERE t.id = :tenantId AND l.deleted = false")
+    long countByTenantIdAndDeletedFalse(@Param("tenantId") Long tenantId);
 
     long countByPropertyUnitIdAndDeletedFalse(Long propertyUnitId);
 
@@ -73,10 +82,10 @@ public interface LeaseRepository extends JpaRepository<Lease, Long> {
         @Param("date") LocalDate date
     );
 
-    @Query("SELECT l FROM Lease l WHERE l.tenant.id = :tenantId " +
+    @Query("SELECT l FROM Lease l JOIN l.tenants t WHERE t.id = :tenantId " +
            "AND l.owner.id = :ownerId AND l.status = 'ACTIVE' AND l.deleted = false " +
            "AND l.startDate <= :date AND l.endDate >= :date")
-    Optional<Lease> findActiveLeaseByTenantIdAndOwnerId(
+    List<Lease> findActiveLeasesByTenantIdAndOwnerId(
         @Param("tenantId") Long tenantId,
         @Param("ownerId") Long ownerId,
         @Param("date") LocalDate date

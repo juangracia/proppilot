@@ -1055,9 +1055,23 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
                 </Paper>
 
                 {/* Payment History */}
-                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, textTransform: 'uppercase', fontSize: '0.75rem' }}>
-                  {t('paymentHistory')}
-                </Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                  <Typography variant="subtitle2" color="text.secondary" sx={{ textTransform: 'uppercase', fontSize: '0.75rem' }}>
+                    {t('paymentHistory')}
+                  </Typography>
+                  {onNavigateToPayment && selectedProperty.payments?.length > 0 && (
+                    <Button
+                      size="small"
+                      onClick={() => {
+                        handleCloseViewDialog()
+                        onNavigateToPayment({ propertyId: selectedProperty.id })
+                      }}
+                      sx={{ textTransform: 'none', fontSize: '0.75rem' }}
+                    >
+                      {t('viewPaymentsForProperty')}
+                    </Button>
+                  )}
+                </Box>
                 <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
                   {(() => {
                     const payments = selectedProperty.payments || []

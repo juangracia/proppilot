@@ -32,7 +32,9 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
-  Divider
+  Divider,
+  Checkbox,
+  OutlinedInput
 } from '@mui/material'
 import Grid from '@mui/material/Grid'
 import {
@@ -69,7 +71,7 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
 
   const [formData, setFormData] = useState({
     propertyUnitId: '',
-    tenantId: '',
+    tenantIds: [],
     startDate: null,
     endDate: null,
     monthlyRent: '',
@@ -207,8 +209,8 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
       errors.propertyUnitId = t('propertyRequired') || 'Propiedad requerida'
     }
 
-    if (!formData.tenantId) {
-      errors.tenantId = t('tenantRequired') || 'Inquilino requerido'
+    if (!formData.tenantIds || formData.tenantIds.length === 0) {
+      errors.tenantIds = t('tenantRequired') || 'Inquilino requerido'
     }
 
     if (!formData.startDate) {
@@ -259,7 +261,7 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
     try {
       const leaseData = {
         propertyUnitId: parseInt(formData.propertyUnitId),
-        tenantId: parseInt(formData.tenantId),
+        tenantIds: formData.tenantIds.map(id => parseInt(id)),
         startDate: format(formData.startDate, 'yyyy-MM-dd'),
         endDate: format(formData.endDate, 'yyyy-MM-dd'),
         monthlyRent: parseFloat(formData.monthlyRent),
@@ -274,7 +276,7 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
         setLeases(prev => [response.data, ...prev])
         setFormData({
           propertyUnitId: '',
-          tenantId: '',
+          tenantIds: [],
           startDate: null,
           endDate: null,
           monthlyRent: '',
@@ -437,7 +439,7 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
     try {
       const response = await axios.post(`${API_BASE_URL}/tenants`, newTenantData)
       setTenants(prev => [...prev, response.data])
-      setFormData(prev => ({ ...prev, tenantId: response.data.id }))
+      setFormData(prev => ({ ...prev, tenantIds: [...prev.tenantIds, response.data.id] }))
       setNewTenantDialogOpen(false)
       setNewTenantData({ fullName: '', nationalId: '', email: '', phone: '' })
       setNewTenantErrors({})
@@ -485,9 +487,9 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
     propertyUnits.find(unit => unit.id === parseInt(formData.propertyUnitId))
   , [propertyUnits, formData.propertyUnitId])
 
-  const selectedTenant = useMemo(() =>
-    tenants.find(tenant => tenant.id === parseInt(formData.tenantId))
-  , [tenants, formData.tenantId])
+  const selectedTenants = useMemo(() =>
+    tenants.filter(tenant => formData.tenantIds.includes(tenant.id))
+  , [tenants, formData.tenantIds])
 
   const handleTabChange = useCallback((e, newValue) => {
     setActiveTab(newValue)
@@ -515,7 +517,7 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
       const query = searchQuery.toLowerCase()
       filtered = filtered.filter(l =>
         l.propertyAddress?.toLowerCase().includes(query) ||
-        l.tenantName?.toLowerCase().includes(query)
+        (l.tenantNames || [l.tenantName]).some(name => name?.toLowerCase().includes(query))
       )
     }
 
@@ -634,22 +636,34 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
 
                     <Grid size={{ xs: 12, md: 6 }}>
                       <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
-                        <FormControl fullWidth required error={!!validationErrors.tenantId}>
-                          <InputLabel>{t('selectTenant') || 'Seleccionar Inquilino'}</InputLabel>
+                        <FormControl fullWidth required error={!!validationErrors.tenantIds}>
+                          <InputLabel>{t('selectTenants') || 'Seleccionar Inquilino(s)'}</InputLabel>
                           <Select
-                            value={formData.tenantId}
-                            onChange={(e) => setFormData(prev => ({ ...prev, tenantId: e.target.value }))}
-                            label={t('selectTenant') || 'Seleccionar Inquilino'}
+                            multiple
+                            value={formData.tenantIds}
+                            onChange={(e) => setFormData(prev => ({ ...prev, tenantIds: e.target.value }))}
+                            input={<OutlinedInput label={t('selectTenants') || 'Seleccionar Inquilino(s)'} />}
+                            renderValue={(selected) => (
+                              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                {selected.map((id) => {
+                                  const tenant = tenants.find(t => t.id === id)
+                                  return tenant ? (
+                                    <Chip key={id} label={tenant.fullName} size="small" />
+                                  ) : null
+                                })}
+                              </Box>
+                            )}
                           >
                             {tenants.map((tenant) => (
                               <MenuItem key={tenant.id} value={tenant.id}>
-                                {tenant.fullName} - {formatNumber(tenant.nationalId)}
+                                <Checkbox checked={formData.tenantIds.indexOf(tenant.id) > -1} />
+                                <ListItemText primary={`${tenant.fullName} - ${formatNumber(tenant.nationalId)}`} />
                               </MenuItem>
                             ))}
                           </Select>
-                          {validationErrors.tenantId && (
+                          {validationErrors.tenantIds && (
                             <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.75 }}>
-                              {validationErrors.tenantId}
+                              {validationErrors.tenantIds}
                             </Typography>
                           )}
                         </FormControl>
@@ -749,7 +763,7 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                       </Grid>
                     )}
 
-                    {(selectedPropertyUnit || selectedTenant) && (
+                    {(selectedPropertyUnit || selectedTenants.length > 0) && (
                       <Grid size={{ xs: 12 }}>
                         <Box sx={{
                           p: { xs: 1.5, sm: 2 },
@@ -767,9 +781,9 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                                 <strong>{t('propertyInfo') || 'Propiedad'}:</strong> {selectedPropertyUnit.address}
                               </Typography>
                             )}
-                            {selectedTenant && (
+                            {selectedTenants.length > 0 && (
                               <Typography variant="body2">
-                                <strong>{t('tenant')}:</strong> {selectedTenant.fullName}
+                                <strong>{t('tenants') || 'Inquilino(s)'}:</strong> {selectedTenants.map(t => t.fullName).join(', ')}
                               </Typography>
                             )}
                           </Box>
@@ -793,7 +807,7 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                           onClick={() => {
                             setFormData({
                               propertyUnitId: '',
-                              tenantId: '',
+                              tenantIds: [],
                               startDate: null,
                               endDate: null,
                               monthlyRent: '',
@@ -959,7 +973,7 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                               sx={{ cursor: 'pointer' }}
                             >
                               <TableCell>{lease.propertyAddress}</TableCell>
-                              <TableCell>{lease.tenantName}</TableCell>
+                              <TableCell>{(lease.tenantNames || [lease.tenantName]).filter(Boolean).join(', ')}</TableCell>
                               <TableCell>{lease.startDate} - {lease.endDate}</TableCell>
                               <TableCell sx={{ fontWeight: 500 }}>{formatCurrency(lease.monthlyRent)}</TableCell>
                               <TableCell>
@@ -1000,7 +1014,7 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                           />
                         </Box>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                          {lease.tenantName}
+                          {(lease.tenantNames || [lease.tenantName]).filter(Boolean).join(', ')}
                         </Typography>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <Typography variant="body1" sx={{ fontWeight: 600, color: 'primary.main' }}>
@@ -1066,7 +1080,7 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                           {deletedLeases.map((lease) => (
                             <TableRow key={lease.id} sx={{ opacity: 0.8 }}>
                               <TableCell>{lease.propertyAddress}</TableCell>
-                              <TableCell>{lease.tenantName}</TableCell>
+                              <TableCell>{(lease.tenantNames || [lease.tenantName]).filter(Boolean).join(', ')}</TableCell>
                               <TableCell>{lease.startDate} - {lease.endDate}</TableCell>
                               <TableCell>
                                 {lease.deletedAt ? new Date(lease.deletedAt).toLocaleDateString() : '-'}
@@ -1132,7 +1146,7 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                           </Box>
                         </Box>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                          {lease.tenantName}
+                          {(lease.tenantNames || [lease.tenantName]).filter(Boolean).join(', ')}
                         </Typography>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <Typography variant="body2" color="text.secondary">
@@ -1252,37 +1266,46 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                 </Paper>
 
                 <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, textTransform: 'uppercase', fontSize: '0.75rem' }}>
-                  {t('tenant')}
+                  {t('tenants') || 'Inquilino(s)'}
                 </Typography>
-                <Paper
-                  variant="outlined"
-                  sx={{
-                    p: 2,
-                    cursor: onNavigateToTenant && selectedLease.tenantIdRef ? 'pointer' : 'default',
-                    '&:hover': onNavigateToTenant && selectedLease.tenantIdRef ? { borderColor: 'primary.main', bgcolor: 'action.hover' } : {}
-                  }}
-                  onClick={() => {
-                    if (onNavigateToTenant && selectedLease.tenantIdRef) {
-                      setDetailDialogOpen(false)
-                      onNavigateToTenant(selectedLease.tenantIdRef)
-                    }
-                  }}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <Person sx={{ fontSize: 20, color: 'primary.main' }} />
-                    <Box sx={{ flex: 1 }}>
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                        {selectedLease.tenantName}
-                      </Typography>
-                      {selectedLease.tenantEmail && (
-                        <Typography variant="caption" color="text.secondary">
-                          {selectedLease.tenantEmail}
-                        </Typography>
-                      )}
-                    </Box>
-                    {onNavigateToTenant && selectedLease.tenantIdRef && <OpenInNew sx={{ fontSize: 16, color: 'text.secondary' }} />}
-                  </Box>
-                </Paper>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  {(selectedLease.tenantNames || [selectedLease.tenantName]).map((tenantName, index) => {
+                    const tenantId = selectedLease.tenantIdRefs?.[index] || selectedLease.tenantIdRef
+                    const tenantEmail = selectedLease.tenantEmails?.[index] || selectedLease.tenantEmail
+                    return (
+                      <Paper
+                        key={tenantId || index}
+                        variant="outlined"
+                        sx={{
+                          p: 2,
+                          cursor: onNavigateToTenant && tenantId ? 'pointer' : 'default',
+                          '&:hover': onNavigateToTenant && tenantId ? { borderColor: 'primary.main', bgcolor: 'action.hover' } : {}
+                        }}
+                        onClick={() => {
+                          if (onNavigateToTenant && tenantId) {
+                            setDetailDialogOpen(false)
+                            onNavigateToTenant(tenantId)
+                          }
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                          <Person sx={{ fontSize: 20, color: 'primary.main' }} />
+                          <Box sx={{ flex: 1 }}>
+                            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                              {tenantName}
+                            </Typography>
+                            {tenantEmail && (
+                              <Typography variant="caption" color="text.secondary">
+                                {tenantEmail}
+                              </Typography>
+                            )}
+                          </Box>
+                          {onNavigateToTenant && tenantId && <OpenInNew sx={{ fontSize: 16, color: 'text.secondary' }} />}
+                        </Box>
+                      </Paper>
+                    )
+                  })}
+                </Box>
 
                 {/* Latest Payments Section */}
                 <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, mt: 3, textTransform: 'uppercase', fontSize: '0.75rem' }}>
@@ -1576,7 +1599,7 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                       {leaseToDelete.propertyAddress}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {leaseToDelete.tenantName} • {leaseToDelete.startDate} - {leaseToDelete.endDate}
+                      {(leaseToDelete.tenantNames || [leaseToDelete.tenantName]).filter(Boolean).join(', ')} • {leaseToDelete.startDate} - {leaseToDelete.endDate}
                     </Typography>
                   </Box>
                 )}
@@ -1628,7 +1651,7 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                   {leaseToRestore.propertyAddress}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  {leaseToRestore.tenantName} • {leaseToRestore.startDate} - {leaseToRestore.endDate}
+                  {(leaseToRestore.tenantNames || [leaseToRestore.tenantName]).filter(Boolean).join(', ')} • {leaseToRestore.startDate} - {leaseToRestore.endDate}
                 </Typography>
               </Box>
             )}
@@ -1668,7 +1691,7 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                   {leaseToPermDelete.propertyAddress}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  {leaseToPermDelete.tenantName} • {leaseToPermDelete.startDate} - {leaseToPermDelete.endDate}
+                  {(leaseToPermDelete.tenantNames || [leaseToPermDelete.tenantName]).filter(Boolean).join(', ')} • {leaseToPermDelete.startDate} - {leaseToPermDelete.endDate}
                 </Typography>
               </Box>
             )}
@@ -1712,7 +1735,7 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                       {leaseToTerminate.propertyAddress}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {leaseToTerminate.tenantName} • {leaseToTerminate.startDate} - {leaseToTerminate.endDate}
+                      {(leaseToTerminate.tenantNames || [leaseToTerminate.tenantName]).filter(Boolean).join(', ')} • {leaseToTerminate.startDate} - {leaseToTerminate.endDate}
                     </Typography>
                   </Box>
                 )}
@@ -1728,7 +1751,7 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                       {leaseToTerminate.propertyAddress}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {leaseToTerminate.tenantName} • {leaseToTerminate.startDate} - {leaseToTerminate.endDate}
+                      {(leaseToTerminate.tenantNames || [leaseToTerminate.tenantName]).filter(Boolean).join(', ')} • {leaseToTerminate.startDate} - {leaseToTerminate.endDate}
                     </Typography>
                   </Box>
                 )}
@@ -1780,7 +1803,7 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                   {leaseToReactivate.propertyAddress}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  {leaseToReactivate.tenantName} • {leaseToReactivate.startDate} - {leaseToReactivate.endDate}
+                  {(leaseToReactivate.tenantNames || [leaseToReactivate.tenantName]).filter(Boolean).join(', ')} • {leaseToReactivate.startDate} - {leaseToReactivate.endDate}
                 </Typography>
               </Box>
             )}

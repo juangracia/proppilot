@@ -35,28 +35,28 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
         @Param("endDate") LocalDate endDate
     );
 
-    @Query("SELECT p FROM Payment p " +
+    @Query("SELECT DISTINCT p FROM Payment p " +
            "JOIN FETCH p.lease l " +
            "JOIN FETCH l.propertyUnit pu " +
-           "JOIN FETCH l.tenant t " +
+           "LEFT JOIN FETCH l.tenants t " +
            "WHERE l.owner.id = :ownerId " +
            "ORDER BY p.paymentDate DESC")
     List<Payment> findByOwnerId(@Param("ownerId") Long ownerId);
 
-    @Query("SELECT p FROM Payment p " +
+    @Query("SELECT DISTINCT p FROM Payment p " +
            "JOIN FETCH p.lease l " +
            "JOIN FETCH l.propertyUnit pu " +
-           "JOIN FETCH l.tenant t " +
+           "LEFT JOIN FETCH l.tenants t " +
            "WHERE p.id = :paymentId AND l.owner.id = :ownerId")
     Optional<Payment> findByIdAndOwnerId(
         @Param("paymentId") Long paymentId,
         @Param("ownerId") Long ownerId
     );
 
-    @Query("SELECT p FROM Payment p " +
+    @Query("SELECT DISTINCT p FROM Payment p " +
            "JOIN FETCH p.lease l " +
            "JOIN FETCH l.propertyUnit pu " +
-           "JOIN FETCH l.tenant t " +
+           "LEFT JOIN FETCH l.tenants t " +
            "WHERE l.id = :leaseId AND l.owner.id = :ownerId " +
            "ORDER BY p.paymentDate DESC")
     List<Payment> findByLeaseIdAndOwnerId(
@@ -64,10 +64,10 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
         @Param("ownerId") Long ownerId
     );
 
-    @Query("SELECT p FROM Payment p " +
+    @Query("SELECT DISTINCT p FROM Payment p " +
            "JOIN FETCH p.lease l " +
            "JOIN FETCH l.propertyUnit pu " +
-           "JOIN FETCH l.tenant t " +
+           "LEFT JOIN FETCH l.tenants t " +
            "WHERE l.propertyUnit.id = :propertyUnitId AND l.owner.id = :ownerId " +
            "ORDER BY p.paymentDate DESC")
     List<Payment> findByPropertyUnitIdAndOwnerId(
@@ -75,21 +75,22 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
         @Param("ownerId") Long ownerId
     );
 
-    @Query("SELECT p FROM Payment p " +
+    @Query("SELECT DISTINCT p FROM Payment p " +
            "JOIN FETCH p.lease l " +
            "JOIN FETCH l.propertyUnit pu " +
-           "JOIN FETCH l.tenant t " +
-           "WHERE l.tenant.id = :tenantId AND l.owner.id = :ownerId " +
+           "LEFT JOIN FETCH l.tenants t " +
+           "JOIN l.tenants tenant " +
+           "WHERE tenant.id = :tenantId AND l.owner.id = :ownerId " +
            "ORDER BY p.paymentDate DESC")
     List<Payment> findByTenantIdAndOwnerId(
         @Param("tenantId") Long tenantId,
         @Param("ownerId") Long ownerId
     );
 
-    @Query("SELECT p FROM Payment p " +
+    @Query("SELECT DISTINCT p FROM Payment p " +
            "JOIN FETCH p.lease l " +
            "JOIN FETCH l.propertyUnit pu " +
-           "JOIN FETCH l.tenant t " +
+           "LEFT JOIN FETCH l.tenants t " +
            "WHERE l.id = :leaseId AND p.status = :status AND l.owner.id = :ownerId " +
            "ORDER BY p.paymentDate DESC")
     List<Payment> findByLeaseIdAndStatusAndOwnerId(

@@ -256,8 +256,10 @@ const PaymentForm = memo(function PaymentForm({
     let filtered = payments.map(payment => ({
       ...payment,
       propertyAddress: payment.propertyAddress || 'Unknown',
-      tenantName: payment.tenantName || 'Sin inquilino',
+      tenantNames: payment.tenantNames || [payment.tenantName].filter(Boolean),
+      tenantName: (payment.tenantNames || [payment.tenantName]).filter(Boolean).join(', ') || 'Sin inquilino',
       propertyId: payment.propertyUnitId,
+      tenantIds: payment.tenantIds || [payment.tenantId].filter(Boolean),
       tenantId: payment.tenantId,
       leaseId: payment.leaseIdRef
     }))
@@ -276,7 +278,7 @@ const PaymentForm = memo(function PaymentForm({
 
     // Apply tenant filter
     if (tenantFilter) {
-      filtered = filtered.filter(p => p.tenantId === tenantFilter)
+      filtered = filtered.filter(p => p.tenantIds?.includes(tenantFilter) || p.tenantId === tenantFilter)
     }
 
     // Apply search term filter
@@ -398,7 +400,7 @@ const PaymentForm = memo(function PaymentForm({
                     >
                       {leases.map((lease) => (
                         <MenuItem key={lease.id} value={lease.id}>
-                          {lease.propertyAddress} - {lease.tenantName} ({formatCurrency(lease.monthlyRent)})
+                          {lease.propertyAddress} - {(lease.tenantNames || [lease.tenantName]).filter(Boolean).join(', ')} ({formatCurrency(lease.monthlyRent)})
                         </MenuItem>
                       ))}
                     </Select>
@@ -526,7 +528,7 @@ const PaymentForm = memo(function PaymentForm({
                             wordBreak: 'break-word'
                           }}
                         >
-                          <strong>{t('tenant')}:</strong> {selectedLease.tenantName}
+                          <strong>{t('tenants') || 'Inquilino(s)'}:</strong> {(selectedLease.tenantNames || [selectedLease.tenantName]).filter(Boolean).join(', ')}
                         </Typography>
                         <Typography
                           variant="body2"
@@ -990,35 +992,42 @@ const PaymentForm = memo(function PaymentForm({
 
                 {/* Tenant Info */}
                 <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, textTransform: 'uppercase', fontSize: '0.75rem' }}>
-                  {t('tenant')}
+                  {t('tenants') || 'Inquilino(s)'}
                 </Typography>
-                <Paper
-                  variant="outlined"
-                  sx={{
-                    p: 2,
-                    mb: 3,
-                    cursor: onNavigateToTenant && selectedPayment.tenantId ? 'pointer' : 'default',
-                    transition: 'all 0.2s',
-                    '&:hover': onNavigateToTenant && selectedPayment.tenantId ? {
-                      borderColor: 'primary.main',
-                      bgcolor: 'action.hover'
-                    } : {}
-                  }}
-                  onClick={() => {
-                    if (onNavigateToTenant && selectedPayment.tenantId) {
-                      setDetailDialogOpen(false)
-                      onNavigateToTenant(selectedPayment.tenantId)
-                    }
-                  }}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <Person sx={{ fontSize: 20, color: 'primary.main' }} />
-                    <Typography variant="body2" sx={{ fontWeight: 500, flex: 1 }}>{selectedPayment.tenantName}</Typography>
-                    {onNavigateToTenant && selectedPayment.tenantId && (
-                      <OpenInNew sx={{ fontSize: 16, color: 'text.secondary' }} />
-                    )}
-                  </Box>
-                </Paper>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 3 }}>
+                  {(selectedPayment.tenantNames || [selectedPayment.tenantName]).filter(Boolean).map((tenantName, index) => {
+                    const tenantId = selectedPayment.tenantIds?.[index] || selectedPayment.tenantId
+                    return (
+                      <Paper
+                        key={tenantId || index}
+                        variant="outlined"
+                        sx={{
+                          p: 2,
+                          cursor: onNavigateToTenant && tenantId ? 'pointer' : 'default',
+                          transition: 'all 0.2s',
+                          '&:hover': onNavigateToTenant && tenantId ? {
+                            borderColor: 'primary.main',
+                            bgcolor: 'action.hover'
+                          } : {}
+                        }}
+                        onClick={() => {
+                          if (onNavigateToTenant && tenantId) {
+                            setDetailDialogOpen(false)
+                            onNavigateToTenant(tenantId)
+                          }
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                          <Person sx={{ fontSize: 20, color: 'primary.main' }} />
+                          <Typography variant="body2" sx={{ fontWeight: 500, flex: 1 }}>{tenantName}</Typography>
+                          {onNavigateToTenant && tenantId && (
+                            <OpenInNew sx={{ fontSize: 16, color: 'text.secondary' }} />
+                          )}
+                        </Box>
+                      </Paper>
+                    )
+                  })}
+                </Box>
 
                 {/* Description */}
                 {selectedPayment.description && (

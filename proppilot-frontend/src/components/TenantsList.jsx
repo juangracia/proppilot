@@ -26,7 +26,10 @@ import {
   List,
   ListItem,
   ListItemText,
-  Avatar
+  Avatar,
+  Tabs,
+  Tab,
+  InputAdornment
 } from '@mui/material'
 import {
   Add,
@@ -44,7 +47,11 @@ import {
   Close,
   ContactPhone,
   Notes,
-  OpenInNew
+  OpenInNew,
+  Search,
+  Clear,
+  Description,
+  PersonOff
 } from '@mui/icons-material'
 import { useLanguage } from '../contexts/LanguageContext'
 import { API_BASE_URL } from '../config/api'
@@ -95,6 +102,10 @@ const TenantsList = memo(function TenantsList({ onNavigateToProperty, onNavigate
     phone: ''
   })
   const [formErrors, setFormErrors] = useState({})
+
+  // Filter state
+  const [searchQuery, setSearchQuery] = useState('')
+  const [leaseStatusFilter, setLeaseStatusFilter] = useState('all') // 'all', 'withLease', 'withoutLease'
 
   // Load tenants on component mount
   useEffect(() => {
@@ -288,11 +299,51 @@ const TenantsList = memo(function TenantsList({ onNavigateToProperty, onNavigate
     )
   }, [tenantToDelete, tenants, handleCloseDeleteDialog, showSnackbar, t])
 
+  // Filter counts
+  const filterCounts = useMemo(() => {
+    const withLease = tenants.filter(t => t.property).length
+    const withoutLease = tenants.filter(t => !t.property).length
+    return { all: tenants.length, withLease, withoutLease }
+  }, [tenants])
+
+  // Filtered tenants
+  const filteredTenants = useMemo(() => {
+    let filtered = tenants
+
+    // Apply lease status filter
+    if (leaseStatusFilter === 'withLease') {
+      filtered = filtered.filter(t => t.property)
+    } else if (leaseStatusFilter === 'withoutLease') {
+      filtered = filtered.filter(t => !t.property)
+    }
+
+    // Apply search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase()
+      filtered = filtered.filter(t =>
+        t.fullName?.toLowerCase().includes(query) ||
+        t.email?.toLowerCase().includes(query) ||
+        t.phone?.toLowerCase().includes(query) ||
+        t.nationalId?.toLowerCase().includes(query) ||
+        t.property?.toLowerCase().includes(query)
+      )
+    }
+
+    return filtered
+  }, [tenants, leaseStatusFilter, searchQuery])
+
+  const hasActiveFilters = leaseStatusFilter !== 'all' || searchQuery.trim() !== ''
+
+  const clearFilters = useCallback(() => {
+    setLeaseStatusFilter('all')
+    setSearchQuery('')
+  }, [])
+
   const totalTenantsText = useMemo(() => {
-    const count = tenants.length
+    const count = filteredTenants.length
     const plural = count !== 1 ? 's' : ''
     return t('totalTenants').replace('{count}', count).replace('{plural}', plural)
-  }, [tenants.length, t])
+  }, [filteredTenants.length, t])
 
   const openDetailDialog = useCallback((tenant) => {
     setSelectedTenant(tenant)
@@ -305,9 +356,9 @@ const TenantsList = memo(function TenantsList({ onNavigateToProperty, onNavigate
   }, [])
 
   const tenantPayments = useMemo(() => {
-    if (!selectedTenant || !selectedTenant.propertyId) return []
+    if (!selectedTenant) return []
     return allPayments
-      .filter(p => p.propertyUnitIdRef === selectedTenant.propertyId)
+      .filter(p => p.tenantId === selectedTenant.id)
       .sort((a, b) => new Date(b.paymentDate) - new Date(a.paymentDate))
   }, [selectedTenant, allPayments])
 
@@ -356,7 +407,70 @@ const TenantsList = memo(function TenantsList({ onNavigateToProperty, onNavigate
         </Button>
       </Box>
 
-      {/* Empty State */}
+      {/* Filters - Only show when there are tenants */}
+      {tenants.length > 0 && (
+        <Box sx={{ mb: 2 }}>
+          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, alignItems: { xs: 'stretch', sm: 'center' }, justifyContent: 'space-between' }}>
+            <Tabs
+              value={leaseStatusFilter}
+              onChange={(e, val) => setLeaseStatusFilter(val)}
+              sx={{
+                minHeight: 36,
+                '& .MuiTab-root': { minHeight: 36, py: 0.5, textTransform: 'none', fontSize: '0.875rem' }
+              }}
+            >
+              <Tab value="all" label={`${t('all')} (${filterCounts.all})`} />
+              <Tab
+                value="withLease"
+                icon={<Description sx={{ fontSize: 16 }} />}
+                iconPosition="start"
+                label={`${t('withLease') || 'Con Contrato'} (${filterCounts.withLease})`}
+              />
+              <Tab
+                value="withoutLease"
+                icon={<PersonOff sx={{ fontSize: 16 }} />}
+                iconPosition="start"
+                label={`${t('withoutLease') || 'Sin Contrato'} (${filterCounts.withoutLease})`}
+              />
+            </Tabs>
+            <TextField
+              size="small"
+              placeholder={t('searchTenantsPlaceholder') || 'Buscar por nombre, email, teléfono...'}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              sx={{ minWidth: { xs: '100%', sm: 280 } }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search sx={{ fontSize: 20, color: 'text.secondary' }} />
+                  </InputAdornment>
+                ),
+                endAdornment: searchQuery && (
+                  <InputAdornment position="end">
+                    <IconButton size="small" onClick={() => setSearchQuery('')}>
+                      <Clear sx={{ fontSize: 18 }} />
+                    </IconButton>
+                  </InputAdornment>
+                )
+              }}
+            />
+          </Box>
+          {hasActiveFilters && (
+            <Box sx={{ mt: 1 }}>
+              <Button
+                size="small"
+                startIcon={<Clear sx={{ fontSize: 16 }} />}
+                onClick={clearFilters}
+                sx={{ textTransform: 'none' }}
+              >
+                {t('clearFilters') || 'Limpiar filtros'}
+              </Button>
+            </Box>
+          )}
+        </Box>
+      )}
+
+      {/* Empty State - No tenants at all */}
       {tenants.length === 0 && (
         <Paper
           sx={{
@@ -384,8 +498,26 @@ const TenantsList = memo(function TenantsList({ onNavigateToProperty, onNavigate
         </Paper>
       )}
 
+      {/* Empty State - Filters returned no results */}
+      {tenants.length > 0 && filteredTenants.length === 0 && (
+        <Paper sx={{ p: 4, textAlign: 'center' }}>
+          <People sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
+          <Typography variant="h6" color="text.secondary" gutterBottom>
+            {t('noTenantsMatchFilter') || 'No hay inquilinos que coincidan con los filtros'}
+          </Typography>
+          <Button
+            size="small"
+            startIcon={<Clear sx={{ fontSize: 16 }} />}
+            onClick={clearFilters}
+            sx={{ textTransform: 'none', mt: 1 }}
+          >
+            {t('clearFilters') || 'Limpiar filtros'}
+          </Button>
+        </Paper>
+      )}
+
       {/* Desktop Table View */}
-      {tenants.length > 0 && (
+      {filteredTenants.length > 0 && (
       <Box sx={{ display: { xs: 'none', xl: 'block' } }}>
         <TableContainer component={Paper} elevation={2} sx={{ overflowX: 'auto' }}>
           <Table sx={{ minWidth: 1000 }}>
@@ -401,7 +533,7 @@ const TenantsList = memo(function TenantsList({ onNavigateToProperty, onNavigate
               </TableRow>
             </TableHead>
             <TableBody>
-              {tenants.map((tenant) => (
+              {filteredTenants.map((tenant) => (
                 <TableRow
                   key={tenant.id}
                   hover
@@ -491,9 +623,9 @@ const TenantsList = memo(function TenantsList({ onNavigateToProperty, onNavigate
       )}
 
       {/* Mobile/Tablet Card View */}
-      {tenants.length > 0 && (
+      {filteredTenants.length > 0 && (
         <Box sx={{ display: { xs: 'block', xl: 'none' } }}>
-        {tenants.map((tenant) => (
+        {filteredTenants.map((tenant) => (
           <Card
             key={tenant.id}
             onClick={() => openDetailDialog(tenant)}
@@ -899,9 +1031,23 @@ const TenantsList = memo(function TenantsList({ onNavigateToProperty, onNavigate
               )}
 
               {/* Payment History */}
-              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, textTransform: 'uppercase', fontSize: '0.75rem' }}>
-                {t('paymentHistory')}
-              </Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                <Typography variant="subtitle2" color="text.secondary" sx={{ textTransform: 'uppercase', fontSize: '0.75rem' }}>
+                  {t('paymentHistory')}
+                </Typography>
+                {onNavigateToPayment && tenantPayments.length > 0 && (
+                  <Button
+                    size="small"
+                    onClick={() => {
+                      handleCloseDetailDialog()
+                      onNavigateToPayment({ tenantId: selectedTenant.id })
+                    }}
+                    sx={{ textTransform: 'none', fontSize: '0.75rem' }}
+                  >
+                    {t('viewPaymentsForTenant')}
+                  </Button>
+                )}
+              </Box>
               <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
                 {tenantPayments.length > 0 ? (
                   <List disablePadding>

@@ -6,14 +6,21 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Data
+@EqualsAndHashCode(exclude = {"tenants", "payments", "propertyUnit", "owner"})
+@ToString(exclude = {"tenants", "payments", "propertyUnit", "owner"})
 @Entity
 @Table(name = "leases")
 public class Lease {
@@ -26,10 +33,14 @@ public class Lease {
     @JsonIgnore
     private PropertyUnit propertyUnit;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "tenant_id", nullable = false)
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+        name = "lease_tenants",
+        joinColumns = @JoinColumn(name = "lease_id"),
+        inverseJoinColumns = @JoinColumn(name = "tenant_id")
+    )
     @JsonIgnore
-    private Tenant tenant;
+    private Set<Tenant> tenants = new HashSet<>();
 
     @Column(nullable = false)
     @NotNull(message = "Start date is required")
@@ -77,8 +88,8 @@ public class Lease {
     private Long inputPropertyUnitId;
 
     @Transient
-    @JsonProperty("tenantId")
-    private Long inputTenantId;
+    @JsonProperty("tenantIds")
+    private List<Long> inputTenantIds;
 
     @JsonProperty("propertyAddress")
     public String getPropertyAddress() {
@@ -90,19 +101,29 @@ public class Lease {
         return propertyUnit != null ? propertyUnit.getType() : null;
     }
 
+    @JsonProperty("tenantNames")
+    public List<String> getTenantNames() {
+        if (tenants == null || tenants.isEmpty()) return List.of();
+        return tenants.stream().map(Tenant::getFullName).collect(Collectors.toList());
+    }
+
+    @JsonProperty("tenantEmails")
+    public List<String> getTenantEmails() {
+        if (tenants == null || tenants.isEmpty()) return List.of();
+        return tenants.stream().map(Tenant::getEmail).collect(Collectors.toList());
+    }
+
+    @JsonProperty("tenantPhones")
+    public List<String> getTenantPhones() {
+        if (tenants == null || tenants.isEmpty()) return List.of();
+        return tenants.stream().map(Tenant::getPhone).collect(Collectors.toList());
+    }
+
+    // For backward compatibility - returns first tenant name
     @JsonProperty("tenantName")
     public String getTenantName() {
-        return tenant != null ? tenant.getFullName() : null;
-    }
-
-    @JsonProperty("tenantEmail")
-    public String getTenantEmail() {
-        return tenant != null ? tenant.getEmail() : null;
-    }
-
-    @JsonProperty("tenantPhone")
-    public String getTenantPhone() {
-        return tenant != null ? tenant.getPhone() : null;
+        if (tenants == null || tenants.isEmpty()) return null;
+        return tenants.iterator().next().getFullName();
     }
 
     @JsonProperty("propertyUnitIdRef")
@@ -110,9 +131,17 @@ public class Lease {
         return propertyUnit != null ? propertyUnit.getId() : null;
     }
 
+    @JsonProperty("tenantIdRefs")
+    public List<Long> getTenantIdRefs() {
+        if (tenants == null || tenants.isEmpty()) return List.of();
+        return tenants.stream().map(Tenant::getId).collect(Collectors.toList());
+    }
+
+    // For backward compatibility - returns first tenant ID
     @JsonProperty("tenantIdRef")
     public Long getTenantIdRef() {
-        return tenant != null ? tenant.getId() : null;
+        if (tenants == null || tenants.isEmpty()) return null;
+        return tenants.iterator().next().getId();
     }
 
     public boolean isActive() {

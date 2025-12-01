@@ -94,8 +94,7 @@ public class PropertyUnit {
     @com.fasterxml.jackson.annotation.JsonProperty("currentTenantId")
     public Long getCurrentTenantId() {
         Lease activeLease = getActiveLease();
-        return activeLease != null && activeLease.getTenant() != null
-            ? activeLease.getTenant().getId() : null;
+        return activeLease != null ? activeLease.getTenantIdRef() : null;
     }
 
     @com.fasterxml.jackson.annotation.JsonProperty("activeLeaseId")

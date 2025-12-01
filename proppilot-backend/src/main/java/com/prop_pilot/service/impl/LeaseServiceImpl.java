@@ -17,7 +17,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class LeaseServiceImpl implements LeaseService {
@@ -46,31 +48,31 @@ public class LeaseServiceImpl implements LeaseService {
             propUnitId = lease.getPropertyUnit().getId();
         }
 
-        // Get tenant ID from transient field or nested object
-        Long tenId = lease.getInputTenantId();
-        if (tenId == null && lease.getTenant() != null) {
-            tenId = lease.getTenant().getId();
+        // Get tenant IDs from transient field
+        List<Long> tenantIds = lease.getInputTenantIds();
+        if (tenantIds == null || tenantIds.isEmpty()) {
+            throw new BusinessLogicException("At least one tenant is required for lease");
         }
 
         // Validate required fields
         if (propUnitId == null) {
             throw new BusinessLogicException("Property unit is required for lease");
         }
-        if (tenId == null) {
-            throw new BusinessLogicException("Tenant is required for lease");
-        }
 
-        // Final variables for lambdas
+        // Final variable for lambda
         final Long propertyUnitId = propUnitId;
-        final Long tenantId = tenId;
 
         // Validate property unit exists and belongs to owner
         PropertyUnit propertyUnit = propertyUnitRepository.findByIdAndOwnerId(propertyUnitId, ownerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Property unit not found with id: " + propertyUnitId));
 
-        // Validate tenant exists and belongs to owner
-        Tenant tenant = tenantRepository.findByIdAndOwnerId(tenantId, ownerId)
-                .orElseThrow(() -> new ResourceNotFoundException("Tenant not found with id: " + tenantId));
+        // Validate all tenants exist and belong to owner
+        Set<Tenant> tenants = new HashSet<>();
+        for (Long tenantId : tenantIds) {
+            Tenant tenant = tenantRepository.findByIdAndOwnerId(tenantId, ownerId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Tenant not found with id: " + tenantId));
+            tenants.add(tenant);
+        }
 
         // Validate dates
         if (lease.getStartDate() == null || lease.getEndDate() == null) {
@@ -92,7 +94,7 @@ public class LeaseServiceImpl implements LeaseService {
 
         // Set the relationships
         lease.setPropertyUnit(propertyUnit);
-        lease.setTenant(tenant);
+        lease.setTenants(tenants);
 
         // Set owner
         User owner = userRepository.findById(ownerId)
@@ -148,9 +150,8 @@ public class LeaseServiceImpl implements LeaseService {
     }
 
     @Override
-    public Lease getActiveLeaseByTenant(@NonNull Long tenantId, @NonNull Long ownerId) {
-        return leaseRepository.findActiveLeaseByTenantIdAndOwnerId(tenantId, ownerId, LocalDate.now())
-                .orElse(null);
+    public List<Lease> getActiveLeasesByTenant(@NonNull Long tenantId, @NonNull Long ownerId) {
+        return leaseRepository.findActiveLeasesByTenantIdAndOwnerId(tenantId, ownerId, LocalDate.now());
     }
 
     @Override
@@ -198,6 +199,29 @@ public class LeaseServiceImpl implements LeaseService {
     public void terminateLease(@NonNull Long id, @NonNull Long ownerId) {
         Lease lease = getLeaseById(id, ownerId);
         lease.setStatus(Lease.LeaseStatus.TERMINATED);
+        leaseRepository.save(lease);
+    }
+
+    @Override
+    @Transactional
+    public void reactivateLease(@NonNull Long id, @NonNull Long ownerId) {
+        Lease lease = getLeaseById(id, ownerId);
+
+        if (lease.getStatus() != Lease.LeaseStatus.TERMINATED) {
+            throw new BusinessLogicException("Only terminated leases can be reactivated");
+        }
+
+        // Check for overlapping active leases before reactivating
+        if (hasOverlappingLease(lease.getPropertyUnit().getId(), lease.getStartDate(), lease.getEndDate(), id)) {
+            throw new BusinessLogicException("Cannot reactivate lease: there is already an active lease for this property during the specified period");
+        }
+
+        // Check if lease dates are still valid (end date not in the past)
+        if (lease.getEndDate().isBefore(LocalDate.now())) {
+            lease.setStatus(Lease.LeaseStatus.EXPIRED);
+        } else {
+            lease.setStatus(Lease.LeaseStatus.ACTIVE);
+        }
         leaseRepository.save(lease);
     }
 

@@ -22,11 +22,13 @@ public interface LeaseService {
 
     Lease getActiveLeaseByPropertyUnit(@NonNull Long propertyUnitId, @NonNull Long ownerId);
 
-    Lease getActiveLeaseByTenant(@NonNull Long tenantId, @NonNull Long ownerId);
+    List<Lease> getActiveLeasesByTenant(@NonNull Long tenantId, @NonNull Long ownerId);
 
     Lease updateLease(@NonNull Long id, @NonNull Lease lease, @NonNull Long ownerId);
 
     void terminateLease(@NonNull Long id, @NonNull Long ownerId);
+
+    void reactivateLease(@NonNull Long id, @NonNull Long ownerId);
 
     void deleteLease(@NonNull Long id, @NonNull Long ownerId);
 

@@ -94,12 +94,12 @@ public class LeaseController {
     }
 
     @GetMapping("/tenant/{tenantId}/active")
-    @Operation(summary = "Get active lease by tenant", description = "Retrieves the current active lease for a tenant")
-    @ApiResponse(responseCode = "200", description = "Successfully retrieved active lease")
-    public ResponseEntity<Lease> getActiveLeaseByTenant(@PathVariable Long tenantId) {
+    @Operation(summary = "Get active leases by tenant", description = "Retrieves all current active leases for a tenant")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved active leases")
+    public ResponseEntity<List<Lease>> getActiveLeasesByTenant(@PathVariable Long tenantId) {
         Long ownerId = currentUserService.getCurrentUserId();
-        Lease lease = leaseService.getActiveLeaseByTenant(tenantId, ownerId);
-        return ResponseEntity.ok(lease);
+        List<Lease> leases = leaseService.getActiveLeasesByTenant(tenantId, ownerId);
+        return ResponseEntity.ok(leases);
     }
 
     @PutMapping("/{id}")
@@ -117,6 +117,18 @@ public class LeaseController {
     public ResponseEntity<Void> terminateLease(@PathVariable Long id) {
         Long ownerId = currentUserService.getCurrentUserId();
         leaseService.terminateLease(id, ownerId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/{id}/reactivate")
+    @Operation(summary = "Reactivate lease", description = "Reactivates a terminated lease")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Lease reactivated successfully"),
+        @ApiResponse(responseCode = "400", description = "Cannot reactivate: overlapping lease exists or lease is not terminated")
+    })
+    public ResponseEntity<Void> reactivateLease(@PathVariable Long id) {
+        Long ownerId = currentUserService.getCurrentUserId();
+        leaseService.reactivateLease(id, ownerId);
         return ResponseEntity.ok().build();
     }
 

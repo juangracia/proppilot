@@ -5,13 +5,17 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @Data
+@EqualsAndHashCode(exclude = {"leases", "owner"})
+@ToString(exclude = {"leases", "owner"})
 @Entity
 @Table(name = "tenants")
 public class Tenant {
@@ -41,9 +45,9 @@ public class Tenant {
     @JsonIgnore
     private User owner;
 
-    @OneToMany(mappedBy = "tenant", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ManyToMany(mappedBy = "tenants")
     @JsonIgnore
-    private List<Lease> leases = new ArrayList<>();
+    private Set<Lease> leases = new HashSet<>();
 
     @Transient
     public Lease getActiveLease() {

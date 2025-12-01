@@ -38,6 +38,7 @@ export const LanguageProvider = ({ children }) => {
       monthlyRent: 'Alquiler Mensual',
       leaseStart: 'Inicio Contrato',
       tenant: 'Inquilino',
+      tenants: 'Inquilino(s)',
       noTenant: 'Sin Inquilino',
 
       // Property Types
@@ -173,6 +174,7 @@ export const LanguageProvider = ({ children }) => {
       createLease: 'Crear Contrato',
       selectProperty: 'Seleccionar Propiedad',
       selectTenant: 'Seleccionar Inquilino',
+      selectTenants: 'Seleccionar Inquilino(s)',
       startDate: 'Fecha de Inicio',
       endDate: 'Fecha de Fin',
       adjustmentIndex: 'Índice de Ajuste',
@@ -446,6 +448,7 @@ export const LanguageProvider = ({ children }) => {
       monthlyRent: 'Monthly Rent',
       leaseStart: 'Lease Start',
       tenant: 'Tenant',
+      tenants: 'Tenant(s)',
       noTenant: 'No Tenant',
 
       // Property Types
@@ -581,6 +584,7 @@ export const LanguageProvider = ({ children }) => {
       createLease: 'Create Lease',
       selectProperty: 'Select Property',
       selectTenant: 'Select Tenant',
+      selectTenants: 'Select Tenant(s)',
       startDate: 'Start Date',
       endDate: 'End Date',
       adjustmentIndex: 'Adjustment Index',

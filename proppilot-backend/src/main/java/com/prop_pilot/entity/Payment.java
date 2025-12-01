@@ -8,6 +8,8 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Data
 @Entity
@@ -19,7 +21,8 @@ public class Payment {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lease_id", nullable = false)
-    @NotNull(message = "Lease is required for payment")
+    // Note: @NotNull removed - validation is handled in PaymentServiceImpl.createPayment()
+    // to support receiving just leaseId (inputLeaseId) from frontend
     @JsonBackReference("lease-payments")
     private Lease lease;
 
@@ -63,18 +66,36 @@ public class Payment {
         return null;
     }
 
+    @JsonProperty("tenantNames")
+    public List<String> getTenantNames() {
+        if (lease != null && lease.getTenants() != null && !lease.getTenants().isEmpty()) {
+            return lease.getTenants().stream().map(Tenant::getFullName).collect(Collectors.toList());
+        }
+        return List.of();
+    }
+
+    // For backward compatibility - returns first tenant name
     @JsonProperty("tenantName")
     public String getTenantName() {
-        if (lease != null && lease.getTenant() != null) {
-            return lease.getTenant().getFullName();
+        if (lease != null && lease.getTenants() != null && !lease.getTenants().isEmpty()) {
+            return lease.getTenants().iterator().next().getFullName();
         }
         return null;
     }
 
+    @JsonProperty("tenantIds")
+    public List<Long> getTenantIdRefs() {
+        if (lease != null && lease.getTenants() != null && !lease.getTenants().isEmpty()) {
+            return lease.getTenants().stream().map(Tenant::getId).collect(Collectors.toList());
+        }
+        return List.of();
+    }
+
+    // For backward compatibility - returns first tenant ID
     @JsonProperty("tenantId")
     public Long getTenantIdRef() {
-        if (lease != null && lease.getTenant() != null) {
-            return lease.getTenant().getId();
+        if (lease != null && lease.getTenants() != null && !lease.getTenants().isEmpty()) {
+            return lease.getTenants().iterator().next().getId();
         }
         return null;
     }
