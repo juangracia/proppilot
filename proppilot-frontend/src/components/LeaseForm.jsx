@@ -1230,13 +1230,13 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                   sx={{
                     p: 2,
                     mb: 2,
-                    cursor: onNavigateToProperty ? 'pointer' : 'default',
-                    '&:hover': onNavigateToProperty ? { borderColor: 'primary.main', bgcolor: 'action.hover' } : {}
+                    cursor: onNavigateToProperty && selectedLease.propertyUnitIdRef ? 'pointer' : 'default',
+                    '&:hover': onNavigateToProperty && selectedLease.propertyUnitIdRef ? { borderColor: 'primary.main', bgcolor: 'action.hover' } : {}
                   }}
                   onClick={() => {
-                    if (onNavigateToProperty && selectedLease.propertyUnit?.id) {
+                    if (onNavigateToProperty && selectedLease.propertyUnitIdRef) {
                       setDetailDialogOpen(false)
-                      onNavigateToProperty(selectedLease.propertyUnit.id)
+                      onNavigateToProperty(selectedLease.propertyUnitIdRef)
                     }
                   }}
                 >
@@ -1245,7 +1245,7 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                     <Typography variant="body2" sx={{ fontWeight: 500, flex: 1 }}>
                       {selectedLease.propertyAddress}
                     </Typography>
-                    {onNavigateToProperty && <OpenInNew sx={{ fontSize: 16, color: 'text.secondary' }} />}
+                    {onNavigateToProperty && selectedLease.propertyUnitIdRef && <OpenInNew sx={{ fontSize: 16, color: 'text.secondary' }} />}
                   </Box>
                 </Paper>
 
@@ -1256,13 +1256,13 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                   variant="outlined"
                   sx={{
                     p: 2,
-                    cursor: onNavigateToTenant ? 'pointer' : 'default',
-                    '&:hover': onNavigateToTenant ? { borderColor: 'primary.main', bgcolor: 'action.hover' } : {}
+                    cursor: onNavigateToTenant && selectedLease.tenantIdRef ? 'pointer' : 'default',
+                    '&:hover': onNavigateToTenant && selectedLease.tenantIdRef ? { borderColor: 'primary.main', bgcolor: 'action.hover' } : {}
                   }}
                   onClick={() => {
-                    if (onNavigateToTenant && selectedLease.tenant?.id) {
+                    if (onNavigateToTenant && selectedLease.tenantIdRef) {
                       setDetailDialogOpen(false)
-                      onNavigateToTenant(selectedLease.tenant.id)
+                      onNavigateToTenant(selectedLease.tenantIdRef)
                     }
                   }}
                 >
@@ -1278,7 +1278,7 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                         </Typography>
                       )}
                     </Box>
-                    {onNavigateToTenant && <OpenInNew sx={{ fontSize: 16, color: 'text.secondary' }} />}
+                    {onNavigateToTenant && selectedLease.tenantIdRef && <OpenInNew sx={{ fontSize: 16, color: 'text.secondary' }} />}
                   </Box>
                 </Paper>
 
