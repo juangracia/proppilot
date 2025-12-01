@@ -27,7 +27,12 @@ import {
   Avatar,
   IconButton,
   InputAdornment,
-  Tooltip
+  Tooltip,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Divider
 } from '@mui/material'
 import Grid from '@mui/material/Grid'
 import {
@@ -46,7 +51,9 @@ import {
   Restore,
   DeleteForever,
   Search,
-  Clear
+  Clear,
+  Payment as PaymentIcon,
+  Schedule
 } from '@mui/icons-material'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
@@ -93,6 +100,8 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
   const [terminateConfirmStep, setTerminateConfirmStep] = useState(0)
   const [reactivateDialogOpen, setReactivateDialogOpen] = useState(false)
   const [leaseToReactivate, setLeaseToReactivate] = useState(null)
+  const [leasePayments, setLeasePayments] = useState([])
+  const [loadingPayments, setLoadingPayments] = useState(false)
 
   // Inline creation dialogs
   const [newTenantDialogOpen, setNewTenantDialogOpen] = useState(false)
@@ -151,6 +160,27 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
       }
     }
   }, [initialLeaseId, leases, onLeaseViewed])
+
+  // Fetch payments when a lease is selected for detail view
+  useEffect(() => {
+    if (selectedLease && detailDialogOpen) {
+      const fetchLeasePayments = async () => {
+        setLoadingPayments(true)
+        try {
+          const response = await axios.get(`${API_BASE_URL}/payments/lease/${selectedLease.id}`)
+          setLeasePayments(Array.isArray(response.data) ? response.data : [])
+        } catch (err) {
+          console.error('Failed to fetch payments for lease:', err)
+          setLeasePayments([])
+        } finally {
+          setLoadingPayments(false)
+        }
+      }
+      fetchLeasePayments()
+    } else {
+      setLeasePayments([])
+    }
+  }, [selectedLease, detailDialogOpen])
 
   // Auto-fill rent and set default end date when property or start date changes
   const handlePropertyChange = useCallback((propertyId) => {
@@ -1250,6 +1280,80 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                     </Box>
                     {onNavigateToTenant && <OpenInNew sx={{ fontSize: 16, color: 'text.secondary' }} />}
                   </Box>
+                </Paper>
+
+                {/* Latest Payments Section */}
+                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, mt: 3, textTransform: 'uppercase', fontSize: '0.75rem' }}>
+                  {t('latestPayments')}
+                </Typography>
+                <Paper variant="outlined" sx={{ p: 2 }}>
+                  {loadingPayments ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                      <CircularProgress size={24} />
+                    </Box>
+                  ) : leasePayments.length === 0 ? (
+                    <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 1 }}>
+                      {t('noPaymentsForLease')}
+                    </Typography>
+                  ) : (
+                    <>
+                      {/* Payment Status Indicator */}
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                        {leasePayments.some(p => p.status === 'PENDING') ? (
+                          <Chip
+                            icon={<Schedule sx={{ fontSize: 16 }} />}
+                            label={t('paymentsPending')}
+                            color="warning"
+                            size="small"
+                            sx={{ fontWeight: 500 }}
+                          />
+                        ) : (
+                          <Chip
+                            icon={<CheckCircle sx={{ fontSize: 16 }} />}
+                            label={t('upToDate')}
+                            color="success"
+                            size="small"
+                            sx={{ fontWeight: 500 }}
+                          />
+                        )}
+                      </Box>
+
+                      {/* Recent Payments List (max 3) */}
+                      <List dense sx={{ py: 0 }}>
+                        {leasePayments.slice(0, 3).map((payment, index) => (
+                          <React.Fragment key={payment.id}>
+                            {index > 0 && <Divider />}
+                            <ListItem sx={{ px: 0 }}>
+                              <ListItemIcon sx={{ minWidth: 36 }}>
+                                <PaymentIcon sx={{ fontSize: 20, color: payment.status === 'PAID' ? 'success.main' : 'warning.main' }} />
+                              </ListItemIcon>
+                              <ListItemText
+                                primary={
+                                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                      {formatCurrency(payment.amount)}
+                                    </Typography>
+                                    <Chip
+                                      label={payment.status === 'PAID' ? t('paid') : t('pending')}
+                                      color={payment.status === 'PAID' ? 'success' : 'warning'}
+                                      size="small"
+                                      sx={{ height: 20, fontSize: '0.7rem' }}
+                                    />
+                                  </Box>
+                                }
+                                secondary={payment.paymentDate}
+                              />
+                            </ListItem>
+                          </React.Fragment>
+                        ))}
+                      </List>
+                      {leasePayments.length > 3 && (
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mt: 1 }}>
+                          +{leasePayments.length - 3} {t('paymentsMenu').toLowerCase()}
+                        </Typography>
+                      )}
+                    </>
+                  )}
                 </Paper>
               </DialogContent>
               <DialogActions sx={{ px: 3, py: 2, justifyContent: 'space-between' }}>
