@@ -146,6 +146,7 @@ public class Lease {
 
     public boolean isActive() {
         return status == LeaseStatus.ACTIVE &&
+               !deleted &&
                !LocalDate.now().isBefore(startDate) &&
                !LocalDate.now().isAfter(endDate);
     }
