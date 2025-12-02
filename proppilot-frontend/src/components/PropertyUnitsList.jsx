@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo, useCallback, memo, useEffect } from 'react'
 import {
   Paper,
   Typography,
@@ -17,7 +17,14 @@ import {
   CardContent,
   Chip,
   Avatar,
-  Divider
+  Divider,
+  Tabs,
+  Tab,
+  List,
+  ListItem,
+  ListItemText,
+  IconButton,
+  Autocomplete
 } from '@mui/material'
 import Grid from '@mui/material/Grid'
 import {
@@ -29,64 +36,71 @@ import {
   AttachMoney,
   CalendarToday,
   Edit,
-  Visibility
+  Visibility,
+  Warning,
+  Receipt,
+  Close,
+  LocationOn,
+  Bed,
+  Bathtub,
+  SquareFoot,
+  Garage,
+  Description,
+  Payment,
+  OpenInNew,
+  Delete
 } from '@mui/icons-material'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
 import { useLanguage } from '../contexts/LanguageContext'
+import { API_BASE_URL } from '../config/api'
+import axios from 'axios'
+import MoneyInput from './MoneyInput'
 
-const API_BASE_URL = '/api'
-
-// Mock data for demonstration
-const mockProperties = [
-  {
-    id: 1,
-    address: '123 Oak Street, Apt 2B',
-    type: 'Apartment',
-    status: 'Occupied',
-    tenant: 'Sarah Johnson',
-    monthlyRent: 1200,
-    leaseStart: '12/31/2023'
-  },
-  {
-    id: 2,
-    address: '456 Pine Avenue House',
-    type: 'House',
-    status: 'Occupied',
-    tenant: 'Mike Chen',
-    monthlyRent: 2100,
-    leaseStart: '11/14/2023'
-  },
-  {
-    id: 3,
-    address: '789 Maple Court, Unit 5A',
-    type: 'Apartment',
-    status: 'Occupied',
-    tenant: 'Emma Davis',
-    monthlyRent: 950,
-    leaseStart: '1/31/2024'
-  },
-  {
-    id: 4,
-    address: '321 Elm Street Loft',
-    type: 'Commercial',
-    status: 'Vacant',
-    tenant: 'Vacant',
-    monthlyRent: 1800,
-    leaseStart: null
-  }
+const ARGENTINE_PROVINCES = [
+  'Buenos Aires',
+  'CABA',
+  'Catamarca',
+  'Chaco',
+  'Chubut',
+  'Córdoba',
+  'Corrientes',
+  'Entre Ríos',
+  'Formosa',
+  'Jujuy',
+  'La Pampa',
+  'La Rioja',
+  'Mendoza',
+  'Misiones',
+  'Neuquén',
+  'Río Negro',
+  'Salta',
+  'San Juan',
+  'San Luis',
+  'Santa Cruz',
+  'Santa Fe',
+  'Santiago del Estero',
+  'Tierra del Fuego',
+  'Tucumán'
 ]
 
-function PropertyUnitsList() {
+const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null, onFilterClear, onNavigateToTenant, onNavigateToPayment, initialPropertyId, onPropertyViewed }) {
   const { t, formatCurrency, currency } = useLanguage()
-  const [propertyUnits, setPropertyUnits] = useState(mockProperties)
-  const [loading, setLoading] = useState(false)
+  const [propertyUnits, setPropertyUnits] = useState([])
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
+  const [activeFilter, setActiveFilter] = useState(initialFilter)
   const [openAddDialog, setOpenAddDialog] = useState(false)
   const [newProperty, setNewProperty] = useState({
-    address: '',
+    street: '',
+    streetNumber: '',
+    floor: '',
+    apartment: '',
+    city: '',
+    province: 'Buenos Aires',
+    postalCode: '',
     type: '',
     baseRentAmount: '',
     leaseStartDate: null
@@ -97,20 +111,106 @@ function PropertyUnitsList() {
   const [editingProperty, setEditingProperty] = useState(null)
   const [openEditDialog, setOpenEditDialog] = useState(false)
   const [editFormData, setEditFormData] = useState({
-    address: '',
+    street: '',
+    streetNumber: '',
+    floor: '',
+    apartment: '',
+    city: '',
+    province: '',
+    postalCode: '',
     type: '',
     baseRentAmount: '',
     leaseStartDate: null
   })
   const [editLoading, setEditLoading] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [propertyToDelete, setPropertyToDelete] = useState(null)
+  const [deleteCheckResult, setDeleteCheckResult] = useState(null)
+  const [deleteLoading, setDeleteLoading] = useState(false)
 
-  const filteredProperties = propertyUnits.filter(property =>
-    property.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    property.tenant.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    property.type.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  // Fetch property units from API
+  const fetchPropertyUnits = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const response = await axios.get(`${API_BASE_URL}/property-units`)
+      // Transform API response to match expected format
+      const dataArray = Array.isArray(response.data) ? response.data : []
+      const transformedData = dataArray.map(property => {
+        const lastPayment = property.payments && property.payments.length > 0
+          ? property.payments.sort((a, b) => new Date(b.paymentDate) - new Date(a.paymentDate))[0]
+          : null
+        const hasPendingPayment = property.payments?.some(p => p.status === 'PENDING' || p.status === 'OVERDUE') || false
 
-  const getStatusColor = (status) => {
+        return {
+          id: property.id,
+          address: property.address,
+          type: property.type,
+          status: property.tenant ? 'Occupied' : 'Vacant',
+          tenant: property.tenant?.fullName || '',
+          tenantId: property.tenant?.id || null,
+          monthlyRent: parseFloat(property.baseRentAmount) || 0,
+          leaseStart: property.leaseStartDate,
+          lastPaymentDate: lastPayment?.paymentDate || null,
+          hasPendingPayment,
+          payments: property.payments || []
+        }
+      })
+      setPropertyUnits(transformedData)
+    } catch (err) {
+      console.error('Error fetching property units:', err)
+      setError('Failed to load properties. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchPropertyUnits()
+  }, [fetchPropertyUnits])
+
+  // Auto-open detail dialog when initialPropertyId is provided
+  useEffect(() => {
+    if (initialPropertyId) {
+      const property = propertyUnits.find(p => p.id === initialPropertyId)
+      if (property) {
+        setSelectedProperty(property)
+        setOpenViewDialog(true)
+        onPropertyViewed?.()
+      }
+    }
+  }, [initialPropertyId, propertyUnits, onPropertyViewed])
+
+  // Memoize filtered properties
+  const filteredProperties = useMemo(() => {
+    const filteredByStatus = propertyUnits.filter(property => {
+      if (activeFilter === 'occupied') return property.status === 'Occupied'
+      if (activeFilter === 'vacant') return property.status === 'Vacant'
+      if (activeFilter === 'overdue') return property.hasPendingPayment
+      return true
+    })
+
+    return filteredByStatus.filter(property =>
+      property.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (property.tenant && property.tenant.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      property.type.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  }, [propertyUnits, activeFilter, searchTerm])
+
+  // Count of overdue properties for badge
+  const overdueCount = useMemo(() =>
+    propertyUnits.filter(p => p.hasPendingPayment).length
+  , [propertyUnits])
+
+  const handleFilterChange = useCallback((event, newValue) => {
+    setActiveFilter(newValue === 'all' ? null : newValue)
+  }, [])
+
+  const handleSearchChange = useCallback((e) => {
+    setSearchTerm(e.target.value)
+  }, [])
+
+  const getStatusColor = useCallback((status) => {
     switch (status) {
       case 'Occupied':
         return 'success'
@@ -119,9 +219,9 @@ function PropertyUnitsList() {
       default:
         return 'default'
     }
-  }
+  }, [])
 
-  const getTypeIcon = (type) => {
+  const getTypeIcon = useCallback((type) => {
     switch (type) {
       case 'House':
         return <Home />
@@ -132,89 +232,190 @@ function PropertyUnitsList() {
       default:
         return <Home />
     }
-  }
+  }, [])
 
-  const handleAddProperty = () => {
+  const handleOpenAddDialog = useCallback(() => {
+    setOpenAddDialog(true)
+  }, [])
+
+  const handleCloseAddDialog = useCallback(() => {
+    setOpenAddDialog(false)
+  }, [])
+
+  const handleAddProperty = useCallback(async () => {
     setAddLoading(true)
-    // Simulate API call
-    setTimeout(() => {
-      const newId = Math.max(...propertyUnits.map(p => p.id)) + 1
-      const property = {
-        id: newId,
-        address: newProperty.address,
+    try {
+      const payload = {
+        street: newProperty.street,
+        streetNumber: newProperty.streetNumber,
+        floor: newProperty.floor || null,
+        apartment: newProperty.apartment || null,
+        city: newProperty.city,
+        province: newProperty.province,
+        postalCode: newProperty.postalCode || null,
         type: newProperty.type,
-        status: 'Vacant',
-        tenant: 'Vacant',
-        monthlyRent: parseFloat(newProperty.baseRentAmount),
-        leaseStart: newProperty.leaseStartDate ? newProperty.leaseStartDate.toLocaleDateString() : null
+        baseRentAmount: parseFloat(newProperty.baseRentAmount),
+        leaseStartDate: newProperty.leaseStartDate
+          ? newProperty.leaseStartDate.toISOString().split('T')[0]
+          : new Date().toISOString().split('T')[0]
       }
-      setPropertyUnits(prev => [...prev, property])
+      await axios.post(`${API_BASE_URL}/property-units`, payload)
       setOpenAddDialog(false)
       setNewProperty({
-        address: '',
+        street: '',
+        streetNumber: '',
+        floor: '',
+        apartment: '',
+        city: '',
+        province: 'Buenos Aires',
+        postalCode: '',
         type: '',
         baseRentAmount: '',
         leaseStartDate: null
       })
+      // Refresh the list
+      fetchPropertyUnits()
+    } catch (err) {
+      console.error('Error adding property:', err)
+      setError('Failed to add property. Please try again.')
+    } finally {
       setAddLoading(false)
-    }, 1000)
-  }
+    }
+  }, [newProperty, fetchPropertyUnits])
 
-  const handleViewDetails = (property) => {
+  const handleViewDetails = useCallback((property) => {
     setSelectedProperty(property)
     setOpenViewDialog(true)
-  }
+  }, [])
 
-  const handleCloseViewDialog = () => {
+  const handleCloseViewDialog = useCallback(() => {
     setOpenViewDialog(false)
     setSelectedProperty(null)
-  }
+  }, [])
 
-  const handleEdit = (property) => {
+  const handleEdit = useCallback(async (property) => {
     setEditingProperty(property)
-    setEditFormData({
-      address: property.address,
-      type: property.type,
-      baseRentAmount: property.monthlyRent.toString(),
-      leaseStartDate: property.leaseStart ? new Date(property.leaseStart) : null
-    })
+    // Fetch full property data to get structured fields
+    try {
+      const response = await axios.get(`${API_BASE_URL}/property-units/${property.id}`)
+      const fullProperty = response.data
+      setEditFormData({
+        street: fullProperty.street || '',
+        streetNumber: fullProperty.streetNumber || '',
+        floor: fullProperty.floor || '',
+        apartment: fullProperty.apartment || '',
+        city: fullProperty.city || '',
+        province: fullProperty.province || 'Buenos Aires',
+        postalCode: fullProperty.postalCode || '',
+        type: fullProperty.type || property.type,
+        baseRentAmount: (fullProperty.baseRentAmount || property.monthlyRent).toString(),
+        leaseStartDate: fullProperty.leaseStartDate ? new Date(fullProperty.leaseStartDate + 'T00:00:00') : (property.leaseStart ? new Date(property.leaseStart + 'T00:00:00') : null)
+      })
+    } catch (err) {
+      // Fallback to using legacy address if structured fields not available
+      setEditFormData({
+        street: '',
+        streetNumber: '',
+        floor: '',
+        apartment: '',
+        city: '',
+        province: 'Buenos Aires',
+        postalCode: '',
+        type: property.type,
+        baseRentAmount: property.monthlyRent.toString(),
+        leaseStartDate: property.leaseStart ? new Date(property.leaseStart + 'T00:00:00') : null
+      })
+    }
     setOpenEditDialog(true)
-  }
+  }, [])
 
-  const handleCloseEditDialog = () => {
+  const handleCloseEditDialog = useCallback(() => {
     setOpenEditDialog(false)
     setEditingProperty(null)
     setEditFormData({
-      address: '',
+      street: '',
+      streetNumber: '',
+      floor: '',
+      apartment: '',
+      city: '',
+      province: '',
+      postalCode: '',
       type: '',
       baseRentAmount: '',
       leaseStartDate: null
     })
-  }
+  }, [])
 
-  const handleUpdateProperty = () => {
-    if (!editFormData.address || !editFormData.type || !editFormData.baseRentAmount) {
+  const handleUpdateProperty = useCallback(async () => {
+    if (!editFormData.street || !editFormData.streetNumber || !editFormData.city || !editFormData.province || !editFormData.type || !editFormData.baseRentAmount) {
       return
     }
 
     setEditLoading(true)
-    // Simulate API call
-    setTimeout(() => {
-      setPropertyUnits(prev => prev.map(p => 
-        p.id === editingProperty.id 
-          ? {
-              ...p,
-              address: editFormData.address,
-              type: editFormData.type,
-              monthlyRent: parseFloat(editFormData.baseRentAmount),
-              leaseStart: editFormData.leaseStartDate ? editFormData.leaseStartDate.toLocaleDateString() : p.leaseStart
-            }
-          : p
-      ))
+    try {
+      const payload = {
+        street: editFormData.street,
+        streetNumber: editFormData.streetNumber,
+        floor: editFormData.floor || null,
+        apartment: editFormData.apartment || null,
+        city: editFormData.city,
+        province: editFormData.province,
+        postalCode: editFormData.postalCode || null,
+        type: editFormData.type,
+        baseRentAmount: parseFloat(editFormData.baseRentAmount),
+        leaseStartDate: editFormData.leaseStartDate
+          ? editFormData.leaseStartDate.toISOString().split('T')[0]
+          : editingProperty.leaseStart
+      }
+      await axios.put(`${API_BASE_URL}/property-units/${editingProperty.id}`, payload)
       handleCloseEditDialog()
+      // Refresh the list
+      fetchPropertyUnits()
+    } catch (err) {
+      console.error('Error updating property:', err)
+      setError('Failed to update property. Please try again.')
+    } finally {
       setEditLoading(false)
-    }, 1000)
-  }
+    }
+  }, [editFormData, editingProperty, handleCloseEditDialog, fetchPropertyUnits])
+
+  const handleDeleteClick = useCallback(async (property) => {
+    setPropertyToDelete(property)
+    setDeleteLoading(true)
+    try {
+      const response = await axios.get(`${API_BASE_URL}/property-units/${property.id}/can-delete`)
+      setDeleteCheckResult(response.data)
+    } catch (err) {
+      console.error('Error checking delete:', err)
+      setDeleteCheckResult({ canDelete: false, reason: t('errorOccurred') })
+    } finally {
+      setDeleteLoading(false)
+    }
+    setDeleteDialogOpen(true)
+  }, [t])
+
+  const handleCloseDeleteDialog = useCallback(() => {
+    setDeleteDialogOpen(false)
+    setPropertyToDelete(null)
+    setDeleteCheckResult(null)
+  }, [])
+
+  const handleConfirmDelete = useCallback(async () => {
+    if (!propertyToDelete || !deleteCheckResult?.canDelete) return
+
+    setDeleteLoading(true)
+    try {
+      await axios.delete(`${API_BASE_URL}/property-units/${propertyToDelete.id}`)
+      handleCloseDeleteDialog()
+      fetchPropertyUnits()
+    } catch (err) {
+      console.error('Error deleting property:', err)
+      const errorMessage = err.response?.data?.message || t('failedToDeleteProperty')
+      setError(errorMessage)
+    } finally {
+      setDeleteLoading(false)
+    }
+  }, [propertyToDelete, deleteCheckResult, handleCloseDeleteDialog, fetchPropertyUnits, t])
 
   if (loading) {
     return (
@@ -227,440 +428,940 @@ function PropertyUnitsList() {
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box>
-        {/* Header */}
-        <Box sx={{ mb: { xs: 3, sm: 4 } }}>
-        <Typography 
-          variant="h4" 
-          sx={{ 
-            fontWeight: 600, 
-            mb: { xs: 0.75, sm: 1 },
-            fontSize: { xs: '1.5rem', sm: '2.125rem' }
-          }}
-        >
-          Properties
-        </Typography>
-        <Typography 
-          variant="body1" 
-          color="text.secondary"
-          sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
-        >
-          Manage your rental properties and units.
-        </Typography>
-      </Box>
-
-      {/* Search and Add Button */}
-      <Box sx={{ 
-        display: 'flex', 
-        gap: { xs: 1.5, sm: 2 }, 
-        mb: { xs: 2, sm: 3 }, 
-        alignItems: 'center',
-        flexDirection: { xs: 'column', sm: 'row' }
-      }}>
-        <TextField
-          placeholder="Search properties..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-          }}
-          sx={{ 
-            flexGrow: 1, 
-            maxWidth: { xs: '100%', sm: 400 },
-            width: '100%'
-          }}
-          size="small"
-        />
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => setOpenAddDialog(true)}
-          sx={{ 
-            textTransform: 'none',
-            width: { xs: '100%', sm: 'auto' },
-            fontSize: { xs: '0.875rem', sm: '1rem' }
-          }}
-        >
-          Add Property
-        </Button>
-      </Box>
-
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
-        </Alert>
-      )}
-
-      {/* Properties Grid */}
-      <Grid container spacing={{ xs: 2, sm: 3 }}>
-        {filteredProperties.map((property) => (
-          <Grid size={{ xs: 12, sm: 6, md: 4 }} key={property.id}>
-            <Card 
-              sx={{ 
-                height: '100%',
-                transition: 'transform 0.2s, box-shadow 0.2s',
-                '&:hover': {
-                  transform: { xs: 'none', sm: 'translateY(-4px)' },
-                  boxShadow: { xs: 2, sm: 4 }
-                }
-              }}
-            >
-              <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-                {/* Property Type and Status */}
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: { xs: 1.5, sm: 2 } }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Avatar sx={{ 
-                      bgcolor: 'primary.main', 
-                      width: { xs: 28, sm: 32 }, 
-                      height: { xs: 28, sm: 32 }
-                    }}>
-                      {React.cloneElement(getTypeIcon(property.type), { 
-                        sx: { fontSize: { xs: 16, sm: 20 } }
-                      })}
-                    </Avatar>
-                    <Typography 
-                      variant="body2" 
-                      color="text.secondary"
-                      sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                    >
-                      {property.type}
-                    </Typography>
-                  </Box>
-                  <Chip 
-                    label={property.status} 
-                    color={getStatusColor(property.status)}
+        {/* Filter Tabs */}
+        <Box sx={{ mb: { xs: 2, sm: 3 } }}>
+          <Tabs
+            value={activeFilter || 'all'}
+            onChange={handleFilterChange}
+            variant="scrollable"
+            scrollButtons="auto"
+            sx={{
+              minHeight: 40,
+              '& .MuiTab-root': {
+                minHeight: 40,
+                textTransform: 'none',
+                fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                fontWeight: 500,
+                py: 1
+              }
+            }}
+          >
+            <Tab label={t('filterAll')} value="all" />
+            <Tab label={t('filterOccupied')} value="occupied" />
+            <Tab label={t('filterVacant')} value="vacant" />
+            <Tab
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  {t('filterOverdue')}
+                  <Chip
+                    label={overdueCount}
                     size="small"
-                    sx={{ 
-                      fontSize: { xs: '0.7rem', sm: '0.75rem' },
-                      height: { xs: 20, sm: 24 }
-                    }}
+                    color="error"
+                    sx={{ height: 18, fontSize: '0.7rem', ml: 0.5 }}
                   />
                 </Box>
+              }
+              value="overdue"
+            />
+          </Tabs>
+        </Box>
 
-                {/* Address */}
-                <Typography 
-                  variant="h6" 
-                  sx={{ 
-                    fontWeight: 600, 
-                    mb: { xs: 1.5, sm: 2 }, 
-                    lineHeight: 1.3,
-                    fontSize: { xs: '1rem', sm: '1.25rem' }
-                  }}
-                >
-                  {property.address}
-                </Typography>
+        {/* Search and Add Button */}
+        <Box sx={{
+          display: 'flex',
+          gap: { xs: 1.5, sm: 2 },
+          mb: { xs: 2, sm: 3 },
+          alignItems: 'center',
+          flexDirection: { xs: 'column', sm: 'row' }
+        }}>
+          <TextField
+            placeholder={t('searchPlaceholder')}
+            value={searchTerm}
+            onChange={handleSearchChange}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              flexGrow: 1,
+              maxWidth: { xs: '100%', sm: 400 },
+              width: '100%'
+            }}
+            size="small"
+          />
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleOpenAddDialog}
+            sx={{
+              textTransform: 'none',
+              width: { xs: '100%', sm: 'auto' },
+              fontSize: { xs: '0.875rem', sm: '1rem' }
+            }}
+          >
+            {t('addProperty')}
+          </Button>
+        </Box>
 
-                {/* Tenant Info */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: { xs: 1.5, sm: 2 }, flexWrap: 'wrap' }}>
-                  <Person sx={{ fontSize: { xs: 14, sm: 16 }, color: 'text.secondary' }} />
-                  <Typography 
-                    variant="body2" 
-                    color="text.secondary"
-                    sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                  >
-                    Tenant:
-                  </Typography>
-                  <Typography 
-                    variant="body2" 
-                    sx={{ 
-                      fontWeight: 500,
-                      fontSize: { xs: '0.75rem', sm: '0.875rem' }
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
+
+        {/* Empty State */}
+        {filteredProperties.length === 0 && (
+          <Paper
+            sx={{
+              p: 4,
+              textAlign: 'center',
+              bgcolor: 'background.default',
+              border: '2px dashed',
+              borderColor: 'divider'
+            }}
+          >
+            <Home sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
+            <Typography variant="h6" color="text.secondary" gutterBottom>
+              {t('noProperties')}
+            </Typography>
+            <Typography variant="body2" color="text.disabled" sx={{ mb: 2 }}>
+              {t('noPropertiesDesc')}
+            </Typography>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleOpenAddDialog}
+            >
+              {t('addProperty')}
+            </Button>
+          </Paper>
+        )}
+
+        {/* Properties Grid */}
+        <Grid container spacing={{ xs: 2, sm: 3 }}>
+          {filteredProperties.map((property) => (
+            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={property.id}>
+              <Card
+                sx={{
+                  height: '100%',
+                  cursor: 'pointer',
+                  transition: 'transform 0.2s, box-shadow 0.2s',
+                  '&:hover': {
+                    transform: { xs: 'none', sm: 'translateY(-4px)' },
+                    boxShadow: { xs: 2, sm: 4 }
+                  }
+                }}
+                onClick={() => handleViewDetails(property)}
+              >
+                <CardContent sx={{ p: { xs: 2, sm: 3 }, pr: { xs: 2.5, sm: 3 } }}>
+                  {/* Property Type and Status */}
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: { xs: 1.5, sm: 2 }, gap: 1, overflow: 'hidden' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0, flex: '0 1 auto' }}>
+                      <Avatar sx={{
+                        bgcolor: 'primary.main',
+                        width: { xs: 28, sm: 32 },
+                        height: { xs: 28, sm: 32 },
+                        flexShrink: 0
+                      }}>
+                        {React.cloneElement(getTypeIcon(property.type), {
+                          sx: { fontSize: { xs: 16, sm: 20 } }
+                        })}
+                      </Avatar>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, whiteSpace: 'nowrap' }}
+                      >
+                        {t(property.type.toLowerCase())}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0 }}>
+                      {property.hasPendingPayment && (
+                        <Chip
+                          icon={<Warning sx={{ fontSize: 12 }} />}
+                          label={t('paymentOverdue')}
+                          size="small"
+                          color="error"
+                          sx={{
+                            fontSize: { xs: '0.6rem', sm: '0.7rem' },
+                            height: { xs: 18, sm: 24 },
+                            '& .MuiChip-icon': { fontSize: 12 },
+                            '& .MuiChip-label': { px: 0.5 }
+                          }}
+                        />
+                      )}
+                      <Chip
+                        label={t(property.status.toLowerCase())}
+                        color={getStatusColor(property.status)}
+                        size="small"
+                        sx={{
+                          fontSize: { xs: '0.65rem', sm: '0.75rem' },
+                          height: { xs: 18, sm: 24 },
+                          '& .MuiChip-label': { px: { xs: 0.75, sm: 1 } }
+                        }}
+                      />
+                    </Box>
+                  </Box>
+
+                  {/* Address */}
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontWeight: 600,
+                      mb: { xs: 1.5, sm: 2 },
+                      lineHeight: 1.3,
+                      fontSize: { xs: '1rem', sm: '1.25rem' }
                     }}
                   >
-                    {property.tenant}
+                    {property.address}
                   </Typography>
-                </Box>
 
-                {/* Monthly Rent */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: { xs: 1.5, sm: 2 }, flexWrap: 'wrap' }}>
-                  <AttachMoney sx={{ fontSize: { xs: 14, sm: 16 }, color: 'text.secondary' }} />
-                  <Typography 
-                    variant="body2" 
-                    color="text.secondary"
-                    sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                  >
-                    Monthly Rent:
-                  </Typography>
-                  <Typography 
-                    variant="body2" 
-                    sx={{ 
-                      fontWeight: 600, 
-                      color: 'primary.main',
-                      fontSize: { xs: '0.875rem', sm: '0.875rem' }
-                    }}
-                  >
-                    ${property.monthlyRent.toLocaleString()}
-                  </Typography>
-                </Box>
-
-                {/* Lease Start */}
-                {property.leaseStart && (
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: { xs: 2, sm: 3 }, flexWrap: 'wrap' }}>
-                    <CalendarToday sx={{ fontSize: { xs: 14, sm: 16 }, color: 'text.secondary' }} />
-                    <Typography 
-                      variant="body2" 
+                  {/* Tenant Info */}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: { xs: 1.5, sm: 2 }, flexWrap: 'wrap' }}>
+                    <Person sx={{ fontSize: { xs: 14, sm: 16 }, color: 'text.secondary' }} />
+                    <Typography
+                      variant="body2"
                       color="text.secondary"
                       sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
                     >
-                      Lease Start:
+                      {t('tenant')}:
                     </Typography>
-                    <Typography 
+                    <Typography
                       variant="body2"
-                      sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                      sx={{
+                        fontWeight: 500,
+                        fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                        fontStyle: property.tenant === 'Vacant' ? 'italic' : 'normal',
+                        color: property.tenant === 'Vacant' ? 'text.secondary' : 'text.primary'
+                      }}
                     >
-                      {property.leaseStart}
+                      {property.tenant === 'Vacant' ? t('vacant') : property.tenant}
                     </Typography>
                   </Box>
-                )}
 
-                <Divider sx={{ my: { xs: 1.5, sm: 2 } }} />
+                  {/* Monthly Rent */}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: { xs: 1.5, sm: 2 }, flexWrap: 'wrap' }}>
+                    <AttachMoney sx={{ fontSize: { xs: 14, sm: 16 }, color: 'text.secondary' }} />
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                    >
+                      {t('monthlyRent')}:
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontWeight: 600,
+                        color: 'primary.main',
+                        fontSize: { xs: '0.875rem', sm: '0.875rem' }
+                      }}
+                    >
+                      {formatCurrency(property.monthlyRent)}
+                    </Typography>
+                  </Box>
 
-                {/* Action Buttons */}
-                <Box sx={{ display: 'flex', gap: 1, flexDirection: { xs: 'column', sm: 'row' } }}>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    startIcon={<Visibility />}
-                    onClick={() => handleViewDetails(property)}
-                    sx={{ 
-                      textTransform: 'none', 
-                      flex: 1,
-                      fontSize: { xs: '0.75rem', sm: '0.875rem' }
-                    }}
-                  >
-                    View Details
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    startIcon={<Edit />}
-                    onClick={() => handleEdit(property)}
-                    sx={{ 
-                      textTransform: 'none', 
-                      flex: 1,
-                      fontSize: { xs: '0.75rem', sm: '0.875rem' }
-                    }}
-                  >
-                    Edit
-                  </Button>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
+                  {/* Last Payment */}
+                  {property.lastPaymentDate && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: { xs: 1.5, sm: 2 }, flexWrap: 'wrap' }}>
+                      <Receipt sx={{ fontSize: { xs: 14, sm: 16 }, color: 'text.secondary' }} />
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                      >
+                        {t('lastPayment')}:
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                          color: property.hasPendingPayment ? 'error.main' : 'success.main',
+                          fontWeight: 500
+                        }}
+                      >
+                        {property.lastPaymentDate}
+                      </Typography>
+                    </Box>
+                  )}
 
-      {/* Add Property Dialog */}
-      <Dialog 
-        open={openAddDialog} 
-        onClose={() => setOpenAddDialog(false)} 
-        maxWidth="sm" 
-        fullWidth
-        PaperProps={{
-          sx: {
-            m: { xs: 1, sm: 2 },
-            maxHeight: { xs: '95vh', sm: '90vh' }
-          }
-        }}
-      >
-        <DialogTitle>Add New Property</DialogTitle>
-        <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
-            <TextField
-              label="Property Address"
-              value={newProperty.address}
-              onChange={(e) => setNewProperty(prev => ({ ...prev, address: e.target.value }))}
-              fullWidth
-              required
-            />
-            <TextField
-              select
-              label="Property Type"
-              value={newProperty.type}
-              onChange={(e) => setNewProperty(prev => ({ ...prev, type: e.target.value }))}
-              fullWidth
-              required
-            >
-              <MenuItem value="Apartment">Apartment</MenuItem>
-              <MenuItem value="House">House</MenuItem>
-              <MenuItem value="Commercial">Commercial</MenuItem>
-            </TextField>
-            <TextField
-              label="Base Rent Amount"
-              type="number"
-              value={newProperty.baseRentAmount}
-              onChange={(e) => setNewProperty(prev => ({ ...prev, baseRentAmount: e.target.value }))}
-              fullWidth
-              required
-              InputProps={{
-                startAdornment: <InputAdornment position="start">$</InputAdornment>,
-              }}
-            />
-            <DatePicker
-              label="Lease Start Date"
-              value={newProperty.leaseStartDate}
-              onChange={(date) => setNewProperty(prev => ({ ...prev, leaseStartDate: date }))}
-              slotProps={{
-                textField: {
-                  fullWidth: true
-                }
-              }}
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenAddDialog(false)}>Cancel</Button>
-          <Button 
-            onClick={handleAddProperty} 
-            variant="contained"
-            disabled={addLoading || !newProperty.address || !newProperty.type || !newProperty.baseRentAmount}
-          >
-            {addLoading ? <CircularProgress size={20} /> : 'Add Property'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+                  {/* Lease Start */}
+                  {property.leaseStart && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: { xs: 2, sm: 3 }, flexWrap: 'wrap' }}>
+                      <CalendarToday sx={{ fontSize: { xs: 14, sm: 16 }, color: 'text.secondary' }} />
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                      >
+                        {t('leaseStart')}:
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                      >
+                        {property.leaseStart}
+                      </Typography>
+                    </Box>
+                  )}
 
-      {/* View Details Dialog */}
-      <Dialog 
-        open={openViewDialog} 
-        onClose={handleCloseViewDialog} 
-        maxWidth="sm" 
-        fullWidth
-        PaperProps={{
-          sx: {
-            m: { xs: 1, sm: 2 },
-            maxHeight: { xs: '95vh', sm: '90vh' }
-          }
-        }}
-      >
-        <DialogTitle>Property Details</DialogTitle>
-        <DialogContent>
-          {selectedProperty && (
+                  <Divider sx={{ my: { xs: 1.5, sm: 2 } }} />
+
+                  {/* Action Buttons */}
+                  <Box sx={{ display: 'flex', gap: 1, flexDirection: { xs: 'column', sm: 'row' } }}>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={<Visibility />}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleViewDetails(property)
+                      }}
+                      sx={{
+                        textTransform: 'none',
+                        flex: 1,
+                        fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                      }}
+                    >
+                      {t('viewDetails')}
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={<Edit />}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleEdit(property)
+                      }}
+                      sx={{
+                        textTransform: 'none',
+                        flex: 1,
+                        fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                      }}
+                    >
+                      {t('edit')}
+                    </Button>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+
+        {/* Add Property Dialog */}
+        <Dialog
+          open={openAddDialog}
+          onClose={handleCloseAddDialog}
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{
+            sx: {
+              m: { xs: 1, sm: 2 },
+              maxHeight: { xs: '95vh', sm: '90vh' }
+            }
+          }}
+        >
+          <DialogTitle>{t('addNewProperty')}</DialogTitle>
+          <DialogContent>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
-              <Box>
-                <Typography variant="caption" color="text.secondary">Address</Typography>
-                <Typography variant="body1" sx={{ fontWeight: 500, mt: 0.5 }}>
-                  {selectedProperty.address}
-                </Typography>
-              </Box>
-              <Box>
-                <Typography variant="caption" color="text.secondary">Type</Typography>
-                <Typography variant="body1" sx={{ fontWeight: 500, mt: 0.5 }}>
-                  {selectedProperty.type}
-                </Typography>
-              </Box>
-              <Box>
-                <Typography variant="caption" color="text.secondary">Status</Typography>
-                <Chip 
-                  label={selectedProperty.status} 
-                  color={getStatusColor(selectedProperty.status)}
-                  size="small"
-                  sx={{ mt: 0.5 }}
+              {/* Address Fields */}
+              <Typography variant="subtitle2" color="text.secondary" sx={{ mt: 1 }}>
+                {t('addressSection')}
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+                <TextField
+                  label={t('streetLabel')}
+                  value={newProperty.street}
+                  onChange={(e) => setNewProperty(prev => ({ ...prev, street: e.target.value }))}
+                  required
+                  fullWidth
+                  sx={{ flex: { sm: 2 } }}
+                />
+                <TextField
+                  label={t('streetNumberLabel')}
+                  value={newProperty.streetNumber}
+                  onChange={(e) => setNewProperty(prev => ({ ...prev, streetNumber: e.target.value }))}
+                  required
+                  fullWidth
+                  sx={{ flex: { sm: 1 } }}
                 />
               </Box>
-              <Box>
-                <Typography variant="caption" color="text.secondary">Tenant</Typography>
-                <Typography variant="body1" sx={{ fontWeight: 500, mt: 0.5 }}>
-                  {selectedProperty.tenant}
-                </Typography>
+              <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+                <TextField
+                  label={t('floorLabel')}
+                  value={newProperty.floor}
+                  onChange={(e) => setNewProperty(prev => ({ ...prev, floor: e.target.value }))}
+                  fullWidth
+                  sx={{ flex: { sm: 1 } }}
+                />
+                <TextField
+                  label={t('apartmentLabel')}
+                  value={newProperty.apartment}
+                  onChange={(e) => setNewProperty(prev => ({ ...prev, apartment: e.target.value }))}
+                  fullWidth
+                  sx={{ flex: { sm: 1 } }}
+                />
               </Box>
-              <Box>
-                <Typography variant="caption" color="text.secondary">Monthly Rent</Typography>
-                <Typography variant="body1" sx={{ fontWeight: 500, mt: 0.5 }}>
-                  ${selectedProperty.monthlyRent.toLocaleString()}
-                </Typography>
+              <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+                <TextField
+                  label={t('cityLabel')}
+                  value={newProperty.city}
+                  onChange={(e) => setNewProperty(prev => ({ ...prev, city: e.target.value }))}
+                  required
+                  fullWidth
+                  sx={{ flex: { sm: 1 } }}
+                />
+                <TextField
+                  label={t('postalCodeLabel')}
+                  value={newProperty.postalCode}
+                  onChange={(e) => setNewProperty(prev => ({ ...prev, postalCode: e.target.value }))}
+                  fullWidth
+                  sx={{ flex: { sm: 1 } }}
+                />
               </Box>
-              {selectedProperty.leaseStart && (
-                <Box>
-                  <Typography variant="caption" color="text.secondary">Lease Start Date</Typography>
-                  <Typography variant="body1" sx={{ fontWeight: 500, mt: 0.5 }}>
-                    {selectedProperty.leaseStart}
-                  </Typography>
-                </Box>
-              )}
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseViewDialog}>Close</Button>
-        </DialogActions>
-      </Dialog>
+              <Autocomplete
+                options={ARGENTINE_PROVINCES}
+                value={newProperty.province}
+                onChange={(e, newValue) => setNewProperty(prev => ({ ...prev, province: newValue || '' }))}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label={t('provinceLabel')}
+                    required
+                    fullWidth
+                  />
+                )}
+                freeSolo={false}
+                disableClearable
+              />
 
-      {/* Edit Property Dialog */}
-      <Dialog 
-        open={openEditDialog} 
-        onClose={handleCloseEditDialog} 
-        maxWidth="sm" 
-        fullWidth
-        PaperProps={{
-          sx: {
-            m: { xs: 1, sm: 2 },
-            maxHeight: { xs: '95vh', sm: '90vh' }
-          }
-        }}
-      >
-        <DialogTitle>Edit Property</DialogTitle>
-        <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
-            <TextField
-              label="Property Address"
-              value={editFormData.address}
-              onChange={(e) => setEditFormData(prev => ({ ...prev, address: e.target.value }))}
-              fullWidth
-              required
-            />
-            <TextField
-              select
-              label="Property Type"
-              value={editFormData.type}
-              onChange={(e) => setEditFormData(prev => ({ ...prev, type: e.target.value }))}
-              fullWidth
-              required
+              {/* Property Details */}
+              <Typography variant="subtitle2" color="text.secondary" sx={{ mt: 2 }}>
+                {t('propertyDetails')}
+              </Typography>
+              <TextField
+                select
+                label={t('propertyTypeLabel')}
+                value={newProperty.type}
+                onChange={(e) => setNewProperty(prev => ({ ...prev, type: e.target.value }))}
+                fullWidth
+                required
+              >
+                <MenuItem value="Apartment">{t('apartment')}</MenuItem>
+                <MenuItem value="House">{t('house')}</MenuItem>
+                <MenuItem value="Commercial">{t('commercial')}</MenuItem>
+              </TextField>
+              <MoneyInput
+                label={t('baseRentLabel')}
+                value={newProperty.baseRentAmount}
+                onChange={(value) => setNewProperty(prev => ({ ...prev, baseRentAmount: value }))}
+                required
+              />
+              <DatePicker
+                label={t('leaseStartLabel')}
+                value={newProperty.leaseStartDate}
+                onChange={(date) => setNewProperty(prev => ({ ...prev, leaseStartDate: date }))}
+                slotProps={{
+                  textField: {
+                    fullWidth: true
+                  }
+                }}
+              />
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseAddDialog}>{t('cancel')}</Button>
+            <Button
+              onClick={handleAddProperty}
+              variant="contained"
+              disabled={addLoading || !newProperty.street || !newProperty.streetNumber || !newProperty.city || !newProperty.province || !newProperty.type || !newProperty.baseRentAmount}
             >
-              <MenuItem value="Apartment">Apartment</MenuItem>
-              <MenuItem value="House">House</MenuItem>
-              <MenuItem value="Commercial">Commercial</MenuItem>
-            </TextField>
-            <TextField
-              label="Base Rent Amount"
-              type="number"
-              value={editFormData.baseRentAmount}
-              onChange={(e) => setEditFormData(prev => ({ ...prev, baseRentAmount: e.target.value }))}
-              fullWidth
-              required
-              InputProps={{
-                startAdornment: <InputAdornment position="start">$</InputAdornment>,
-              }}
-            />
-            <DatePicker
-              label="Lease Start Date"
-              value={editFormData.leaseStartDate}
-              onChange={(date) => setEditFormData(prev => ({ ...prev, leaseStartDate: date }))}
-              slotProps={{
-                textField: {
-                  fullWidth: true
-                }
-              }}
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseEditDialog}>Cancel</Button>
-          <Button 
-            onClick={handleUpdateProperty} 
-            variant="contained"
-            disabled={editLoading || !editFormData.address || !editFormData.type || !editFormData.baseRentAmount}
-          >
-            {editLoading ? <CircularProgress size={20} /> : 'Save Changes'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+              {addLoading ? <CircularProgress size={20} /> : t('addPropertyAction')}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* View Details Dialog */}
+        <Dialog
+          open={openViewDialog}
+          onClose={handleCloseViewDialog}
+          maxWidth="md"
+          fullWidth
+          PaperProps={{
+            sx: {
+              m: { xs: 1, sm: 2 },
+              maxHeight: { xs: '95vh', sm: '90vh' }
+            }
+          }}
+        >
+          {selectedProperty && (
+            <>
+              <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Avatar sx={{ bgcolor: selectedProperty.type === 'Commercial' ? 'secondary.main' : 'primary.main', width: 48, height: 48 }}>
+                    {selectedProperty.type === 'Commercial' ? <Business /> : <Home />}
+                  </Avatar>
+                  <Box>
+                    <Typography variant="h6" sx={{ fontWeight: 600, fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                      {selectedProperty.address}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {t(selectedProperty.type.toLowerCase())}
+                    </Typography>
+                  </Box>
+                </Box>
+                <IconButton onClick={handleCloseViewDialog} sx={{ display: { xs: 'flex', sm: 'none' } }}>
+                  <Close />
+                </IconButton>
+              </DialogTitle>
+              <DialogContent dividers>
+                {/* Status and Rent */}
+                <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+                  <Chip
+                    label={t(selectedProperty.status.toLowerCase())}
+                    color={getStatusColor(selectedProperty.status)}
+                    sx={{ fontWeight: 500 }}
+                  />
+                  {selectedProperty.hasPendingPayment && (
+                    <Chip
+                      icon={<Warning />}
+                      label={t('pendingPayment')}
+                      color="error"
+                      variant="outlined"
+                    />
+                  )}
+                </Box>
+
+                {/* Property Details */}
+                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, textTransform: 'uppercase', fontSize: '0.75rem' }}>
+                  {t('propertyDetails')}
+                </Typography>
+                <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
+                  <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap', mb: 2 }}>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">{t('monthlyRent')}</Typography>
+                      <Typography variant="h6" sx={{ fontWeight: 600, color: 'primary.main' }}>
+                        {formatCurrency(selectedProperty.monthlyRent)}
+                      </Typography>
+                    </Box>
+                    {selectedProperty.sqMeters && (
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">{t('area')}</Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                          {selectedProperty.sqMeters} m²
+                        </Typography>
+                      </Box>
+                    )}
+                    {selectedProperty.bedrooms && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <Bed sx={{ fontSize: 20, color: 'text.secondary' }} />
+                        <Typography variant="body1">{selectedProperty.bedrooms}</Typography>
+                      </Box>
+                    )}
+                    {selectedProperty.bathrooms && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <Bathtub sx={{ fontSize: 20, color: 'text.secondary' }} />
+                        <Typography variant="body1">{selectedProperty.bathrooms}</Typography>
+                      </Box>
+                    )}
+                    {selectedProperty.garage && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <Garage sx={{ fontSize: 20, color: 'text.secondary' }} />
+                        <Typography variant="body1">{t('yes')}</Typography>
+                      </Box>
+                    )}
+                  </Box>
+                  {selectedProperty.description && (
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+                      <Description sx={{ fontSize: 20, color: 'text.secondary', mt: 0.25 }} />
+                      <Typography variant="body2" color="text.secondary">
+                        {selectedProperty.description}
+                      </Typography>
+                    </Box>
+                  )}
+                  {selectedProperty.amenities && selectedProperty.amenities.length > 0 && (
+                    <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                        {t('amenities')}
+                      </Typography>
+                      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                        {selectedProperty.amenities.map((amenity, i) => (
+                          <Chip key={i} label={amenity} size="small" variant="outlined" />
+                        ))}
+                      </Box>
+                    </Box>
+                  )}
+                </Paper>
+
+                {/* Tenant Info */}
+                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, textTransform: 'uppercase', fontSize: '0.75rem' }}>
+                  {t('tenant')}
+                </Typography>
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    p: 2,
+                    mb: 3,
+                    cursor: onNavigateToTenant && selectedProperty.tenantId ? 'pointer' : 'default',
+                    transition: 'all 0.2s',
+                    '&:hover': onNavigateToTenant && selectedProperty.tenantId ? {
+                      borderColor: 'primary.main',
+                      bgcolor: 'action.hover'
+                    } : {}
+                  }}
+                  onClick={() => {
+                    if (onNavigateToTenant && selectedProperty.tenantId) {
+                      handleCloseViewDialog()
+                      onNavigateToTenant(selectedProperty.tenantId)
+                    }
+                  }}
+                >
+                  {selectedProperty.tenant ? (
+                    <Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+                        <Person sx={{ fontSize: 20, color: 'primary.main' }} />
+                        <Typography variant="body1" sx={{ fontWeight: 500, flex: 1 }}>{selectedProperty.tenant}</Typography>
+                        {onNavigateToTenant && selectedProperty.tenantId && (
+                          <OpenInNew sx={{ fontSize: 16, color: 'text.secondary' }} />
+                        )}
+                      </Box>
+                      <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
+                        {selectedProperty.leaseStart && (
+                          <Box>
+                            <Typography variant="caption" color="text.secondary">{t('leaseStart')}</Typography>
+                            <Typography variant="body2">{selectedProperty.leaseStart}</Typography>
+                          </Box>
+                        )}
+                        {selectedProperty.leaseEnd && (
+                          <Box>
+                            <Typography variant="caption" color="text.secondary">{t('leaseEnds')}</Typography>
+                            <Typography variant="body2">{selectedProperty.leaseEnd}</Typography>
+                          </Box>
+                        )}
+                        {selectedProperty.lastPaymentDate && (
+                          <Box>
+                            <Typography variant="caption" color="text.secondary">{t('lastPayment')}</Typography>
+                            <Typography variant="body2">{selectedProperty.lastPaymentDate}</Typography>
+                          </Box>
+                        )}
+                      </Box>
+                    </Box>
+                  ) : (
+                    <Box sx={{ textAlign: 'center', py: 2 }}>
+                      <Person sx={{ fontSize: 32, color: 'text.disabled', mb: 1 }} />
+                      <Typography variant="body2" color="text.secondary">
+                        {t('noTenantAssigned')}
+                      </Typography>
+                    </Box>
+                  )}
+                </Paper>
+
+                {/* Payment History */}
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                  <Typography variant="subtitle2" color="text.secondary" sx={{ textTransform: 'uppercase', fontSize: '0.75rem' }}>
+                    {t('paymentHistory')}
+                  </Typography>
+                  {onNavigateToPayment && selectedProperty.payments?.length > 0 && (
+                    <Button
+                      size="small"
+                      onClick={() => {
+                        handleCloseViewDialog()
+                        onNavigateToPayment({ propertyId: selectedProperty.id })
+                      }}
+                      sx={{ textTransform: 'none', fontSize: '0.75rem' }}
+                    >
+                      {t('viewPaymentsForProperty')}
+                    </Button>
+                  )}
+                </Box>
+                <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
+                  {(() => {
+                    const payments = selectedProperty.payments || []
+                    return payments.length > 0 ? (
+                      <List disablePadding>
+                        {payments.slice(0, 5).map((payment, index) => (
+                          <ListItem
+                            key={payment.id}
+                            divider={index < payments.length - 1}
+                            sx={{
+                              px: 2,
+                              py: 1.5,
+                              cursor: onNavigateToPayment ? 'pointer' : 'default',
+                              transition: 'background-color 0.2s',
+                              '&:hover': onNavigateToPayment ? {
+                                bgcolor: 'action.hover'
+                              } : {}
+                            }}
+                            onClick={() => {
+                              if (onNavigateToPayment) {
+                                handleCloseViewDialog()
+                                onNavigateToPayment(payment.id)
+                              }
+                            }}
+                          >
+                            <ListItemText
+                              primary={
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                    {formatCurrency(payment.amount)}
+                                  </Typography>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Chip
+                                      label={payment.status === 'PAID' ? t('paid') : t('pending')}
+                                      size="small"
+                                      color={payment.status === 'PAID' ? 'success' : 'warning'}
+                                      sx={{ height: 20, fontSize: '0.7rem' }}
+                                    />
+                                    {onNavigateToPayment && (
+                                      <OpenInNew sx={{ fontSize: 14, color: 'text.secondary' }} />
+                                    )}
+                                  </Box>
+                                </Box>
+                              }
+                              secondary={
+                                <Typography variant="caption" color="text.secondary">
+                                  {payment.paymentDate} {payment.description && `• ${payment.description}`}
+                                </Typography>
+                              }
+                            />
+                          </ListItem>
+                        ))}
+                      </List>
+                    ) : (
+                      <Box sx={{ p: 3, textAlign: 'center' }}>
+                        <Payment sx={{ fontSize: 32, color: 'text.disabled', mb: 1 }} />
+                        <Typography variant="body2" color="text.secondary">
+                          {t('noPaymentsYet')}
+                        </Typography>
+                      </Box>
+                    )
+                  })()}
+                </Paper>
+              </DialogContent>
+              <DialogActions sx={{ px: 3, py: 2, justifyContent: 'space-between' }}>
+                <Button
+                  variant="outlined"
+                  color="error"
+                  startIcon={<Delete />}
+                  onClick={() => {
+                    handleCloseViewDialog()
+                    handleDeleteClick(selectedProperty)
+                  }}
+                >
+                  {t('delete')}
+                </Button>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Button onClick={handleCloseViewDialog}>{t('close')}</Button>
+                  <Button
+                    variant="outlined"
+                    startIcon={<Edit />}
+                    onClick={() => {
+                      handleCloseViewDialog()
+                      handleEdit(selectedProperty)
+                    }}
+                  >
+                    {t('edit')}
+                  </Button>
+                </Box>
+              </DialogActions>
+            </>
+          )}
+        </Dialog>
+
+        {/* Edit Property Dialog */}
+        <Dialog
+          open={openEditDialog}
+          onClose={handleCloseEditDialog}
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{
+            sx: {
+              m: { xs: 1, sm: 2 },
+              maxHeight: { xs: '95vh', sm: '90vh' }
+            }
+          }}
+        >
+          <DialogTitle>{t('editProperty')}</DialogTitle>
+          <DialogContent>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+              {/* Address Fields */}
+              <Typography variant="subtitle2" color="text.secondary" sx={{ mt: 1 }}>
+                {t('addressSection')}
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+                <TextField
+                  label={t('streetLabel')}
+                  value={editFormData.street}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, street: e.target.value }))}
+                  required
+                  fullWidth
+                  sx={{ flex: { sm: 2 } }}
+                />
+                <TextField
+                  label={t('streetNumberLabel')}
+                  value={editFormData.streetNumber}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, streetNumber: e.target.value }))}
+                  required
+                  fullWidth
+                  sx={{ flex: { sm: 1 } }}
+                />
+              </Box>
+              <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+                <TextField
+                  label={t('floorLabel')}
+                  value={editFormData.floor}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, floor: e.target.value }))}
+                  fullWidth
+                  sx={{ flex: { sm: 1 } }}
+                />
+                <TextField
+                  label={t('apartmentLabel')}
+                  value={editFormData.apartment}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, apartment: e.target.value }))}
+                  fullWidth
+                  sx={{ flex: { sm: 1 } }}
+                />
+              </Box>
+              <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+                <TextField
+                  label={t('cityLabel')}
+                  value={editFormData.city}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, city: e.target.value }))}
+                  required
+                  fullWidth
+                  sx={{ flex: { sm: 1 } }}
+                />
+                <TextField
+                  label={t('postalCodeLabel')}
+                  value={editFormData.postalCode}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, postalCode: e.target.value }))}
+                  fullWidth
+                  sx={{ flex: { sm: 1 } }}
+                />
+              </Box>
+              <Autocomplete
+                options={ARGENTINE_PROVINCES}
+                value={editFormData.province}
+                onChange={(e, newValue) => setEditFormData(prev => ({ ...prev, province: newValue || '' }))}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label={t('provinceLabel')}
+                    required
+                    fullWidth
+                  />
+                )}
+                freeSolo={false}
+                disableClearable
+              />
+
+              {/* Property Details */}
+              <Typography variant="subtitle2" color="text.secondary" sx={{ mt: 2 }}>
+                {t('propertyDetails')}
+              </Typography>
+              <TextField
+                select
+                label={t('propertyTypeLabel')}
+                value={editFormData.type}
+                onChange={(e) => setEditFormData(prev => ({ ...prev, type: e.target.value }))}
+                fullWidth
+                required
+              >
+                <MenuItem value="Apartment">{t('apartment')}</MenuItem>
+                <MenuItem value="House">{t('house')}</MenuItem>
+                <MenuItem value="Commercial">{t('commercial')}</MenuItem>
+              </TextField>
+              <MoneyInput
+                label={t('baseRentLabel')}
+                value={editFormData.baseRentAmount}
+                onChange={(value) => setEditFormData(prev => ({ ...prev, baseRentAmount: value }))}
+                required
+              />
+              <DatePicker
+                label={t('leaseStartLabel')}
+                value={editFormData.leaseStartDate}
+                onChange={(date) => setEditFormData(prev => ({ ...prev, leaseStartDate: date }))}
+                slotProps={{
+                  textField: {
+                    fullWidth: true
+                  }
+                }}
+              />
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseEditDialog}>{t('cancel')}</Button>
+            <Button
+              onClick={handleUpdateProperty}
+              variant="contained"
+              disabled={editLoading || !editFormData.street || !editFormData.streetNumber || !editFormData.city || !editFormData.province || !editFormData.type || !editFormData.baseRentAmount}
+            >
+              {editLoading ? <CircularProgress size={20} /> : t('saveChanges')}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog
+          open={deleteDialogOpen}
+          onClose={handleCloseDeleteDialog}
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{
+            sx: {
+              m: { xs: 1, sm: 2 }
+            }
+          }}
+        >
+          <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {deleteCheckResult?.canDelete ? (
+              <>
+                <Warning color="warning" />
+                {t('confirmDeleteProperty')}
+              </>
+            ) : (
+              <>
+                <Warning color="error" />
+                {t('cannotDeleteProperty')}
+              </>
+            )}
+          </DialogTitle>
+          <DialogContent>
+            {deleteLoading ? (
+              <Box display="flex" justifyContent="center" py={3}>
+                <CircularProgress />
+              </Box>
+            ) : deleteCheckResult?.canDelete ? (
+              <Typography>
+                {t('confirmDeletePropertyMessage')}
+              </Typography>
+            ) : (
+              <Alert severity="error" sx={{ mt: 1 }}>
+                {t('propertyHasContracts', { count: deleteCheckResult?.leaseCount || 0 })}
+              </Alert>
+            )}
+          </DialogContent>
+          <DialogActions sx={{ px: 3, py: 2 }}>
+            <Button onClick={handleCloseDeleteDialog}>{t('cancel')}</Button>
+            {deleteCheckResult?.canDelete && (
+              <Button
+                onClick={handleConfirmDelete}
+                variant="contained"
+                color="error"
+                disabled={deleteLoading}
+                startIcon={deleteLoading ? <CircularProgress size={16} /> : <Delete />}
+              >
+                {t('delete')}
+              </Button>
+            )}
+          </DialogActions>
+        </Dialog>
       </Box>
     </LocalizationProvider>
   )
-}
+})
 
 export default PropertyUnitsList

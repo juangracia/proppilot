@@ -1,0 +1,29 @@
+<svg width="300" height="80" viewBox="0 0 300 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="circleGrad" x1="20%" y1="20%" x2="80%" y2="80%">
+      <stop offset="0%" style="stop-color:#45B8C1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1B7A8C;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Icon only (for favicon/small uses) -->
+  <!-- Rounded square border -->
+  <rect x="10" y="10" width="60" height="60" rx="14" stroke="#45B8C1" stroke-width="3.5" fill="white"/>
+  
+  <!-- Circle with gradient -->
+  <circle cx="40" cy="40" r="20" fill="url(#circleGrad)"/>
+  
+  <!-- House roof (triangle) -->
+  <path d="M40 28 L50 36 L30 36 Z" fill="white"/>
+  
+  <!-- House body (rectangle) -->
+  <rect x="32" y="36" width="16" height="14" fill="white"/>
+  
+  <!-- Letter P overlay -->
+  <path d="M35 32 L35 50 L38 50 L38 42 L42 42 C44.2 42 46 40.2 46 38 C46 35.8 44.2 34 42 34 L35 32 Z M38 35 L42 35 C42.8 35 43.5 35.7 43.5 38 C43.5 40.3 42.8 41 42 41 L38 41 L38 35 Z" fill="white" fill-rule="evenodd"/>
+  
+  <!-- PropPilot Text -->
+  <text x="85" y="50" font-family="system-ui, -apple-system, 'Segoe UI', 'Roboto', sans-serif" font-size="34" font-weight="700" fill="currentColor" letter-spacing="-1">
+    PropPilot
+  </text>
+</svg>

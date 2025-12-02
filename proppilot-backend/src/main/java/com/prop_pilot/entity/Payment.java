@@ -3,9 +3,13 @@ package com.prop_pilot.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Data
 @Entity
@@ -16,9 +20,16 @@ public class Payment {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "property_unit_id", nullable = false)
-    @JsonBackReference
-    private PropertyUnit propertyUnit;
+    @JoinColumn(name = "lease_id", nullable = false)
+    // Note: @NotNull removed - validation is handled in PaymentServiceImpl.createPayment()
+    // to support receiving just leaseId (inputLeaseId) from frontend
+    @JsonBackReference("lease-payments")
+    private Lease lease;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private User owner;
 
     @Column(nullable = false, precision = 10, scale = 2)
     @NotNull(message = "Payment amount is required")
@@ -43,12 +54,79 @@ public class Payment {
     @Column(nullable = false)
     private PaymentStatus status = PaymentStatus.PAID;
 
-    // Legacy fields for compatibility
-    @Column
-    private String monthYear;
+    @Transient
+    @JsonProperty("leaseId")
+    private Long inputLeaseId;
 
-    @Column
-    private String appliedIndex;
+    @JsonProperty("propertyAddress")
+    public String getPropertyAddress() {
+        if (lease != null && lease.getPropertyUnit() != null) {
+            return lease.getPropertyUnit().getAddress();
+        }
+        return null;
+    }
+
+    @JsonProperty("tenantNames")
+    public List<String> getTenantNames() {
+        if (lease != null && lease.getTenants() != null && !lease.getTenants().isEmpty()) {
+            return lease.getTenants().stream().map(Tenant::getFullName).collect(Collectors.toList());
+        }
+        return List.of();
+    }
+
+    // For backward compatibility - returns first tenant name
+    @JsonProperty("tenantName")
+    public String getTenantName() {
+        if (lease != null && lease.getTenants() != null && !lease.getTenants().isEmpty()) {
+            return lease.getTenants().iterator().next().getFullName();
+        }
+        return null;
+    }
+
+    @JsonProperty("tenantIds")
+    public List<Long> getTenantIdRefs() {
+        if (lease != null && lease.getTenants() != null && !lease.getTenants().isEmpty()) {
+            return lease.getTenants().stream().map(Tenant::getId).collect(Collectors.toList());
+        }
+        return List.of();
+    }
+
+    // For backward compatibility - returns first tenant ID
+    @JsonProperty("tenantId")
+    public Long getTenantIdRef() {
+        if (lease != null && lease.getTenants() != null && !lease.getTenants().isEmpty()) {
+            return lease.getTenants().iterator().next().getId();
+        }
+        return null;
+    }
+
+    @JsonProperty("propertyUnitId")
+    public Long getPropertyUnitIdRef() {
+        if (lease != null && lease.getPropertyUnit() != null) {
+            return lease.getPropertyUnit().getId();
+        }
+        return null;
+    }
+
+    @JsonProperty("leaseIdRef")
+    public Long getLeaseIdRef() {
+        return lease != null ? lease.getId() : null;
+    }
+
+    @JsonProperty("leaseStartDate")
+    public LocalDate getLeaseStartDate() {
+        return lease != null ? lease.getStartDate() : null;
+    }
+
+    @JsonProperty("leaseEndDate")
+    public LocalDate getLeaseEndDate() {
+        return lease != null ? lease.getEndDate() : null;
+    }
+
+    @JsonProperty("monthlyRent")
+    public BigDecimal getMonthlyRent() {
+        return lease != null ? lease.getMonthlyRent() : null;
+    }
 
     public enum PaymentType {
         RENT,

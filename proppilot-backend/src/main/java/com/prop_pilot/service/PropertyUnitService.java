@@ -1,14 +1,27 @@
 package com.prop_pilot.service;
 
 import com.prop_pilot.entity.PropertyUnit;
+import com.prop_pilot.entity.User;
+import org.springframework.lang.NonNull;
+
 import java.util.List;
+import java.util.Map;
 
 public interface PropertyUnitService {
-    PropertyUnit createPropertyUnit(PropertyUnit propertyUnit);
-    PropertyUnit getPropertyUnitById(Long id);
-    List<PropertyUnit> getAllPropertyUnits();
-    List<PropertyUnit> getPropertyUnitsByTenant(Long tenantId);
-    PropertyUnit updatePropertyUnit(Long id, PropertyUnit propertyUnit);
-    void deletePropertyUnit(Long id);
-    List<PropertyUnit> searchPropertyUnits(String address);
+
+    PropertyUnit createPropertyUnit(@NonNull PropertyUnit propertyUnit, @NonNull User owner);
+
+    PropertyUnit getPropertyUnitById(@NonNull Long id, @NonNull Long ownerId);
+
+    List<PropertyUnit> getAllPropertyUnits(@NonNull Long ownerId);
+
+    List<PropertyUnit> getAllPropertyUnitsWithLeases(@NonNull Long ownerId);
+
+    PropertyUnit updatePropertyUnit(@NonNull Long id, @NonNull PropertyUnit propertyUnit, @NonNull Long ownerId);
+
+    void deletePropertyUnit(@NonNull Long id, @NonNull Long ownerId);
+
+    List<PropertyUnit> searchPropertyUnits(String address, @NonNull Long ownerId);
+
+    Map<String, Object> canDelete(@NonNull Long id, @NonNull Long ownerId);
 }

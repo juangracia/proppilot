@@ -1,8 +1,7 @@
-import React, { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import {
   Typography,
   Box,
-  Paper,
   ThemeProvider,
   createTheme,
   CssBaseline,
@@ -15,16 +14,23 @@ import {
   ListItemIcon,
   ListItemText,
   Divider,
-  Container
+  Container,
+  Avatar,
+  Menu as MuiMenu,
+  MenuItem,
+  CircularProgress
 } from '@mui/material'
-import { 
-  Brightness4, 
-  Brightness7, 
+import {
+  Brightness4,
+  Brightness7,
   Dashboard,
   Home,
   Payment,
   People,
-  Menu
+  Menu,
+  Logout,
+  HelpOutline,
+  Description
 } from '@mui/icons-material'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
@@ -32,37 +38,74 @@ import DashboardView from './components/DashboardView'
 import PropertyUnitsList from './components/PropertyUnitsList'
 import PaymentForm from './components/PaymentForm'
 import TenantsList from './components/TenantsList'
+import LeaseForm from './components/LeaseForm'
+import LoginPage from './components/LoginPage'
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext'
+import { AuthProvider, useAuth } from './contexts/AuthContext'
 import LanguageCurrencySelector from './components/LanguageCurrencySelector'
+import ProductTour, { useTour } from './components/ProductTour'
 import './App.css'
 
 const drawerWidth = 240
 
-const menuItems = [
-  { text: 'Dashboard', icon: <Dashboard />, value: 0 },
-  { text: 'Properties', icon: <Home />, value: 1 },
-  { text: 'Tenants', icon: <People />, value: 2 },
-  { text: 'Payments', icon: <Payment />, value: 3 }
-]
-
 function AppContent() {
   const [selectedView, setSelectedView] = useState(0)
-  const [darkMode, setDarkMode] = useState(false)
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('darkMode')
+    return saved ? JSON.parse(saved) : false
+  })
   const [mobileOpen, setMobileOpen] = useState(false)
-  const { t } = useLanguage()
+  const [propertyFilter, setPropertyFilter] = useState(null)
+  const [anchorEl, setAnchorEl] = useState(null)
+  const [selectedPropertyId, setSelectedPropertyId] = useState(null)
+  const [selectedTenantId, setSelectedTenantId] = useState(null)
+  const [selectedLeaseId, setSelectedLeaseId] = useState(null)
+  const [selectedPaymentId, setSelectedPaymentId] = useState(null)
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState(null)
+  const [paymentPropertyFilter, setPaymentPropertyFilter] = useState(null)
+  const [paymentTenantFilter, setPaymentTenantFilter] = useState(null)
+  const { t, language } = useLanguage()
+  const { user, logout, isAuthenticated, loading } = useAuth()
+  const { startTour } = useTour()
 
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen)
+  const handleUserMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget)
   }
 
-  const handleMenuClick = (value) => {
+  const handleUserMenuClose = () => {
+    setAnchorEl(null)
+  }
+
+  const handleLogout = () => {
+    handleUserMenuClose()
+    logout()
+  }
+
+  const handleStartTour = () => {
+    handleUserMenuClose()
+    startTour()
+  }
+
+  const menuItems = useMemo(() => [
+    { text: t('dashboardMenu'), icon: <Dashboard />, value: 0, tourId: 'nav-dashboard' },
+    { text: t('propertiesMenu'), icon: <Home />, value: 1, tourId: 'nav-properties' },
+    { text: t('tenantsMenu'), icon: <People />, value: 2, tourId: 'nav-tenants' },
+    { text: t('leasesMenu') || 'Contratos', icon: <Description />, value: 3, tourId: 'nav-leases' },
+    { text: t('paymentsMenu'), icon: <Payment />, value: 4, tourId: 'nav-payments' }
+  ], [t])
+
+  const handleDrawerToggle = useCallback(() => {
+    setMobileOpen(prev => !prev)
+  }, [])
+
+  const handleMenuClick = useCallback((value) => {
     setSelectedView(value)
     setMobileOpen(false)
-  }
+  }, [])
 
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode)
-  }
+  const toggleDarkMode = useCallback(() => {
+    setDarkMode(prev => !prev)
+  }, [])
 
   const theme = useMemo(
     () =>
@@ -81,27 +124,30 @@ function AppContent() {
           },
         },
         typography: {
-          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif',
+          fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif',
           h1: {
             fontSize: '2.5rem',
-            fontWeight: 600,
+            fontWeight: 700,
             lineHeight: 1.2,
+            letterSpacing: '-0.02em',
             '@media (max-width:600px)': {
               fontSize: '2rem',
             },
           },
           h2: {
             fontSize: '2rem',
-            fontWeight: 600,
+            fontWeight: 700,
             lineHeight: 1.2,
+            letterSpacing: '-0.01em',
             '@media (max-width:600px)': {
               fontSize: '1.75rem',
             },
           },
           h4: {
-            fontWeight: 600,
+            fontWeight: 700,
             fontSize: '1.75rem',
             lineHeight: 1.3,
+            letterSpacing: '-0.01em',
             '@media (max-width:600px)': {
               fontSize: '1.5rem',
             },
@@ -115,26 +161,42 @@ function AppContent() {
             },
           },
           h6: {
-            fontWeight: 500,
+            fontWeight: 600,
             fontSize: '1.25rem',
             lineHeight: 1.3,
             '@media (max-width:600px)': {
               fontSize: '1.125rem',
             },
           },
+          subtitle1: {
+            fontSize: '1rem',
+            fontWeight: 600,
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+          },
+          subtitle2: {
+            fontSize: '0.875rem',
+            fontWeight: 600,
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+          },
           body1: {
             fontSize: '1rem',
-            lineHeight: 1.5,
+            lineHeight: 1.6,
+            '@media (max-width:600px)': {
+              fontSize: '1rem',
+            },
+          },
+          body2: {
+            fontSize: '0.9375rem',
+            lineHeight: 1.6,
             '@media (max-width:600px)': {
               fontSize: '0.9375rem',
             },
           },
-          body2: {
-            fontSize: '0.875rem',
-            lineHeight: 1.5,
-            '@media (max-width:600px)': {
-              fontSize: '0.8125rem',
-            },
+          button: {
+            fontWeight: 600,
+            letterSpacing: '0.02em',
           },
         },
         breakpoints: {
@@ -147,23 +209,20 @@ function AppContent() {
           },
         },
         components: {
-          MuiDrawer: {
-            styleOverrides: {
-              paper: {
-                backgroundColor: darkMode ? '#1e1e1e' : '#ffffff',
-                borderRight: `1px solid ${darkMode ? '#333' : '#e0e0e0'}`,
-              },
-            },
-          },
           MuiAppBar: {
             styleOverrides: {
-              root: {
+              root: ({ theme }) => ({
+                backgroundColor: theme.palette.background.default,
+                color: theme.palette.text.primary,
+                boxShadow: 'none',
+                borderBottom: '1px solid',
+                borderColor: theme.palette.divider,
                 '@media (max-width:600px)': {
                   '& .MuiTypography-h6': {
                     fontSize: '0.875rem',
                   },
                 },
-              },
+              }),
             },
           },
           MuiContainer: {
@@ -176,69 +235,301 @@ function AppContent() {
               },
             },
           },
+          MuiDrawer: {
+            styleOverrides: {
+              paper: ({ theme }) => ({
+                backgroundColor: theme.palette.background.paper,
+                color: theme.palette.text.primary,
+              }),
+            },
+          },
+          MuiListItemIcon: {
+            styleOverrides: {
+              root: {
+                color: 'inherit',
+                minWidth: 40,
+              },
+            },
+          },
         },
       }),
     [darkMode]
   )
 
   const drawer = (
-    <div>
+    <Box sx={{ height: '100%', bgcolor: 'background.paper', color: 'text.primary' }}>
       <Toolbar>
-        <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-          <Home sx={{ mr: 1, color: 'primary.main' }} />
-          <Typography variant="h6" sx={{ fontWeight: 600, color: 'primary.main' }}>
-            PropPilot
-          </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', py: 1, color: 'text.primary' }}>
+          <Box
+            component="svg"
+            viewBox="0 0 300 80"
+            sx={(theme) => ({
+              height: 'auto',
+              width: '160px',
+              maxWidth: '90%',
+              fill: 'none',
+              color: 'text.primary',
+              '& rect:first-of-type': {
+                fill: theme.palette.mode === 'dark' ? 'currentColor' : 'white',
+                stroke: theme.palette.mode === 'dark' ? 'currentColor' : '#45B8C1',
+              },
+              '& rect:last-of-type': {
+                fill: theme.palette.mode === 'dark' ? 'currentColor' : 'white',
+              },
+              '& path': {
+                fill: theme.palette.mode === 'dark' ? 'currentColor' : 'white',
+              },
+              '& text': {
+                fill: 'currentColor',
+              },
+            })}
+          >
+            <defs>
+              <linearGradient id="circleGrad" x1="20%" y1="20%" x2="80%" y2="80%">
+                <stop offset="0%" style={{ stopColor: '#45B8C1', stopOpacity: 1 }} />
+                <stop offset="100%" style={{ stopColor: '#1B7A8C', stopOpacity: 1 }} />
+              </linearGradient>
+            </defs>
+            <rect 
+              x="10" 
+              y="10" 
+              width="60" 
+              height="60" 
+              rx="14"
+              strokeWidth="3.5"
+            />
+            <circle cx="40" cy="40" r="20" fill="url(#circleGrad)"/>
+            <path d="M40 28 L50 36 L30 36 Z"/>
+            <rect x="32" y="36" width="16" height="14"/>
+            <path 
+              d="M35 32 L35 50 L38 50 L38 42 L42 42 C44.2 42 46 40.2 46 38 C46 35.8 44.2 34 42 34 L35 32 Z M38 35 L42 35 C42.8 35 43.5 35.7 43.5 38 C43.5 40.3 42.8 41 42 41 L38 41 L38 35 Z" 
+              fillRule="evenodd"
+            />
+            <text 
+              x="85" 
+              y="50" 
+              style={{
+                fontFamily: "system-ui, -apple-system, 'Segoe UI', 'Roboto', sans-serif",
+                fontSize: '34px',
+                fontWeight: 700,
+                fill: 'currentColor',
+                letterSpacing: '-1px'
+              }}
+            >
+              PropPilot
+            </text>
+          </Box>
         </Box>
       </Toolbar>
-      <Divider />
-      <List>
+      <Divider sx={{ borderColor: 'divider' }} />
+      <List data-tour="sidebar-nav">
         {menuItems.map((item) => (
           <ListItem
             component="button"
             key={item.text}
             onClick={() => handleMenuClick(item.value)}
             selected={selectedView === item.value}
+            data-tour={item.tourId}
             sx={{
+              border: 'none',
+              width: '100%',
+              textAlign: 'left',
+              cursor: 'pointer',
+              bgcolor: 'transparent',
               '&.Mui-selected': {
                 backgroundColor: 'primary.main',
                 color: 'white',
                 '& .MuiListItemIcon-root': {
                   color: 'white',
                 },
+                '& .MuiListItemText-primary': {
+                  color: 'white',
+                },
                 '&:hover': {
                   backgroundColor: 'primary.dark',
                 },
               },
+              '&:not(.Mui-selected)': {
+                color: 'text.primary',
+                '& .MuiListItemIcon-root': {
+                  color: 'text.secondary',
+                },
+                '& .MuiListItemText-primary': {
+                  color: 'text.primary',
+                },
+                '&:hover': {
+                  backgroundColor: 'action.hover',
+                  color: 'text.primary',
+                  '& .MuiListItemIcon-root': {
+                    color: 'text.primary',
+                  },
+                  '& .MuiListItemText-primary': {
+                    color: 'text.primary',
+                  },
+                },
+              },
             }}
           >
-            <ListItemIcon sx={{ color: selectedView === item.value ? 'white' : 'inherit' }}>
+            <ListItemIcon
+              sx={{
+                color: selectedView === item.value ? 'white' : 'text.secondary',
+                minWidth: 40,
+              }}
+            >
               {item.icon}
             </ListItemIcon>
-            <ListItemText primary={item.text} />
+            <ListItemText
+              primary={item.text}
+              sx={{
+                '& .MuiListItemText-primary': {
+                  color: 'inherit',
+                  fontWeight: selectedView === item.value ? 600 : 500,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  fontSize: '0.875rem'
+                }
+              }}
+            />
           </ListItem>
         ))}
       </List>
-    </div>
+    </Box>
   )
 
-  const handleNavigate = (viewIndex) => {
+  const handleNavigate = useCallback((viewIndex, filter = null) => {
+    setPropertyFilter(filter)
     setSelectedView(viewIndex)
-  }
+  }, [])
 
-  const renderContent = () => {
+  const handleNavigateToProperty = useCallback((propertyId) => {
+    setSelectedPropertyId(propertyId)
+    setSelectedView(1) // Properties view
+  }, [])
+
+  const handleNavigateToTenant = useCallback((tenantId) => {
+    setSelectedTenantId(tenantId)
+    setSelectedView(2) // Tenants view
+  }, [])
+
+  const handleNavigateToLease = useCallback((leaseId) => {
+    setSelectedLeaseId(leaseId)
+    setSelectedView(3) // Leases view
+  }, [])
+
+  const handleNavigateToPayment = useCallback((options = {}) => {
+    const { paymentId, statusFilter, propertyId, tenantId } = typeof options === 'object' ? options : { paymentId: options }
+    setSelectedPaymentId(paymentId || null)
+    setPaymentStatusFilter(statusFilter || null)
+    setPaymentPropertyFilter(propertyId || null)
+    setPaymentTenantFilter(tenantId || null)
+    setSelectedView(4) // Payments view
+  }, [])
+
+  const currentViewTitle = useMemo(() => {
     switch (selectedView) {
       case 0:
-        return <DashboardView onNavigate={handleNavigate} />
+        return t('dashboardTitle')
       case 1:
-        return <PropertyUnitsList />
+        return t('propertyUnitsTitle')
       case 2:
-        return <TenantsList />
+        return t('tenantsTitle')
       case 3:
-        return <PaymentForm />
+        return t('leasesTitle') || 'Contratos'
+      case 4:
+        return t('registerPaymentTitle')
       default:
-        return <DashboardView onNavigate={handleNavigate} />
+        return t('dashboardTitle')
     }
+  }, [selectedView, t])
+
+  const currentViewSubtitle = useMemo(() => {
+    switch (selectedView) {
+      case 0:
+        return t('dashboardSubtitle')
+      case 1:
+        return ''
+      case 2:
+        return ''
+      case 3:
+        return ''
+      case 4:
+        return ''
+      default:
+        return t('dashboardSubtitle')
+    }
+  }, [selectedView, t])
+
+  const content = useMemo(() => {
+    switch (selectedView) {
+      case 0:
+        return <DashboardView onNavigate={handleNavigate} onNavigateToPayment={handleNavigateToPayment} />
+      case 1:
+        return (
+          <PropertyUnitsList
+            onNavigateToTenant={handleNavigateToTenant}
+            onNavigateToPayment={handleNavigateToPayment}
+            initialPropertyId={selectedPropertyId}
+            onPropertyViewed={() => setSelectedPropertyId(null)}
+          />
+        )
+      case 2:
+        return (
+          <TenantsList
+            onNavigateToProperty={handleNavigateToProperty}
+            onNavigateToPayment={handleNavigateToPayment}
+            initialTenantId={selectedTenantId}
+            onTenantViewed={() => setSelectedTenantId(null)}
+          />
+        )
+      case 3:
+        return (
+          <LeaseForm
+            onNavigateToProperty={handleNavigateToProperty}
+            onNavigateToTenant={handleNavigateToTenant}
+            initialLeaseId={selectedLeaseId}
+            onLeaseViewed={() => setSelectedLeaseId(null)}
+          />
+        )
+      case 4:
+        return (
+          <PaymentForm
+            onNavigateToProperty={handleNavigateToProperty}
+            onNavigateToTenant={handleNavigateToTenant}
+            onNavigateToLease={handleNavigateToLease}
+            initialPaymentId={selectedPaymentId}
+            onPaymentViewed={() => setSelectedPaymentId(null)}
+            initialStatusFilter={paymentStatusFilter}
+            initialPropertyFilter={paymentPropertyFilter}
+            initialTenantFilter={paymentTenantFilter}
+            onFiltersCleared={() => {
+              setPaymentStatusFilter(null)
+              setPaymentPropertyFilter(null)
+              setPaymentTenantFilter(null)
+            }}
+          />
+        )
+      default:
+        return <DashboardView onNavigate={handleNavigate} onNavigateToPayment={handleNavigateToPayment} />
+    }
+  }, [selectedView, handleNavigate, handleNavigateToTenant, handleNavigateToProperty, handleNavigateToLease, handleNavigateToPayment, selectedPropertyId, selectedTenantId, selectedLeaseId, selectedPaymentId, paymentStatusFilter, paymentPropertyFilter, paymentTenantFilter])
+
+  // Update body theme attribute for CSS-based styling and persist preference
+  useEffect(() => {
+    document.body.setAttribute('data-theme', darkMode ? 'dark' : 'light')
+    localStorage.setItem('darkMode', JSON.stringify(darkMode))
+  }, [darkMode])
+
+  // Early returns AFTER all hooks
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    )
+  }
+
+  if (!isAuthenticated) {
+    return <LoginPage />
   }
 
   return (
@@ -252,6 +543,10 @@ function AppContent() {
               width: { sm: `calc(100% - ${drawerWidth}px)` },
               ml: { sm: `${drawerWidth}px` },
               zIndex: (theme) => theme.zIndex.drawer + 1,
+              backgroundColor: 'background.default',
+              color: 'text.primary',
+              // iOS safe area support for Dynamic Island/notch
+              paddingTop: 'env(safe-area-inset-top)',
             }}
           >
             <Toolbar sx={{ minHeight: { xs: '56px', sm: '64px' }, px: { xs: 1, sm: 2 } }}>
@@ -260,32 +555,106 @@ function AppContent() {
                 aria-label="open drawer"
                 edge="start"
                 onClick={handleDrawerToggle}
-                sx={{ mr: 2, display: { sm: 'none' } }}
+                sx={{ 
+                  mr: 2, 
+                  display: { sm: 'none' },
+                  color: 'text.primary'
+                }}
               >
                 <Menu />
               </IconButton>
-              <Typography 
-                variant="h4" 
-                noWrap 
-                component="div" 
-                sx={{ 
+              <Box
+                sx={{
                   flexGrow: 1,
-                  fontSize: { xs: '1.5rem', sm: '2rem' },
-                  fontWeight: 700,
-                  letterSpacing: '0.02em',
-                  fontFamily: 'inherit'
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center'
                 }}
               >
-                PropPilot
-              </Typography>
-              <LanguageCurrencySelector />
+                <Typography
+                  variant="h4"
+                  noWrap
+                  component="div"
+                  sx={{
+                    fontSize: { xs: '1.25rem', sm: '1.5rem' },
+                    fontWeight: 600,
+                    letterSpacing: '0.05em',
+                    fontFamily: 'inherit',
+                    color: 'text.primary',
+                    lineHeight: 1.2,
+                    textTransform: 'uppercase'
+                  }}
+                >
+                  {currentViewTitle}
+                </Typography>
+                {currentViewSubtitle && (
+                  <Typography
+                    variant="body2"
+                    component="div"
+                    sx={{
+                      fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                      fontWeight: 400,
+                      fontFamily: 'inherit',
+                      color: 'text.secondary',
+                      mt: 0.25,
+                      display: { xs: 'none', sm: 'block' }
+                    }}
+                  >
+                    {currentViewSubtitle}
+                  </Typography>
+                )}
+              </Box>
+              <Box data-tour="language-selector">
+                <LanguageCurrencySelector />
+              </Box>
               <IconButton
                 color="inherit"
                 onClick={() => setDarkMode(!darkMode)}
-                sx={{ ml: 1 }}
+                data-tour="dark-mode-toggle"
+                sx={{
+                  ml: 1,
+                  color: 'text.primary'
+                }}
               >
                 {darkMode ? <Brightness7 /> : <Brightness4 />}
               </IconButton>
+              <IconButton
+                onClick={handleUserMenuOpen}
+                data-tour="user-menu"
+                sx={{ ml: 1 }}
+              >
+                <Avatar
+                  src={user?.picture}
+                  alt={user?.name}
+                  sx={{ width: 32, height: 32 }}
+                />
+              </IconButton>
+              <MuiMenu
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={handleUserMenuClose}
+                anchorOrigin={{
+                  vertical: 'bottom',
+                  horizontal: 'right',
+                }}
+                transformOrigin={{
+                  vertical: 'top',
+                  horizontal: 'right',
+                }}
+              >
+                <MenuItem disabled>
+                  <Typography variant="body2">{user?.email}</Typography>
+                </MenuItem>
+                <Divider />
+                <MenuItem onClick={handleStartTour}>
+                  <HelpOutline fontSize="small" sx={{ mr: 1 }} />
+                  {t('startTour')}
+                </MenuItem>
+                <MenuItem onClick={handleLogout}>
+                  <Logout fontSize="small" sx={{ mr: 1 }} />
+                  {language === 'es' ? 'Cerrar Sesión' : 'Logout'}
+                </MenuItem>
+              </MuiMenu>
             </Toolbar>
           </AppBar>
 
@@ -302,7 +671,12 @@ function AppContent() {
               }}
               sx={{
                 display: { xs: 'block', sm: 'none' },
-                '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+                '& .MuiDrawer-paper': { 
+                  boxSizing: 'border-box', 
+                  width: drawerWidth,
+                  bgcolor: 'background.paper',
+                  color: 'text.primary',
+                },
               }}
             >
               {drawer}
@@ -311,7 +685,14 @@ function AppContent() {
               variant="permanent"
               sx={{
                 display: { xs: 'none', sm: 'block' },
-                '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+                '& .MuiDrawer-paper': { 
+                  boxSizing: 'border-box', 
+                  width: drawerWidth,
+                  bgcolor: 'background.paper',
+                  color: 'text.primary',
+                  borderRight: '1px solid',
+                  borderColor: 'divider',
+                },
               }}
               open
             >
@@ -325,16 +706,18 @@ function AppContent() {
               flexGrow: 1,
               p: { xs: 2, sm: 3 },
               width: { sm: `calc(100% - ${drawerWidth}px)` },
-              mt: { xs: '56px', sm: '64px' },
+              // Account for AppBar height plus iOS safe area
+              mt: { xs: 'calc(56px + env(safe-area-inset-top, 0px))', sm: 'calc(64px + env(safe-area-inset-top, 0px))' },
               backgroundColor: 'background.default',
               minHeight: '100vh',
               pb: { xs: 3, sm: 4 },
             }}
           >
-            <Container maxWidth="xl" sx={{ px: { xs: 1, sm: 2 } }}>
-              {renderContent()}
+            <Container maxWidth="xl" sx={{ px: { xs: 2, sm: 3 } }}>
+              {content}
             </Container>
           </Box>
+          <ProductTour onNavigate={handleNavigate} currentView={selectedView} />
         </Box>
       </LocalizationProvider>
     </ThemeProvider>
@@ -344,7 +727,9 @@ function AppContent() {
 function App() {
   return (
     <LanguageProvider>
-      <AppContent />
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
     </LanguageProvider>
   )
 }

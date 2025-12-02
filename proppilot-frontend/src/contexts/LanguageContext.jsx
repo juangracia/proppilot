@@ -19,26 +19,28 @@ export const LanguageProvider = ({ children }) => {
       // Header
       appTitle: 'PropPilot',
       appSubtitle: 'Gestión de Propiedades de Alquiler',
-      
+
       // Tabs
-      propertyUnits: 'UNIDADES DE PROPIEDAD',
-      registerPayment: 'REGISTRAR PAGO',
+      propertyUnits: 'PROPIEDADES',
+      registerPayment: 'Registrar Pago',
       tenants: 'INQUILINOS',
-      
+
       // Property List
-      propertyUnitsTitle: 'Unidades de Propiedad',
-      addProperty: 'AGREGAR PROPIEDAD',
+      propertyUnitsTitle: 'Propiedades',
+      addProperty: 'Agregar Propiedad',
       searchPlaceholder: 'Buscar por dirección...',
-      
+
       // Table Headers
       id: 'ID',
       address: 'Dirección',
       type: 'Tipo',
       baseRent: 'Alquiler Base',
+      monthlyRent: 'Alquiler Mensual',
       leaseStart: 'Inicio Contrato',
       tenant: 'Inquilino',
+      tenants: 'Inquilino(s)',
       noTenant: 'Sin Inquilino',
-      
+
       // Property Types
       apartment: 'Departamento',
       house: 'Casa',
@@ -47,12 +49,20 @@ export const LanguageProvider = ({ children }) => {
       studio: 'Estudio',
       loft: 'Loft',
       townhouse: 'Casa Adosada',
-      
+
       // Add Property Dialog
       addNewProperty: 'Agregar Nueva Propiedad',
       addressLabel: 'Dirección',
       addressPlaceholder: 'Ej: Calle Principal 1234, Barrio Centro',
       addressHelper: 'Dirección completa de la propiedad',
+      addressSection: 'Dirección',
+      streetLabel: 'Calle',
+      streetNumberLabel: 'Número',
+      floorLabel: 'Piso',
+      apartmentLabel: 'Departamento',
+      cityLabel: 'Ciudad',
+      provinceLabel: 'Provincia',
+      postalCodeLabel: 'Código Postal',
       propertyTypeLabel: 'Tipo de Propiedad',
       selectPropertyType: 'Seleccionar tipo de propiedad',
       baseRentLabel: 'Alquiler Base',
@@ -60,16 +70,18 @@ export const LanguageProvider = ({ children }) => {
       baseRentHelper: 'Monto mensual',
       leaseStartLabel: 'Fecha de Inicio del Contrato',
       leaseStartHelper: 'Fecha de inicio del contrato de alquiler',
-      
+
       // Dialog Actions
-      cancel: 'CANCELAR',
+      cancel: 'Cancelar',
+      create: 'Crear',
       addPropertyAction: 'AGREGAR PROPIEDAD',
-      
+      propertyType: 'Tipo de Propiedad',
+
       // Messages
-      totalUnits: 'Total: {count} unidade{plural} de propiedad',
+      totalUnits: 'Total: {count} propiedad{plural}',
       loading: 'Cargando...',
       errorOccurred: 'Ocurrió un error',
-      
+
       // Tenant Management
       tenantsTitle: 'Inquilinos',
       addTenant: 'AGREGAR INQUILINO',
@@ -104,17 +116,17 @@ export const LanguageProvider = ({ children }) => {
       duplicateNationalId: 'Ya existe un inquilino con este DNI/CUIT',
       duplicateEmail: 'Ya existe un inquilino con este email',
       totalTenants: 'Total: {count} inquilino{plural}',
-      
+
       // Property Management
       deleteProperty: 'ELIMINAR PROPIEDAD',
       confirmDeleteProperty: '¿Estás seguro de que deseas eliminar esta propiedad?',
       confirmDeletePropertyMessage: 'Esta acción no se puede deshacer.',
       propertyDeletedSuccess: '¡Propiedad eliminada exitosamente!',
       failedToDeleteProperty: 'Error al eliminar la propiedad',
-      
+
       // Payment Form
       registerPaymentTitle: 'Registrar Pago',
-      propertyUnitLabel: 'Unidad de Propiedad',
+      propertyUnitLabel: 'Propiedad',
       paymentAmountLabel: 'Monto del Pago',
       paymentDateLabel: 'Fecha de Pago',
       paymentTypeLabel: 'Tipo de Pago',
@@ -126,14 +138,149 @@ export const LanguageProvider = ({ children }) => {
       failedToRegisterPayment: 'Error al registrar el pago',
       fixValidationErrors: 'Por favor corrige los errores de validación',
       charactersCount: '{count}/500 caracteres',
-      
+
+      // Validation Errors
+      fullNameRequired: 'El nombre completo es requerido',
+      nationalIdRequired: 'El DNI/CUIT es requerido',
+      emailRequired: 'El email es requerido',
+      emailInvalid: 'El formato del email no es válido',
+      phoneRequired: 'El teléfono es requerido',
+      propertyUnitRequired: 'La propiedad es requerida',
+      amountRequired: 'El monto del pago es requerido',
+      amountPositive: 'El monto del pago debe ser mayor a 0',
+      amountExceeded: 'El monto del pago no puede exceder 999,999.99',
+      dateRequired: 'La fecha de pago es requerida',
+      dateFuture: 'La fecha de pago no puede ser futura',
+      descriptionLength: 'La descripción no puede exceder 500 caracteres',
+      failedToLoadProperties: 'Error al cargar las propiedades. Por favor asegúrese de que el servidor esté funcionando.',
+
+      // Selectors
+      language: 'Idioma',
+      currency: 'Moneda',
+
+      // Menu Items
+      dashboardMenu: 'Panel',
+      propertiesMenu: 'Propiedades',
+      tenantsMenu: 'Inquilinos',
+      leasesMenu: 'Contratos',
+      paymentsMenu: 'Pagos',
+
+      // Leases
+      leasesTitle: 'Contratos de Alquiler',
+      leaseList: 'Lista de Contratos',
+      newLease: 'Nuevo Contrato',
+      noLeases: 'Sin contratos',
+      noLeasesDesc: 'Crea tu primer contrato para vincular una propiedad con un inquilino',
+      createLease: 'Crear Contrato',
+      selectProperty: 'Seleccionar Propiedad',
+      selectTenant: 'Seleccionar Inquilino',
+      selectTenants: 'Seleccionar Inquilino(s)',
+      startDate: 'Fecha de Inicio',
+      endDate: 'Fecha de Fin',
+      adjustmentIndex: 'Índice de Ajuste',
+      adjustmentFrequency: 'Frecuencia de Ajuste (meses)',
+      leaseStatus: 'Estado del Contrato',
+      leaseDetails: 'Detalles del Contrato',
+      leasePeriod: 'Período del Contrato',
+      adjustmentInfo: 'Ajuste',
+      leaseActive: 'Activo',
+      leaseExpired: 'Vencido',
+      leaseTerminated: 'Terminado',
+      indexICL: 'ICL (Índice para Contratos de Locación)',
+      indexIPC: 'IPC (Índice de Precios al Consumidor)',
+      indexFixed: 'Fijo (Sin ajuste)',
+      indexCustom: 'Personalizado',
+      monthly: 'Mensual (1 mes)',
+      bimonthly: 'Bimestral (2 meses)',
+      quarterly: 'Trimestral (3 meses)',
+      semiannual: 'Semestral (6 meses)',
+      annual: 'Anual (12 meses)',
+      minLeaseDuration: 'El contrato debe durar al menos 1 mes',
+      rentMaxExceeded: 'El monto excede el límite permitido',
+      propertyRequired: 'Propiedad requerida',
+      tenantRequired: 'Inquilino requerido',
+      startDateRequired: 'Fecha de inicio requerida',
+      endDateRequired: 'Fecha de fin requerida',
+      endDateAfterStart: 'La fecha de fin debe ser posterior a la de inicio',
+      rentRequired: 'Alquiler mensual requerido',
+      rentPositive: 'El alquiler debe ser mayor a 0',
+      leaseCreatedSuccess: '¡Contrato creado exitosamente!',
+      failedToCreateLease: 'Error al crear el contrato',
+      leaseUpdatedSuccess: '¡Contrato actualizado exitosamente!',
+      failedToUpdateLease: 'Error al actualizar el contrato',
+      leaseDeletedSuccess: '¡Contrato eliminado exitosamente!',
+      failedToDeleteLease: 'Error al eliminar el contrato',
+      leaseTerminatedSuccess: '¡Contrato terminado exitosamente!',
+      failedToTerminateLease: 'Error al terminar el contrato',
+      terminateLease: 'Terminar Contrato',
+      confirmTerminateLease: '¿Estás seguro de que deseas terminar este contrato?',
+      totalLeases: 'Total: {count} contrato{plural}',
+
+      // Termination & Reactivation
+      confirmTerminateStep1: '¿Terminar este contrato?',
+      confirmTerminateStep2: 'Confirmar terminación',
+      terminateWarningStep1: 'Terminar un contrato lo marcará como finalizado anticipadamente. Esta acción es reversible - podrás reactivar el contrato luego si es necesario.',
+      terminateWarningStep2: '¿Estás seguro de que deseas terminar este contrato? El inquilino ya no estará asociado a esta propiedad de forma activa.',
+      confirmTerminate: 'Sí, terminar contrato',
+      continue: 'Continuar',
+      reactivateLease: 'Reactivar',
+      confirmReactivate: 'Reactivar Contrato',
+      reactivateInfo: 'Reactivar este contrato lo volverá a marcar como activo (o vencido si la fecha de fin ya pasó). Asegúrate de que no haya otro contrato activo para esta propiedad en el mismo período.',
+      reactivate: 'Reactivar',
+      leaseReactivatedSuccess: '¡Contrato reactivado exitosamente!',
+      failedToReactivateLease: 'Error al reactivar el contrato',
+
+      // Deletion Features
+      deletedContracts: 'Contratos Eliminados',
+      deletedContractsMenu: 'Eliminados',
+      noDeletedContracts: 'No hay contratos eliminados',
+      noDeletedContractsDesc: 'Los contratos eliminados aparecerán aquí',
+      deletedContractsInfo: 'Estos contratos han sido eliminados pero pueden ser restaurados o eliminados permanentemente.',
+      restoreLease: 'Restaurar',
+      permanentlyDelete: 'Eliminar Permanentemente',
+      confirmPermanentDelete: '¡Eliminar Permanentemente!',
+      confirmPermanentDeleteMessage: 'Esta acción no se puede deshacer. El contrato será eliminado de forma permanente.',
+      permanentDeleteWarning: 'Esta acción no se puede deshacer. El contrato será eliminado permanentemente y no podrá ser recuperado.',
+      confirmRestore: 'Confirmar Restauración',
+      confirmRestoreMessage: '¿Estás seguro de que deseas restaurar este contrato?',
+      leaseRestoredSuccess: '¡Contrato restaurado exitosamente!',
+      failedToRestoreLease: 'Error al restaurar el contrato',
+      leasePermanentlyDeleted: '¡Contrato eliminado permanentemente!',
+      leasePermanentlyDeletedSuccess: '¡Contrato eliminado permanentemente!',
+      failedToPermanentlyDeleteLease: 'Error al eliminar el contrato permanentemente',
+      failedToPermanentlyDelete: 'Error al eliminar permanentemente',
+      deletedAt: 'Eliminado',
+      cannotDeleteTenant: 'No se puede eliminar el inquilino',
+      cannotDeleteProperty: 'No se puede eliminar la propiedad',
+      tenantHasContracts: 'Este inquilino tiene {count} contrato(s) asociado(s). Debes eliminar primero los contratos antes de poder eliminar el inquilino.',
+      propertyHasContracts: 'Esta propiedad tiene {count} contrato(s) asociado(s). Debes eliminar primero los contratos antes de poder eliminar la propiedad.',
+      confirmDeleteLease: '¿Estás seguro de que deseas eliminar este contrato?',
+      confirmDeleteLeaseMessage: '¿Estás seguro de que deseas eliminar este contrato? El contrato podrá ser restaurado desde la pestaña "Eliminados".',
+      confirmDeleteActiveLease: '¡Atención! Este es un contrato activo.',
+      confirmDeleteActiveLeaseWarning: 'Estás a punto de eliminar un contrato que está actualmente en vigencia. Esta acción puede afectar los registros de pagos y otros datos relacionados.',
+      confirmDeleteActiveLeaseMessage: '¿Estás completamente seguro de que deseas eliminar este contrato activo? Esta acción moverá el contrato a la papelera.',
+      doubleConfirmDelete: 'Confirmar Eliminación',
+      understand: 'Entiendo, continuar',
+      activeLeases: 'Contratos Activos',
+      selectLease: 'Seleccionar Contrato',
+      leaseRequired: 'El contrato es requerido',
+      noActiveLeases: 'No hay contratos activos',
+      noActiveLeasesDesc: 'Crea un contrato primero para poder registrar pagos',
+      leaseSummary: 'Resumen del Contrato',
+      leaseInfo: 'Contrato',
+      property: 'Propiedad',
+      expiringContracts: 'Contratos por Vencer',
+      expiringSoon: 'por vencer',
+      allGood: 'todos vigentes',
+      daysLabel: 'días',
+
       // Payment Types
       rentPayment: 'Pago de Alquiler',
       depositPayment: 'Depósito',
       maintenancePayment: 'Mantenimiento',
       utilityPayment: 'Servicios',
       otherPayment: 'Otro',
-      
+
       // Currencies
       currencySymbol: {
         ARS: '$',
@@ -142,32 +289,168 @@ export const LanguageProvider = ({ children }) => {
       currencyName: {
         ARS: 'Pesos Argentinos',
         USD: 'Dólares Estadounidenses'
-      }
+      },
+      // Dashboard
+      dashboardTitle: 'Panel de Control',
+      dashboardSubtitle: '¡Bienvenido de nuevo! Aquí está el resumen de sus propiedades.',
+      totalProperties: 'Total de Propiedades',
+      activeTenants: 'Inquilinos Activos',
+      monthlyRevenue: 'Ingresos Mensuales',
+      outstandingPayments: 'Pagos Pendientes',
+      recentPayments: 'Pagos Recientes',
+      noRecentPayments: 'No hay pagos recientes',
+      quickActions: 'Acciones Rápidas',
+      viewOutstanding: 'Ver Pendientes',
+      thisMonth: 'este mes',
+      thisWeek: 'esta semana',
+      fromLastMonth: 'desde el mes pasado',
+      overdue: 'vencidos',
+      paid: 'Pagado',
+      pending: 'Pendiente',
+      nextPaymentDue: 'Próximo Pago',
+      daysLeft: 'días restantes',
+      lastPayment: 'Último Pago',
+      paymentOverdue: 'Pago Vencido',
+      onTime: 'Al Día',
+      late: 'Atrasado',
+      leaseEnds: 'Fin de Contrato',
+      paymentHistory: 'Historial de Pagos',
+      partialPayment: 'Pago Parcial',
+      remainingBalance: 'Saldo Restante',
+      noProperties: 'No hay propiedades',
+      noPropertiesDesc: 'Agrega tu primera propiedad para comenzar',
+      noTenants: 'No hay inquilinos',
+      noTenantsDesc: 'Agrega tu primer inquilino para comenzar',
+      noPayments: 'No hay pagos registrados',
+      noPaymentsDesc: 'Registra tu primer pago para verlo aquí',
+      latestPayments: 'Últimos Pagos',
+      noPaymentsForLease: 'Sin pagos registrados para este contrato',
+      paymentStatus: 'Estado de Pagos',
+      upToDate: 'Al día',
+      paymentsPending: 'Pagos pendientes',
+      actionUndone: 'Acción deshecha',
+      undo: 'Deshacer',
+      deleted: 'eliminado',
+      filterAll: 'Todos',
+      filterOccupied: 'Ocupados',
+      filterVacant: 'Vacantes',
+      filterOverdue: 'Vencidos',
+      searchPaymentsPlaceholder: 'Buscar por propiedad o inquilino...',
+      clearFilters: 'Limpiar filtros',
+      noPaymentsMatchFilter: 'No hay pagos que coincidan con los filtros',
+      viewPaymentsForProperty: 'Ver pagos de esta propiedad',
+      viewPaymentsForTenant: 'Ver pagos de este inquilino',
+      // Tenant filters
+      searchTenantsPlaceholder: 'Buscar por nombre, email, teléfono...',
+      all: 'Todos',
+      withLease: 'Con Contrato',
+      withoutLease: 'Sin Contrato',
+      noTenantsMatchFilter: 'No hay inquilinos que coincidan con los filtros',
+      // Lease filters
+      searchLeasesPlaceholder: 'Buscar por propiedad o inquilino...',
+      expiredLeases: 'Vencidos',
+      terminatedLeases: 'Terminados',
+      noLeasesMatchFilter: 'No hay contratos que coincidan con los filtros',
+      // Property filters
+      searchPropertiesPlaceholder: 'Buscar por dirección...',
+      noPropertiesMatchFilter: 'No hay propiedades que coincidan con los filtros',
+
+      // Common
+      viewDetails: 'Ver Detalles',
+      close: 'Cerrar',
+      saveChanges: 'Guardar Cambios',
+      propertyDetails: 'Detalles de la Propiedad',
+      editProperty: 'Editar Propiedad',
+      status: 'Estado',
+      occupied: 'Ocupado',
+      vacant: 'Vacante',
+      commercial: 'Comercial',
+
+      // Tenant Details
+      contactInfo: 'Información de Contacto',
+      propertyInfo: 'Propiedad',
+      notes: 'Notas',
+      noPaymentsYet: 'Sin pagos registrados',
+      noPropertyAssigned: 'Sin propiedad asignada',
+      emergencyContact: 'Contacto de Emergencia',
+
+      // Property Details
+      pendingPayment: 'Pago Pendiente',
+      area: 'Superficie',
+      yes: 'Sí',
+      no: 'No',
+      amenities: 'Amenities',
+      noTenantAssigned: 'Sin inquilino asignado',
+      paymentDetails: 'Detalles del Pago',
+      paymentMethod: 'Método de Pago',
+
+      // Payment Status
+      statusCompleted: 'Pagado',
+      statusPending: 'Pendiente',
+      statusOverdue: 'Vencido',
+
+      // Payment Methods
+      methodTransfer: 'Transferencia',
+      methodCash: 'Efectivo',
+      methodCheck: 'Cheque',
+      methodCard: 'Tarjeta',
+
+      // Product Tour
+      tourWelcomeTitle: '¡Bienvenido a PropPilot!',
+      tourWelcome: 'Te guiaremos por las principales funciones de la aplicación para que puedas gestionar tus propiedades de manera eficiente.',
+      tourDashboardStatsTitle: 'Panel de Control',
+      tourDashboardStats: 'Aquí puedes ver un resumen rápido de tus propiedades, inquilinos activos, ingresos mensuales y pagos pendientes.',
+      tourSidebarNavTitle: 'Navegación',
+      tourSidebarNav: 'Usa el menú lateral para navegar entre las diferentes secciones de la aplicación.',
+      tourNavPropertiesTitle: 'Propiedades',
+      tourNavProperties: 'Gestiona todas tus propiedades. Agrega, edita o elimina propiedades con sus direcciones y tipos.',
+      tourNavTenantsTitle: 'Inquilinos',
+      tourNavTenants: 'Administra la información de tus inquilinos. Mantén un registro de sus datos de contacto.',
+      tourNavLeasesTitle: 'Contratos',
+      tourNavLeases: 'Crea y administra contratos de alquiler. Vincula propiedades con inquilinos, define montos y ajustes.',
+      tourNavPaymentsTitle: 'Pagos',
+      tourNavPayments: 'Registra y da seguimiento a los pagos de alquiler. Mantén un historial completo de todas las transacciones.',
+      tourLanguageSelectorTitle: 'Idioma y Moneda',
+      tourLanguageSelector: 'Cambia el idioma de la aplicación y la moneda para visualizar los montos.',
+      tourDarkModeTitle: 'Modo Oscuro',
+      tourDarkMode: 'Alterna entre modo claro y oscuro según tu preferencia visual.',
+      tourUserMenuTitle: 'Tu Perfil',
+      tourUserMenu: 'Accede a tu perfil y cierra sesión cuando lo necesites.',
+      tourCompleteTitle: '¡Listo para comenzar!',
+      tourComplete: 'Ya conoces las funciones principales de PropPilot. ¡Comienza a gestionar tus propiedades ahora!',
+      tourBack: 'Atrás',
+      tourClose: 'Cerrar',
+      tourFinish: 'Finalizar',
+      tourNext: 'Siguiente',
+      tourSkip: 'Saltar tour',
+      startTour: 'Iniciar Tour',
     },
     en: {
       // Header
       appTitle: 'PropPilot',
       appSubtitle: 'Rental Property Management',
-      
+
       // Tabs
       propertyUnits: 'PROPERTY UNITS',
-      registerPayment: 'REGISTER PAYMENT',
+      registerPayment: 'Register Payment',
       tenants: 'TENANTS',
-      
+
       // Property List
       propertyUnitsTitle: 'Property Units',
-      addProperty: 'ADD PROPERTY',
+      addProperty: 'Add Property',
       searchPlaceholder: 'Search by address...',
-      
+
       // Table Headers
       id: 'ID',
       address: 'Address',
       type: 'Type',
       baseRent: 'Base Rent',
+      monthlyRent: 'Monthly Rent',
       leaseStart: 'Lease Start',
       tenant: 'Tenant',
+      tenants: 'Tenant(s)',
       noTenant: 'No Tenant',
-      
+
       // Property Types
       apartment: 'Apartment',
       house: 'House',
@@ -176,12 +459,20 @@ export const LanguageProvider = ({ children }) => {
       studio: 'Studio',
       loft: 'Loft',
       townhouse: 'Townhouse',
-      
+
       // Add Property Dialog
       addNewProperty: 'Add New Property',
       addressLabel: 'Address',
       addressPlaceholder: 'Ex: 123 Main Street, Downtown',
       addressHelper: 'Complete property address',
+      addressSection: 'Address',
+      streetLabel: 'Street',
+      streetNumberLabel: 'Number',
+      floorLabel: 'Floor',
+      apartmentLabel: 'Apartment',
+      cityLabel: 'City',
+      provinceLabel: 'Province/State',
+      postalCodeLabel: 'Postal Code',
       propertyTypeLabel: 'Property Type',
       selectPropertyType: 'Select property type',
       baseRentLabel: 'Base Rent',
@@ -189,16 +480,18 @@ export const LanguageProvider = ({ children }) => {
       baseRentHelper: 'Monthly amount',
       leaseStartLabel: 'Lease Start Date',
       leaseStartHelper: 'Lease contract start date',
-      
+
       // Dialog Actions
-      cancel: 'CANCEL',
+      cancel: 'Cancel',
+      create: 'Create',
       addPropertyAction: 'ADD PROPERTY',
-      
+      propertyType: 'Property Type',
+
       // Messages
       totalUnits: 'Total: {count} property unit{plural}',
       loading: 'Loading...',
       errorOccurred: 'An error occurred',
-      
+
       // Tenant Management
       tenantsTitle: 'Tenants',
       addTenant: 'ADD TENANT',
@@ -233,14 +526,14 @@ export const LanguageProvider = ({ children }) => {
       duplicateNationalId: 'A tenant with this National ID already exists',
       duplicateEmail: 'A tenant with this email already exists',
       totalTenants: 'Total: {count} tenant{plural}',
-      
+
       // Property Management
       deleteProperty: 'DELETE PROPERTY',
       confirmDeleteProperty: 'Are you sure you want to delete this property?',
       confirmDeletePropertyMessage: 'This action cannot be undone.',
       propertyDeletedSuccess: 'Property deleted successfully!',
       failedToDeleteProperty: 'Failed to delete property',
-      
+
       // Payment Form
       registerPaymentTitle: 'Register Payment',
       propertyUnitLabel: 'Property Unit',
@@ -255,14 +548,150 @@ export const LanguageProvider = ({ children }) => {
       failedToRegisterPayment: 'Failed to register payment',
       fixValidationErrors: 'Please fix the validation errors below',
       charactersCount: '{count}/500 characters',
-      
+
+      // Validation Errors
+      fullNameRequired: 'Full name is required',
+      nationalIdRequired: 'National ID is required',
+      emailRequired: 'Email is required',
+      emailInvalid: 'Email format is invalid',
+      phoneRequired: 'Phone is required',
+      propertyUnitRequired: 'Property unit is required',
+      amountRequired: 'Payment amount is required',
+      amountPositive: 'Payment amount must be greater than 0',
+      amountExceeded: 'Payment amount cannot exceed 999,999.99',
+      dateRequired: 'Payment date is required',
+      dateFuture: 'Payment date cannot be in the future',
+      descriptionLength: 'Description cannot exceed 500 characters',
+      failedToLoadProperties: 'Failed to load property units. Please make sure the backend server is running.',
+
+      // Selectors
+      language: 'Language',
+      currency: 'Currency',
+
+      // Menu Items
+      dashboardMenu: 'Dashboard',
+      propertiesMenu: 'Properties',
+      tenantsMenu: 'Tenants',
+      leasesMenu: 'Leases',
+      paymentsMenu: 'Payments',
+
+      // Leases
+      leasesTitle: 'Lease Contracts',
+      leaseList: 'Lease List',
+      newLease: 'New Lease',
+      noLeases: 'No leases',
+      noLeasesDesc: 'Create your first lease to link a property with a tenant',
+      createLease: 'Create Lease',
+      selectProperty: 'Select Property',
+      selectTenant: 'Select Tenant',
+      selectTenants: 'Select Tenant(s)',
+      startDate: 'Start Date',
+      endDate: 'End Date',
+      adjustmentIndex: 'Adjustment Index',
+      adjustmentFrequency: 'Adjustment Frequency (months)',
+      leaseStatus: 'Lease Status',
+      leaseDetails: 'Lease Details',
+      leasePeriod: 'Period',
+      adjustmentInfo: 'Adjustment',
+      leaseActive: 'Active',
+      leaseExpired: 'Expired',
+      leaseTerminated: 'Terminated',
+      indexICL: 'ICL (Rental Contract Index)',
+      indexIPC: 'IPC (Consumer Price Index)',
+      indexFixed: 'Fixed (No adjustment)',
+      indexCustom: 'Custom',
+      monthly: 'Monthly (1 month)',
+      bimonthly: 'Bimonthly (2 months)',
+      quarterly: 'Quarterly (3 months)',
+      semiannual: 'Semiannual (6 months)',
+      annual: 'Annual (12 months)',
+      minLeaseDuration: 'Lease must be at least 1 month',
+      rentMaxExceeded: 'Amount exceeds maximum allowed',
+      propertyRequired: 'Property is required',
+      tenantRequired: 'Tenant is required',
+      startDateRequired: 'Start date is required',
+      endDateRequired: 'End date is required',
+      endDateAfterStart: 'End date must be after start date',
+      rentRequired: 'Monthly rent is required',
+      rentPositive: 'Rent must be greater than 0',
+      leaseCreatedSuccess: 'Lease created successfully!',
+      failedToCreateLease: 'Failed to create lease',
+      leaseUpdatedSuccess: 'Lease updated successfully!',
+      failedToUpdateLease: 'Failed to update lease',
+      leaseDeletedSuccess: 'Lease deleted successfully!',
+      failedToDeleteLease: 'Failed to delete lease',
+      leaseTerminatedSuccess: 'Lease terminated successfully!',
+      failedToTerminateLease: 'Failed to terminate lease',
+      terminateLease: 'Terminate Lease',
+      confirmTerminateLease: 'Are you sure you want to terminate this lease?',
+      totalLeases: 'Total: {count} lease{plural}',
+
+      // Termination & Reactivation
+      confirmTerminateStep1: 'Terminate this lease?',
+      confirmTerminateStep2: 'Confirm termination',
+      terminateWarningStep1: 'Terminating a lease will mark it as ended early. This action is reversible - you can reactivate the lease later if needed.',
+      terminateWarningStep2: 'Are you sure you want to terminate this lease? The tenant will no longer be actively associated with this property.',
+      confirmTerminate: 'Yes, terminate lease',
+      continue: 'Continue',
+      reactivateLease: 'Reactivate',
+      confirmReactivate: 'Reactivate Lease',
+      reactivateInfo: 'Reactivating this lease will mark it as active again (or expired if the end date has passed). Make sure there is no other active lease for this property during the same period.',
+      reactivate: 'Reactivate',
+      leaseReactivatedSuccess: 'Lease reactivated successfully!',
+      failedToReactivateLease: 'Failed to reactivate lease',
+
+      // Deletion Features
+      deletedContracts: 'Deleted Contracts',
+      deletedContractsMenu: 'Deleted',
+      noDeletedContracts: 'No deleted contracts',
+      noDeletedContractsDesc: 'Deleted contracts will appear here',
+      deletedContractsInfo: 'These contracts have been deleted but can be restored or permanently deleted.',
+      restoreLease: 'Restore',
+      permanentlyDelete: 'Permanently Delete',
+      confirmPermanentDelete: 'Permanently Delete!',
+      confirmPermanentDeleteMessage: 'This action cannot be undone. The contract will be permanently deleted.',
+      permanentDeleteWarning: 'This action cannot be undone. The contract will be permanently deleted and cannot be recovered.',
+      confirmRestore: 'Confirm Restoration',
+      confirmRestoreMessage: 'Are you sure you want to restore this contract?',
+      leaseRestoredSuccess: 'Contract restored successfully!',
+      failedToRestoreLease: 'Failed to restore contract',
+      leasePermanentlyDeleted: 'Contract permanently deleted!',
+      leasePermanentlyDeletedSuccess: 'Contract permanently deleted!',
+      failedToPermanentlyDeleteLease: 'Failed to permanently delete contract',
+      failedToPermanentlyDelete: 'Failed to permanently delete',
+      deletedAt: 'Deleted',
+      cannotDeleteTenant: 'Cannot delete tenant',
+      cannotDeleteProperty: 'Cannot delete property',
+      tenantHasContracts: 'This tenant has {count} associated contract(s). You must delete the contracts first before deleting the tenant.',
+      propertyHasContracts: 'This property has {count} associated contract(s). You must delete the contracts first before deleting the property.',
+      confirmDeleteLease: 'Are you sure you want to delete this contract?',
+      confirmDeleteLeaseMessage: 'Are you sure you want to delete this contract? The contract can be restored from the "Deleted" tab.',
+      confirmDeleteActiveLease: 'Warning! This is an active contract.',
+      confirmDeleteActiveLeaseWarning: 'You are about to delete a contract that is currently in effect. This action may affect payment records and other related data.',
+      confirmDeleteActiveLeaseMessage: 'Are you absolutely sure you want to delete this active contract? This action will move the contract to trash.',
+      doubleConfirmDelete: 'Confirm Deletion',
+      understand: 'I understand, continue',
+
+      activeLeases: 'Active Leases',
+      selectLease: 'Select Lease',
+      leaseRequired: 'Lease is required',
+      noActiveLeases: 'No active leases',
+      noActiveLeasesDesc: 'Create a lease first to register payments',
+      leaseSummary: 'Lease Summary',
+      leaseInfo: 'Lease',
+      property: 'Property',
+      expiringContracts: 'Expiring Contracts',
+      expiringSoon: 'expiring soon',
+      allGood: 'all current',
+      daysLabel: 'days',
+
       // Payment Types
       rentPayment: 'Rent Payment',
       depositPayment: 'Deposit',
       maintenancePayment: 'Maintenance',
       utilityPayment: 'Utility',
       otherPayment: 'Other',
-      
+
       // Currencies
       currencySymbol: {
         ARS: 'AR$',
@@ -271,22 +700,159 @@ export const LanguageProvider = ({ children }) => {
       currencyName: {
         ARS: 'Argentine Pesos',
         USD: 'US Dollars'
-      }
+      },
+      // Dashboard
+      dashboardTitle: 'Dashboard',
+      dashboardSubtitle: 'Welcome back! Here\'s your property overview.',
+      totalProperties: 'Total Properties',
+      activeTenants: 'Active Tenants',
+      monthlyRevenue: 'Monthly Revenue',
+      outstandingPayments: 'Outstanding Payments',
+      recentPayments: 'Recent Payments',
+      noRecentPayments: 'No recent payments',
+      quickActions: 'Quick Actions',
+      viewOutstanding: 'View Outstanding',
+      thisMonth: 'this month',
+      thisWeek: 'this week',
+      fromLastMonth: 'from last month',
+      overdue: 'overdue',
+      paid: 'Paid',
+      pending: 'Pending',
+      nextPaymentDue: 'Next Payment Due',
+      daysLeft: 'days left',
+      lastPayment: 'Last Payment',
+      paymentOverdue: 'Payment Overdue',
+      onTime: 'On Time',
+      late: 'Late',
+      leaseEnds: 'Lease Ends',
+      paymentHistory: 'Payment History',
+      partialPayment: 'Partial Payment',
+      remainingBalance: 'Remaining Balance',
+      noProperties: 'No properties',
+      noPropertiesDesc: 'Add your first property to get started',
+      noTenants: 'No tenants',
+      noTenantsDesc: 'Add your first tenant to get started',
+      noPayments: 'No payments recorded',
+      noPaymentsDesc: 'Register your first payment to see it here',
+      latestPayments: 'Latest Payments',
+      noPaymentsForLease: 'No payments recorded for this contract',
+      paymentStatus: 'Payment Status',
+      upToDate: 'Up to date',
+      paymentsPending: 'Payments pending',
+      actionUndone: 'Action undone',
+      undo: 'Undo',
+      deleted: 'deleted',
+      filterAll: 'All',
+      filterOccupied: 'Occupied',
+      filterVacant: 'Vacant',
+      filterOverdue: 'Overdue',
+      searchPaymentsPlaceholder: 'Search by property or tenant...',
+      clearFilters: 'Clear filters',
+      noPaymentsMatchFilter: 'No payments match the current filters',
+      viewPaymentsForProperty: 'View payments for this property',
+      viewPaymentsForTenant: 'View payments for this tenant',
+      // Tenant filters
+      searchTenantsPlaceholder: 'Search by name, email, phone...',
+      all: 'All',
+      withLease: 'With Lease',
+      withoutLease: 'Without Lease',
+      noTenantsMatchFilter: 'No tenants match the current filters',
+      // Lease filters
+      searchLeasesPlaceholder: 'Search by property or tenant...',
+      expiredLeases: 'Expired',
+      terminatedLeases: 'Terminated',
+      noLeasesMatchFilter: 'No leases match the current filters',
+      // Property filters
+      searchPropertiesPlaceholder: 'Search by address...',
+      noPropertiesMatchFilter: 'No properties match the current filters',
+
+      // Common
+      viewDetails: 'View Details',
+      close: 'Close',
+      saveChanges: 'Save Changes',
+      propertyDetails: 'Property Details',
+      editProperty: 'Edit Property',
+      status: 'Status',
+      occupied: 'Occupied',
+      vacant: 'Vacant',
+      commercial: 'Commercial',
+
+      // Tenant Details
+      contactInfo: 'Contact Information',
+      propertyInfo: 'Property',
+      notes: 'Notes',
+      noPaymentsYet: 'No payments recorded',
+      noPropertyAssigned: 'No property assigned',
+      emergencyContact: 'Emergency Contact',
+
+      // Property Details
+      pendingPayment: 'Pending Payment',
+      area: 'Area',
+      yes: 'Yes',
+      no: 'No',
+      amenities: 'Amenities',
+      noTenantAssigned: 'No tenant assigned',
+      paymentDetails: 'Payment Details',
+      paymentMethod: 'Payment Method',
+
+      // Payment Status
+      statusCompleted: 'Completed',
+      statusPending: 'Pending',
+      statusOverdue: 'Overdue',
+
+      // Payment Methods
+      methodTransfer: 'Transfer',
+      methodCash: 'Cash',
+      methodCheck: 'Check',
+      methodCard: 'Card',
+
+      // Product Tour
+      tourWelcomeTitle: 'Welcome to PropPilot!',
+      tourWelcome: 'We\'ll guide you through the main features of the app so you can manage your properties efficiently.',
+      tourDashboardStatsTitle: 'Dashboard',
+      tourDashboardStats: 'Here you can see a quick summary of your properties, active tenants, monthly revenue, and outstanding payments.',
+      tourSidebarNavTitle: 'Navigation',
+      tourSidebarNav: 'Use the sidebar menu to navigate between the different sections of the application.',
+      tourNavPropertiesTitle: 'Properties',
+      tourNavProperties: 'Manage all your properties. Add, edit, or delete properties with their addresses and types.',
+      tourNavTenantsTitle: 'Tenants',
+      tourNavTenants: 'Manage your tenant information. Keep track of their contact details.',
+      tourNavLeasesTitle: 'Leases',
+      tourNavLeases: 'Create and manage rental contracts. Link properties with tenants, set amounts and adjustments.',
+      tourNavPaymentsTitle: 'Payments',
+      tourNavPayments: 'Record and track rent payments. Maintain a complete history of all transactions.',
+      tourLanguageSelectorTitle: 'Language & Currency',
+      tourLanguageSelector: 'Change the app language and currency for displaying amounts.',
+      tourDarkModeTitle: 'Dark Mode',
+      tourDarkMode: 'Toggle between light and dark mode based on your visual preference.',
+      tourUserMenuTitle: 'Your Profile',
+      tourUserMenu: 'Access your profile and log out when needed.',
+      tourCompleteTitle: 'Ready to Go!',
+      tourComplete: 'You now know the main features of PropPilot. Start managing your properties now!',
+      tourBack: 'Back',
+      tourClose: 'Close',
+      tourFinish: 'Finish',
+      tourNext: 'Next',
+      tourSkip: 'Skip tour',
+      startTour: 'Start Tour',
     }
   }
 
   const t = (key, params = {}) => {
+    if (!key) return ''
     const keys = key.split('.')
     let value = translations[language]
-    
+
     for (const k of keys) {
       value = value?.[k]
     }
-    
+
     if (typeof value === 'string' && params) {
-      return value.replace(/\{(\w+)\}/g, (match, paramKey) => params[paramKey] || match)
+      return value.replace(/\{(\w+)\}/g, (match, paramKey) =>
+        params[paramKey] !== undefined ? params[paramKey] : match
+      )
     }
-    
+
     return value || key
   }
 
@@ -296,6 +862,12 @@ export const LanguageProvider = ({ children }) => {
     return `${symbol}${formattedAmount}`
   }
 
+  const formatNumber = (number) => {
+    if (!number && number !== 0) return ''
+    const numStr = String(number).replace(/\D/g, '')
+    return new Intl.NumberFormat(language === 'es' ? 'es-AR' : 'en-US', { useGrouping: true }).format(numStr)
+  }
+
   const value = {
     language,
     setLanguage,
@@ -303,6 +875,7 @@ export const LanguageProvider = ({ children }) => {
     setCurrency,
     t,
     formatCurrency,
+    formatNumber,
     availableLanguages: [
       { code: 'es', name: 'Español' },
       { code: 'en', name: 'English' }

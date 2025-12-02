@@ -1,6 +1,7 @@
 package com.prop_pilot.controller;
 
 import com.prop_pilot.entity.Tenant;
+import com.prop_pilot.service.CurrentUserService;
 import com.prop_pilot.service.TenantService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -8,12 +9,13 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -21,8 +23,13 @@ import java.util.Optional;
 @Tag(name = "Tenants", description = "API for managing tenants")
 public class TenantController {
 
-    @Autowired
-    private TenantService tenantService;
+    private final TenantService tenantService;
+    private final CurrentUserService currentUserService;
+
+    public TenantController(TenantService tenantService, CurrentUserService currentUserService) {
+        this.tenantService = tenantService;
+        this.currentUserService = currentUserService;
+    }
 
     @PostMapping
     @Operation(summary = "Create a new tenant", description = "Creates a new tenant in the system")
@@ -42,7 +49,8 @@ public class TenantController {
     )
     public ResponseEntity<Tenant> createTenant(@Valid @RequestBody Tenant tenant) {
         try {
-            Tenant createdTenant = tenantService.createTenant(tenant);
+            Long ownerId = currentUserService.getCurrentUserId();
+            Tenant createdTenant = tenantService.createTenant(tenant, ownerId);
             return new ResponseEntity<>(createdTenant, HttpStatus.CREATED);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
@@ -50,12 +58,13 @@ public class TenantController {
     }
 
     @GetMapping
-    @Operation(summary = "Get all tenants", description = "Retrieves a list of all tenants")
+    @Operation(summary = "Get all tenants", description = "Retrieves a list of all tenants for the current landlord")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Tenants retrieved successfully")
     })
     public ResponseEntity<List<Tenant>> getAllTenants() {
-        List<Tenant> tenants = tenantService.getAllTenants();
+        Long ownerId = currentUserService.getCurrentUserId();
+        List<Tenant> tenants = tenantService.getAllTenants(ownerId);
         return new ResponseEntity<>(tenants, HttpStatus.OK);
     }
 
@@ -67,8 +76,9 @@ public class TenantController {
     })
     public ResponseEntity<Tenant> getTenantById(
             @Parameter(description = "Tenant ID", required = true)
-            @PathVariable Long id) {
-        Optional<Tenant> tenant = tenantService.getTenantById(id);
+            @PathVariable @NonNull Long id) {
+        Long ownerId = currentUserService.getCurrentUserId();
+        Optional<Tenant> tenant = tenantService.getTenantById(id, ownerId);
         return tenant.map(t -> new ResponseEntity<>(t, HttpStatus.OK))
                     .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
@@ -92,10 +102,11 @@ public class TenantController {
     )
     public ResponseEntity<Tenant> updateTenant(
             @Parameter(description = "Tenant ID", required = true)
-            @PathVariable Long id,
-            @Valid @RequestBody Tenant tenant) {
+            @PathVariable @NonNull Long id,
+            @Valid @RequestBody @NonNull Tenant tenant) {
         try {
-            Tenant updatedTenant = tenantService.updateTenant(id, tenant);
+            Long ownerId = currentUserService.getCurrentUserId();
+            Tenant updatedTenant = tenantService.updateTenant(id, tenant, ownerId);
             return new ResponseEntity<>(updatedTenant, HttpStatus.OK);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
@@ -112,9 +123,10 @@ public class TenantController {
     })
     public ResponseEntity<Void> deleteTenant(
             @Parameter(description = "Tenant ID", required = true)
-            @PathVariable Long id) {
+            @PathVariable @NonNull Long id) {
         try {
-            tenantService.deleteTenant(id);
+            Long ownerId = currentUserService.getCurrentUserId();
+            tenantService.deleteTenant(id, ownerId);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -130,7 +142,8 @@ public class TenantController {
     public ResponseEntity<Tenant> getTenantByNationalId(
             @Parameter(description = "National ID", required = true)
             @PathVariable String nationalId) {
-        Optional<Tenant> tenant = tenantService.getTenantByNationalId(nationalId);
+        Long ownerId = currentUserService.getCurrentUserId();
+        Optional<Tenant> tenant = tenantService.getTenantByNationalId(nationalId, ownerId);
         return tenant.map(t -> new ResponseEntity<>(t, HttpStatus.OK))
                     .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
@@ -144,8 +157,20 @@ public class TenantController {
     public ResponseEntity<Tenant> getTenantByEmail(
             @Parameter(description = "Email", required = true)
             @PathVariable String email) {
-        Optional<Tenant> tenant = tenantService.getTenantByEmail(email);
+        Long ownerId = currentUserService.getCurrentUserId();
+        Optional<Tenant> tenant = tenantService.getTenantByEmail(email, ownerId);
         return tenant.map(t -> new ResponseEntity<>(t, HttpStatus.OK))
                     .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+    }
+
+    @GetMapping("/{id}/can-delete")
+    @Operation(summary = "Check if tenant can be deleted", description = "Checks if tenant has any associated contracts")
+    @ApiResponse(responseCode = "200", description = "Check completed")
+    public ResponseEntity<Map<String, Object>> canDeleteTenant(
+            @Parameter(description = "Tenant ID", required = true)
+            @PathVariable @NonNull Long id) {
+        Long ownerId = currentUserService.getCurrentUserId();
+        Map<String, Object> result = tenantService.canDelete(id, ownerId);
+        return ResponseEntity.ok(result);
     }
 }

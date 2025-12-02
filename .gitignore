@@ -1,23 +1,27 @@
-# Backend (Spring Boot/Maven)
-proppilot-backend/target/
-proppilot-backend/*.pid
-proppilot-backend/*.log
-proppilot-backend/*.jar
-proppilot-backend/*.war
-proppilot-backend/*.class
-proppilot-backend/.mvn/
-proppilot-backend/mvnw
-proppilot-backend/mvnw.cmd
+# Build directories (Maven, Gradle, NPM, etc.)
+**/target/
+**/build/
+**/out/
+**/dist/
+**/.vite/
 
-# Frontend (React/Vite)
-proppilot-frontend/node_modules/
-proppilot-frontend/dist/
-proppilot-frontend/*.pid
-proppilot-frontend/*.log
-proppilot-frontend/.vite/
-proppilot-frontend/.env
-proppilot-frontend/.env.local
-proppilot-frontend/.env.production
+# Dependencies
+**/node_modules/
+**/.pnp/
+.pnp.js
+
+# Backend (Spring Boot/Maven)
+*.pid
+*.class
+**/.mvn/
+**/mvnw
+**/mvnw.cmd
+
+# Frontend build caches
+**/.next/
+**/.nuxt/
+**/.cache/
+**/.parcel-cache/
 
 # IDE
 .idea/

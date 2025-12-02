@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">PropPilot</string>
+    <string name="title_activity_main">PropPilot</string>
+    <string name="package_name">com.proppilot.app</string>
+    <string name="custom_url_scheme">com.proppilot.app</string>
+    <string name="server_client_id">686454629506-d068i9m0tm2nvue7rdbjfgpm3ivvmggb.apps.googleusercontent.com</string>
+</resources>

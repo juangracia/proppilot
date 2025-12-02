@@ -1,0 +1,27 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="circleGrad" x1="20%" y1="20%" x2="80%" y2="80%">
+      <stop offset="0%" style="stop-color:#45B8C1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1B7A8C;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="80" fill="url(#bgGrad)"/>
+
+  <!-- White rounded square -->
+  <rect x="96" y="96" width="320" height="320" rx="60" fill="white"/>
+
+  <!-- Circle with gradient -->
+  <circle cx="256" cy="256" r="110" fill="url(#circleGrad)"/>
+
+  <!-- House roof (triangle) -->
+  <path d="M256 190 L320 240 L192 240 Z" fill="white"/>
+
+  <!-- House body (rectangle) -->
+  <rect x="208" y="240" width="96" height="80" fill="white"/>
+</svg>

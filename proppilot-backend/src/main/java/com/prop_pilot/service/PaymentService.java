@@ -1,22 +1,35 @@
 package com.prop_pilot.service;
 
 import com.prop_pilot.entity.Payment;
+import org.springframework.lang.NonNull;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
 public interface PaymentService {
-    Payment createPayment(Payment payment);
-    Payment getPaymentById(Long id);
-    List<Payment> getAllPayments();
-    List<Payment> getPaymentsByPropertyUnit(Long propertyUnitId);
-    Payment updatePayment(Long id, Payment payment);
-    void deletePayment(Long id);
-    
-    // Advanced functionality for rent calculations
-    BigDecimal calculateAdjustedRent(Long propertyUnitId, LocalDate effectiveDate);
-    List<Payment> getOutstandingPayments(Long propertyUnitId);
-    BigDecimal getTotalPaidAmount(Long propertyUnitId, Payment.PaymentType paymentType);
-    List<Payment> getPaymentHistory(Long propertyUnitId, LocalDate startDate, LocalDate endDate);
-    BigDecimal calculateOutstandingAmount(Long propertyUnitId, LocalDate asOfDate);
+
+    Payment createPayment(@NonNull Payment payment, @NonNull Long ownerId);
+
+    Payment getPaymentById(@NonNull Long id, @NonNull Long ownerId);
+
+    List<Payment> getAllPayments(@NonNull Long ownerId);
+
+    List<Payment> getPaymentsByLease(@NonNull Long leaseId, @NonNull Long ownerId);
+
+    List<Payment> getPaymentsByPropertyUnit(@NonNull Long propertyUnitId, @NonNull Long ownerId);
+
+    List<Payment> getPaymentsByTenant(@NonNull Long tenantId, @NonNull Long ownerId);
+
+    Payment updatePayment(@NonNull Long id, @NonNull Payment payment, @NonNull Long ownerId);
+
+    void deletePayment(@NonNull Long id, @NonNull Long ownerId);
+
+    BigDecimal getTotalPaidAmountByLease(@NonNull Long leaseId, Payment.PaymentType paymentType, @NonNull Long ownerId);
+
+    List<Payment> getOutstandingPaymentsByLease(@NonNull Long leaseId, @NonNull Long ownerId);
+
+    List<Payment> getPaymentHistory(@NonNull Long leaseId, LocalDate startDate, LocalDate endDate, @NonNull Long ownerId);
+
+    BigDecimal calculateOutstandingAmount(@NonNull Long leaseId, LocalDate asOfDate, @NonNull Long ownerId);
 }

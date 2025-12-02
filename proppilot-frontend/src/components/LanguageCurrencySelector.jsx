@@ -13,15 +13,16 @@ import LanguageIcon from '@mui/icons-material/Language'
 import { useLanguage } from '../contexts/LanguageContext'
 
 const LanguageCurrencySelector = () => {
-  const { 
-    language, 
-    setLanguage, 
-    currency, 
-    setCurrency, 
-    availableLanguages, 
-    availableCurrencies
+  const {
+    language,
+    setLanguage,
+    currency,
+    setCurrency,
+    availableLanguages,
+    availableCurrencies,
+    t
   } = useLanguage()
-  
+
   const [anchorEl, setAnchorEl] = useState(null)
   const open = Boolean(anchorEl)
 
@@ -56,7 +57,7 @@ const LanguageCurrencySelector = () => {
       >
         <LanguageIcon />
       </IconButton>
-      
+
       <Menu
         id="language-menu"
         anchorEl={anchorEl}
@@ -70,10 +71,10 @@ const LanguageCurrencySelector = () => {
       >
         <Box sx={{ px: 2, py: 1 }}>
           <Typography variant="subtitle2" color="text.secondary">
-            Language
+            {t('language')}
           </Typography>
         </Box>
-        
+
         {availableLanguages.map((lang) => (
           <MenuItem
             key={lang.code}
@@ -83,22 +84,22 @@ const LanguageCurrencySelector = () => {
             <ListItemText primary={lang.name} />
           </MenuItem>
         ))}
-        
+
         <Divider />
-        
+
         <Box sx={{ px: 2, py: 1 }}>
           <Typography variant="subtitle2" color="text.secondary">
-            Currency
+            {t('currency')}
           </Typography>
         </Box>
-        
+
         {availableCurrencies.map((curr) => (
           <MenuItem
             key={curr.code}
             onClick={() => handleCurrencyChange(curr.code)}
             selected={currency === curr.code}
           >
-            <ListItemText 
+            <ListItemText
               primary={curr.code}
               secondary={curr.name}
             />
