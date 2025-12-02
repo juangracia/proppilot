@@ -968,7 +968,11 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                               sx={{ cursor: 'pointer' }}
                             >
                               <TableCell>{lease.propertyAddress}</TableCell>
-                              <TableCell>{(lease.tenantNames || [lease.tenantName]).filter(Boolean).join(', ')}</TableCell>
+                              <TableCell>
+                                {(lease.tenantNames || [lease.tenantName]).filter(Boolean).map((name, idx) => (
+                                  <Box key={idx}>{name}</Box>
+                                ))}
+                              </TableCell>
                               <TableCell>{lease.startDate} - {lease.endDate}</TableCell>
                               <TableCell sx={{ fontWeight: 500 }}>{formatCurrency(lease.monthlyRent)}</TableCell>
                               <TableCell>
@@ -1008,9 +1012,11 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                             color={getStatusColor(lease.status)}
                           />
                         </Box>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                          {(lease.tenantNames || [lease.tenantName]).filter(Boolean).join(', ')}
-                        </Typography>
+                        <Box sx={{ mb: 1 }}>
+                          {(lease.tenantNames || [lease.tenantName]).filter(Boolean).map((name, idx) => (
+                            <Typography key={idx} variant="body2" color="text.secondary">{name}</Typography>
+                          ))}
+                        </Box>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <Typography variant="body1" sx={{ fontWeight: 600, color: 'primary.main' }}>
                             {formatCurrency(lease.monthlyRent)}
@@ -1075,7 +1081,11 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                           {deletedLeases.map((lease) => (
                             <TableRow key={lease.id} sx={{ opacity: 0.8 }}>
                               <TableCell>{lease.propertyAddress}</TableCell>
-                              <TableCell>{(lease.tenantNames || [lease.tenantName]).filter(Boolean).join(', ')}</TableCell>
+                              <TableCell>
+                                {(lease.tenantNames || [lease.tenantName]).filter(Boolean).map((name, idx) => (
+                                  <Box key={idx}>{name}</Box>
+                                ))}
+                              </TableCell>
                               <TableCell>{lease.startDate} - {lease.endDate}</TableCell>
                               <TableCell>
                                 {lease.deletedAt ? new Date(lease.deletedAt).toLocaleDateString() : '-'}
@@ -1140,9 +1150,11 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                             </IconButton>
                           </Box>
                         </Box>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                          {(lease.tenantNames || [lease.tenantName]).filter(Boolean).join(', ')}
-                        </Typography>
+                        <Box sx={{ mb: 1 }}>
+                          {(lease.tenantNames || [lease.tenantName]).filter(Boolean).map((name, idx) => (
+                            <Typography key={idx} variant="body2" color="text.secondary">{name}</Typography>
+                          ))}
+                        </Box>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <Typography variant="body2" color="text.secondary">
                             {lease.startDate} - {lease.endDate}
