@@ -118,7 +118,7 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
 
   // Filter state
   const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all') // 'all', 'ACTIVE', 'EXPIRED', 'TERMINATED'
+  const [statusFilter, setStatusFilter] = useState('ACTIVE') // 'all', 'ACTIVE', 'EXPIRED', 'TERMINATED'
 
   const adjustmentIndices = useMemo(() => [
     { value: 'ICL', label: t('indexICL') },
