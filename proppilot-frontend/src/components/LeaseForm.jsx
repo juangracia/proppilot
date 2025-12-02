@@ -73,7 +73,7 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
   const [formData, setFormData] = useState({
     propertyUnitId: '',
     tenantIds: [],
-    startDate: null,
+    startDate: new Date(),
     endDate: null,
     monthlyRent: '',
     adjustmentIndex: 'ICL',
@@ -278,7 +278,7 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
         setFormData({
           propertyUnitId: '',
           tenantIds: [],
-          startDate: null,
+          startDate: new Date(),
           endDate: null,
           monthlyRent: '',
           adjustmentIndex: 'ICL',
@@ -803,7 +803,7 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                             setFormData({
                               propertyUnitId: '',
                               tenantIds: [],
-                              startDate: null,
+                              startDate: new Date(),
                               endDate: null,
                               monthlyRent: '',
                               adjustmentIndex: 'ICL',
