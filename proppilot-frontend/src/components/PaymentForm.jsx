@@ -149,8 +149,8 @@ const PaymentForm = memo(function PaymentForm({
 
   // Auto-open detail dialog when initialPaymentId is provided
   useEffect(() => {
-    if (initialPaymentId && payments.length > 0) {
-      const payment = payments.find(p => p.id === initialPaymentId)
+    if (initialPaymentId && transformedPayments.length > 0) {
+      const payment = transformedPayments.find(p => p.id === initialPaymentId)
       if (payment) {
         setSelectedPayment(payment)
         setDetailDialogOpen(true)
@@ -158,7 +158,7 @@ const PaymentForm = memo(function PaymentForm({
         onPaymentViewed?.()
       }
     }
-  }, [initialPaymentId, payments, onPaymentViewed])
+  }, [initialPaymentId, transformedPayments, onPaymentViewed])
 
   // Auto-fill rent amount when lease is selected
   const handleLeaseChange = useCallback((leaseId) => {
@@ -262,9 +262,9 @@ const PaymentForm = memo(function PaymentForm({
     setActiveTab(newValue)
   }, [])
 
-  // Transform and filter payments for display
-  const displayPayments = useMemo(() => {
-    let filtered = payments.map(payment => ({
+  // Transform payments with normalized field names
+  const transformedPayments = useMemo(() => {
+    return payments.map(payment => ({
       ...payment,
       propertyAddress: payment.propertyAddress || 'Unknown',
       tenantNames: payment.tenantNames || [payment.tenantName].filter(Boolean),
@@ -274,6 +274,11 @@ const PaymentForm = memo(function PaymentForm({
       tenantId: payment.tenantId,
       leaseId: payment.leaseIdRef
     }))
+  }, [payments])
+
+  // Filter transformed payments for display
+  const displayPayments = useMemo(() => {
+    let filtered = transformedPayments
 
     // Apply status filter
     if (statusFilter === 'paid') {
@@ -302,7 +307,7 @@ const PaymentForm = memo(function PaymentForm({
     }
 
     return filtered
-  }, [payments, statusFilter, propertyFilter, tenantFilter, searchTerm])
+  }, [transformedPayments, statusFilter, propertyFilter, tenantFilter, searchTerm])
 
   // Get counts for filter tabs
   const statusCounts = useMemo(() => {
