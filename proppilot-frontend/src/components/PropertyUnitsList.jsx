@@ -23,7 +23,8 @@ import {
   List,
   ListItem,
   ListItemText,
-  IconButton
+  IconButton,
+  Autocomplete
 } from '@mui/material'
 import Grid from '@mui/material/Grid'
 import {
@@ -55,6 +56,33 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
 import { useLanguage } from '../contexts/LanguageContext'
 import { API_BASE_URL } from '../config/api'
 import axios from 'axios'
+
+const ARGENTINE_PROVINCES = [
+  'Buenos Aires',
+  'CABA',
+  'Catamarca',
+  'Chaco',
+  'Chubut',
+  'Córdoba',
+  'Corrientes',
+  'Entre Ríos',
+  'Formosa',
+  'Jujuy',
+  'La Pampa',
+  'La Rioja',
+  'Mendoza',
+  'Misiones',
+  'Neuquén',
+  'Río Negro',
+  'Salta',
+  'San Juan',
+  'San Luis',
+  'Santa Cruz',
+  'Santa Fe',
+  'Santiago del Estero',
+  'Tierra del Fuego',
+  'Tucumán'
+]
 
 const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null, onFilterClear, onNavigateToTenant, onNavigateToPayment, initialPropertyId, onPropertyViewed }) {
   const { t, formatCurrency, currency } = useLanguage()
@@ -793,39 +821,21 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
                   sx={{ flex: { sm: 1 } }}
                 />
               </Box>
-              <TextField
-                select
-                label={t('provinceLabel')}
+              <Autocomplete
+                options={ARGENTINE_PROVINCES}
                 value={newProperty.province}
-                onChange={(e) => setNewProperty(prev => ({ ...prev, province: e.target.value }))}
-                fullWidth
-                required
-              >
-                <MenuItem value="Buenos Aires">Buenos Aires</MenuItem>
-                <MenuItem value="CABA">CABA</MenuItem>
-                <MenuItem value="Córdoba">Córdoba</MenuItem>
-                <MenuItem value="Santa Fe">Santa Fe</MenuItem>
-                <MenuItem value="Mendoza">Mendoza</MenuItem>
-                <MenuItem value="Tucumán">Tucumán</MenuItem>
-                <MenuItem value="Entre Ríos">Entre Ríos</MenuItem>
-                <MenuItem value="Salta">Salta</MenuItem>
-                <MenuItem value="Misiones">Misiones</MenuItem>
-                <MenuItem value="Chaco">Chaco</MenuItem>
-                <MenuItem value="Corrientes">Corrientes</MenuItem>
-                <MenuItem value="Santiago del Estero">Santiago del Estero</MenuItem>
-                <MenuItem value="San Juan">San Juan</MenuItem>
-                <MenuItem value="Jujuy">Jujuy</MenuItem>
-                <MenuItem value="Río Negro">Río Negro</MenuItem>
-                <MenuItem value="Neuquén">Neuquén</MenuItem>
-                <MenuItem value="Formosa">Formosa</MenuItem>
-                <MenuItem value="Chubut">Chubut</MenuItem>
-                <MenuItem value="San Luis">San Luis</MenuItem>
-                <MenuItem value="Catamarca">Catamarca</MenuItem>
-                <MenuItem value="La Rioja">La Rioja</MenuItem>
-                <MenuItem value="La Pampa">La Pampa</MenuItem>
-                <MenuItem value="Santa Cruz">Santa Cruz</MenuItem>
-                <MenuItem value="Tierra del Fuego">Tierra del Fuego</MenuItem>
-              </TextField>
+                onChange={(e, newValue) => setNewProperty(prev => ({ ...prev, province: newValue || '' }))}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label={t('provinceLabel')}
+                    required
+                    fullWidth
+                  />
+                )}
+                freeSolo={false}
+                disableClearable
+              />
 
               {/* Property Details */}
               <Typography variant="subtitle2" color="text.secondary" sx={{ mt: 2 }}>
@@ -1237,39 +1247,21 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
                   sx={{ flex: { sm: 1 } }}
                 />
               </Box>
-              <TextField
-                select
-                label={t('provinceLabel')}
+              <Autocomplete
+                options={ARGENTINE_PROVINCES}
                 value={editFormData.province}
-                onChange={(e) => setEditFormData(prev => ({ ...prev, province: e.target.value }))}
-                fullWidth
-                required
-              >
-                <MenuItem value="Buenos Aires">Buenos Aires</MenuItem>
-                <MenuItem value="CABA">CABA</MenuItem>
-                <MenuItem value="Córdoba">Córdoba</MenuItem>
-                <MenuItem value="Santa Fe">Santa Fe</MenuItem>
-                <MenuItem value="Mendoza">Mendoza</MenuItem>
-                <MenuItem value="Tucumán">Tucumán</MenuItem>
-                <MenuItem value="Entre Ríos">Entre Ríos</MenuItem>
-                <MenuItem value="Salta">Salta</MenuItem>
-                <MenuItem value="Misiones">Misiones</MenuItem>
-                <MenuItem value="Chaco">Chaco</MenuItem>
-                <MenuItem value="Corrientes">Corrientes</MenuItem>
-                <MenuItem value="Santiago del Estero">Santiago del Estero</MenuItem>
-                <MenuItem value="San Juan">San Juan</MenuItem>
-                <MenuItem value="Jujuy">Jujuy</MenuItem>
-                <MenuItem value="Río Negro">Río Negro</MenuItem>
-                <MenuItem value="Neuquén">Neuquén</MenuItem>
-                <MenuItem value="Formosa">Formosa</MenuItem>
-                <MenuItem value="Chubut">Chubut</MenuItem>
-                <MenuItem value="San Luis">San Luis</MenuItem>
-                <MenuItem value="Catamarca">Catamarca</MenuItem>
-                <MenuItem value="La Rioja">La Rioja</MenuItem>
-                <MenuItem value="La Pampa">La Pampa</MenuItem>
-                <MenuItem value="Santa Cruz">Santa Cruz</MenuItem>
-                <MenuItem value="Tierra del Fuego">Tierra del Fuego</MenuItem>
-              </TextField>
+                onChange={(e, newValue) => setEditFormData(prev => ({ ...prev, province: newValue || '' }))}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label={t('provinceLabel')}
+                    required
+                    fullWidth
+                  />
+                )}
+                freeSolo={false}
+                disableClearable
+              />
 
               {/* Property Details */}
               <Typography variant="subtitle2" color="text.secondary" sx={{ mt: 2 }}>
