@@ -192,15 +192,17 @@ const DashboardView = memo(({ onNavigate, onNavigateToPayment }) => {
   ], [t, formatCurrency, dashboardStats])
 
   const quickActions = useMemo(() => [
-    { title: t('addProperty'), icon: <Home />, color: 'primary', navigateTo: 1 },
-    { title: t('addNewTenant'), icon: <Add />, color: 'primary', navigateTo: 2 },
-    { title: t('createLease') || 'Crear Contrato', icon: <Description />, color: 'secondary', navigateTo: 3 },
-    { title: t('registerPayment'), icon: <Payment />, color: 'secondary', navigateTo: 4 }
+    { title: t('addProperty'), icon: <Home />, color: 'primary', navigateTo: 1, openAdd: true },
+    { title: t('addNewTenant'), icon: <Add />, color: 'primary', navigateTo: 2, openAdd: true },
+    { title: t('createLease') || 'Crear Contrato', icon: <Description />, color: 'secondary', navigateTo: 3, openAdd: true },
+    { title: t('registerPayment'), icon: <Payment />, color: 'secondary', navigateTo: 4, openAdd: true }
   ], [t])
 
   const handleStatClick = useCallback((stat) => {
     if (stat.navigateTo === 4 && stat.statusFilter && onNavigateToPayment) {
       onNavigateToPayment({ statusFilter: stat.statusFilter })
+    } else if (stat.openAdd) {
+      onNavigate && onNavigate(stat.navigateTo, { openAdd: true })
     } else {
       onNavigate && onNavigate(stat.navigateTo)
     }

@@ -66,7 +66,7 @@ import { useLanguage } from '../contexts/LanguageContext'
 import { API_BASE_URL } from '../config/api'
 import MoneyInput from './MoneyInput'
 
-const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTenant, initialLeaseId, onLeaseViewed }) {
+const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTenant, initialLeaseId, onLeaseViewed, openAddForm, onAddFormOpened }) {
   const { t, formatCurrency, currency, formatNumber } = useLanguage()
   const [activeTab, setActiveTab] = useState(0)
 
@@ -163,6 +163,14 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
       }
     }
   }, [initialLeaseId, leases, onLeaseViewed])
+
+  // Auto-switch to new contract tab when openAddForm is true
+  useEffect(() => {
+    if (openAddForm) {
+      setActiveTab(1) // Tab 1 is "New Contract"
+      onAddFormOpened?.()
+    }
+  }, [openAddForm, onAddFormOpened])
 
   // Fetch payments when a lease is selected for detail view
   useEffect(() => {

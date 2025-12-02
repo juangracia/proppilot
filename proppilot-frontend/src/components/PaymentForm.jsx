@@ -66,7 +66,9 @@ const PaymentForm = memo(function PaymentForm({
   initialStatusFilter,
   initialPropertyFilter,
   initialTenantFilter,
-  onFiltersCleared
+  onFiltersCleared,
+  openAddForm,
+  onAddFormOpened
 }) {
   const { t, formatCurrency, currency } = useLanguage()
   const [activeTab, setActiveTab] = useState(0)
@@ -136,6 +138,14 @@ const PaymentForm = memo(function PaymentForm({
   useEffect(() => {
     if (initialTenantFilter) setTenantFilter(initialTenantFilter)
   }, [initialTenantFilter])
+
+  // Auto-switch to new payment tab when openAddForm is true
+  useEffect(() => {
+    if (openAddForm) {
+      setActiveTab(1) // Tab 1 is "Register Payment"
+      onAddFormOpened?.()
+    }
+  }, [openAddForm, onAddFormOpened])
 
   // Auto-open detail dialog when initialPaymentId is provided
   useEffect(() => {

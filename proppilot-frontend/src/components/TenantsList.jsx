@@ -67,7 +67,7 @@ const isLeaseEndingSoon = (dateStr) => {
   return diffDays <= 30 && diffDays >= 0
 }
 
-const TenantsList = memo(function TenantsList({ onNavigateToProperty, onNavigateToPayment, initialTenantId, onTenantViewed }) {
+const TenantsList = memo(function TenantsList({ onNavigateToProperty, onNavigateToPayment, initialTenantId, onTenantViewed, openAddForm, onAddFormOpened }) {
   const { t, formatCurrency, formatNumber } = useLanguage()
   const isMobile = useMediaQuery('(max-width:600px)')
   const [tenants, setTenants] = useState([])
@@ -93,6 +93,7 @@ const TenantsList = memo(function TenantsList({ onNavigateToProperty, onNavigate
       }
     }
   }, [initialTenantId, tenants, onTenantViewed])
+
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success', action: null })
   const [pendingDelete, setPendingDelete] = useState(null)
   const [formData, setFormData] = useState({
@@ -143,6 +144,14 @@ const TenantsList = memo(function TenantsList({ onNavigateToProperty, onNavigate
     setFormErrors({})
     setDialogOpen(true)
   }, [])
+
+  // Auto-open add dialog when openAddForm is true
+  useEffect(() => {
+    if (openAddForm) {
+      openAddDialog()
+      onAddFormOpened?.()
+    }
+  }, [openAddForm, openAddDialog, onAddFormOpened])
 
   const openEditDialog = useCallback((tenant) => {
     setEditingTenant(tenant)

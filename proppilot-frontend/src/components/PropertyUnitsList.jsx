@@ -85,7 +85,7 @@ const ARGENTINE_PROVINCES = [
   'Tucumán'
 ]
 
-const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null, onFilterClear, onNavigateToTenant, onNavigateToPayment, initialPropertyId, onPropertyViewed }) {
+const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null, onFilterClear, onNavigateToTenant, onNavigateToPayment, initialPropertyId, onPropertyViewed, openAddForm, onAddFormOpened }) {
   const { t, formatCurrency, currency } = useLanguage()
   const [propertyUnits, setPropertyUnits] = useState([])
   const [loading, setLoading] = useState(true)
@@ -180,6 +180,14 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
       }
     }
   }, [initialPropertyId, propertyUnits, onPropertyViewed])
+
+  // Auto-open add dialog when openAddForm is true
+  useEffect(() => {
+    if (openAddForm) {
+      setOpenAddDialog(true)
+      onAddFormOpened?.()
+    }
+  }, [openAddForm, onAddFormOpened])
 
   // Memoize filtered properties
   const filteredProperties = useMemo(() => {

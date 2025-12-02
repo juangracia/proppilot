@@ -64,6 +64,7 @@ function AppContent() {
   const [paymentStatusFilter, setPaymentStatusFilter] = useState(null)
   const [paymentPropertyFilter, setPaymentPropertyFilter] = useState(null)
   const [paymentTenantFilter, setPaymentTenantFilter] = useState(null)
+  const [openAddForm, setOpenAddForm] = useState(false)
   const { t, language } = useLanguage()
   const { user, logout, isAuthenticated, loading } = useAuth()
   const { startTour } = useTour()
@@ -396,8 +397,10 @@ function AppContent() {
     </Box>
   )
 
-  const handleNavigate = useCallback((viewIndex, filter = null) => {
+  const handleNavigate = useCallback((viewIndex, options = {}) => {
+    const { filter = null, openAdd = false } = typeof options === 'object' ? options : { filter: options }
     setPropertyFilter(filter)
+    setOpenAddForm(openAdd)
     setSelectedView(viewIndex)
   }, [])
 
@@ -470,6 +473,8 @@ function AppContent() {
             onNavigateToPayment={handleNavigateToPayment}
             initialPropertyId={selectedPropertyId}
             onPropertyViewed={() => setSelectedPropertyId(null)}
+            openAddForm={openAddForm}
+            onAddFormOpened={() => setOpenAddForm(false)}
           />
         )
       case 2:
@@ -479,6 +484,8 @@ function AppContent() {
             onNavigateToPayment={handleNavigateToPayment}
             initialTenantId={selectedTenantId}
             onTenantViewed={() => setSelectedTenantId(null)}
+            openAddForm={openAddForm}
+            onAddFormOpened={() => setOpenAddForm(false)}
           />
         )
       case 3:
@@ -488,6 +495,8 @@ function AppContent() {
             onNavigateToTenant={handleNavigateToTenant}
             initialLeaseId={selectedLeaseId}
             onLeaseViewed={() => setSelectedLeaseId(null)}
+            openAddForm={openAddForm}
+            onAddFormOpened={() => setOpenAddForm(false)}
           />
         )
       case 4:
@@ -506,12 +515,14 @@ function AppContent() {
               setPaymentPropertyFilter(null)
               setPaymentTenantFilter(null)
             }}
+            openAddForm={openAddForm}
+            onAddFormOpened={() => setOpenAddForm(false)}
           />
         )
       default:
         return <DashboardView onNavigate={handleNavigate} onNavigateToPayment={handleNavigateToPayment} />
     }
-  }, [selectedView, handleNavigate, handleNavigateToTenant, handleNavigateToProperty, handleNavigateToLease, handleNavigateToPayment, selectedPropertyId, selectedTenantId, selectedLeaseId, selectedPaymentId, paymentStatusFilter, paymentPropertyFilter, paymentTenantFilter])
+  }, [selectedView, handleNavigate, handleNavigateToTenant, handleNavigateToProperty, handleNavigateToLease, handleNavigateToPayment, selectedPropertyId, selectedTenantId, selectedLeaseId, selectedPaymentId, paymentStatusFilter, paymentPropertyFilter, paymentTenantFilter, openAddForm])
 
   // Update body theme attribute for CSS-based styling and persist preference
   useEffect(() => {
