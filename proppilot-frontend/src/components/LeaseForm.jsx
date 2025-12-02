@@ -64,6 +64,7 @@ import { format, addYears } from 'date-fns'
 import axios from 'axios'
 import { useLanguage } from '../contexts/LanguageContext'
 import { API_BASE_URL } from '../config/api'
+import MoneyInput from './MoneyInput'
 
 const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTenant, initialLeaseId, onLeaseViewed }) {
   const { t, formatCurrency, currency, formatNumber } = useLanguage()
@@ -712,19 +713,13 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                     </Grid>
 
                     <Grid size={{ xs: 12, md: 6 }}>
-                      <TextField
+                      <MoneyInput
                         label={t('monthlyRent') || 'Alquiler Mensual'}
-                        type="number"
                         value={formData.monthlyRent}
-                        onChange={(e) => setFormData(prev => ({ ...prev, monthlyRent: e.target.value }))}
-                        fullWidth
+                        onChange={(value) => setFormData(prev => ({ ...prev, monthlyRent: value }))}
                         required
                         error={!!validationErrors.monthlyRent}
                         helperText={validationErrors.monthlyRent}
-                        inputProps={{ step: '0.01', min: '0.01' }}
-                        InputProps={{
-                          startAdornment: <Typography sx={{ mr: 1, color: 'text.secondary' }}>{currency}</Typography>
-                        }}
                       />
                     </Grid>
 
@@ -1467,19 +1462,13 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                 <MenuItem value="House">{t('house') || 'Casa'}</MenuItem>
                 <MenuItem value="Commercial">{t('commercial') || 'Comercial'}</MenuItem>
               </TextField>
-              <TextField
+              <MoneyInput
                 label={t('baseRent') || 'Alquiler Base'}
-                type="number"
                 value={newPropertyData.baseRentAmount}
-                onChange={(e) => setNewPropertyData(prev => ({ ...prev, baseRentAmount: e.target.value }))}
-                fullWidth
+                onChange={(value) => setNewPropertyData(prev => ({ ...prev, baseRentAmount: value }))}
                 required
                 error={!!newPropertyErrors.baseRentAmount}
                 helperText={newPropertyErrors.baseRentAmount}
-                inputProps={{ step: '0.01', min: '0.01' }}
-                InputProps={{
-                  startAdornment: <Typography sx={{ mr: 1, color: 'text.secondary' }}>{currency}</Typography>
-                }}
               />
             </Box>
           </DialogContent>

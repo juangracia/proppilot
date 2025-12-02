@@ -56,6 +56,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
 import { useLanguage } from '../contexts/LanguageContext'
 import { API_BASE_URL } from '../config/api'
 import axios from 'axios'
+import MoneyInput from './MoneyInput'
 
 const ARGENTINE_PROVINCES = [
   'Buenos Aires',
@@ -853,17 +854,11 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
                 <MenuItem value="House">{t('house')}</MenuItem>
                 <MenuItem value="Commercial">{t('commercial')}</MenuItem>
               </TextField>
-              <TextField
+              <MoneyInput
                 label={t('baseRentLabel')}
-                type="number"
                 value={newProperty.baseRentAmount}
-                onChange={(e) => setNewProperty(prev => ({ ...prev, baseRentAmount: e.target.value }))}
-                fullWidth
+                onChange={(value) => setNewProperty(prev => ({ ...prev, baseRentAmount: value }))}
                 required
-                placeholder={t('baseRentPlaceholder')}
-                InputProps={{
-                  startAdornment: <InputAdornment position="start">{currency}</InputAdornment>,
-                }}
               />
               <DatePicker
                 label={t('leaseStartLabel')}
@@ -1279,17 +1274,11 @@ const PropertyUnitsList = memo(function PropertyUnitsList({ initialFilter = null
                 <MenuItem value="House">{t('house')}</MenuItem>
                 <MenuItem value="Commercial">{t('commercial')}</MenuItem>
               </TextField>
-              <TextField
+              <MoneyInput
                 label={t('baseRentLabel')}
-                type="number"
                 value={editFormData.baseRentAmount}
-                onChange={(e) => setEditFormData(prev => ({ ...prev, baseRentAmount: e.target.value }))}
-                fullWidth
+                onChange={(value) => setEditFormData(prev => ({ ...prev, baseRentAmount: value }))}
                 required
-                placeholder={t('baseRentPlaceholder')}
-                InputProps={{
-                  startAdornment: <InputAdornment position="start">{currency}</InputAdornment>,
-                }}
               />
               <DatePicker
                 label={t('leaseStartLabel')}

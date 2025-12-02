@@ -55,6 +55,7 @@ import { format } from 'date-fns'
 import axios from 'axios'
 import { useLanguage } from '../contexts/LanguageContext'
 import { API_BASE_URL } from '../config/api'
+import MoneyInput from './MoneyInput'
 
 const PaymentForm = memo(function PaymentForm({
   onNavigateToProperty,
@@ -413,20 +414,13 @@ const PaymentForm = memo(function PaymentForm({
                 </Grid>
 
                 <Grid size={{ xs: 12, md: 6 }}>
-                  <TextField
+                  <MoneyInput
                     label={t('paymentAmountLabel')}
-                    type="number"
                     value={formData.amount}
-                    onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
-                    fullWidth
+                    onChange={(value) => setFormData(prev => ({ ...prev, amount: value }))}
                     required
                     error={!!validationErrors.amount}
                     helperText={validationErrors.amount}
-                    placeholder="0.00"
-                    inputProps={{ step: '0.01', min: '0.01', max: '999999.99' }}
-                    InputProps={{
-                      startAdornment: <Typography sx={{ mr: 1, color: 'text.secondary' }}>{currency}</Typography>
-                    }}
                   />
                   <FormControlLabel
                     control={
