@@ -60,7 +60,7 @@ import {
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
-import { format, addYears } from 'date-fns'
+import { format, addYears, differenceInMonths, parseISO } from 'date-fns'
 import axios from 'axios'
 import { useLanguage } from '../contexts/LanguageContext'
 import { API_BASE_URL } from '../config/api'
@@ -501,15 +501,16 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
     const active = leases.filter(l => l.status === 'ACTIVE').length
     const expired = leases.filter(l => l.status === 'EXPIRED').length
     const terminated = leases.filter(l => l.status === 'TERMINATED').length
-    return { all: leases.length, active, expired, terminated }
-  }, [leases])
+    return { all: leases.length, active, expired, terminated, deleted: deletedLeases.length }
+  }, [leases, deletedLeases])
 
   // Filtered leases
   const filteredLeases = useMemo(() => {
-    let filtered = leases
+    // Use deleted leases when DELETED filter is selected
+    let filtered = statusFilter === 'DELETED' ? deletedLeases : leases
 
-    // Apply status filter
-    if (statusFilter !== 'all') {
+    // Apply status filter (skip for DELETED since we already filtered)
+    if (statusFilter !== 'all' && statusFilter !== 'DELETED') {
       filtered = filtered.filter(l => l.status === statusFilter)
     }
 
@@ -523,9 +524,10 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
     }
 
     return filtered
-  }, [leases, statusFilter, searchQuery])
+  }, [leases, deletedLeases, statusFilter, searchQuery])
 
   const hasActiveFilters = statusFilter !== 'all' || searchQuery.trim() !== ''
+  const isShowingDeleted = statusFilter === 'DELETED'
 
   const clearFilters = useCallback(() => {
     setStatusFilter('all')
@@ -550,6 +552,17 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
     }
   }
 
+  const getLeaseDurationMonths = (startDate, endDate) => {
+    if (!startDate || !endDate) return null
+    try {
+      const start = typeof startDate === 'string' ? parseISO(startDate) : startDate
+      const end = typeof endDate === 'string' ? parseISO(endDate) : endDate
+      return differenceInMonths(end, start)
+    } catch {
+      return null
+    }
+  }
+
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box sx={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
@@ -563,22 +576,6 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
           >
             <Tab label={t('leaseList') || 'Contratos'} sx={{ textTransform: 'none' }} />
             <Tab label={t('newLease') || 'Nuevo Contrato'} sx={{ textTransform: 'none' }} />
-            <Tab
-              label={
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  {t('deletedContractsMenu') || 'Eliminados'}
-                  {deletedLeases.length > 0 && (
-                    <Chip
-                      label={deletedLeases.length}
-                      size="small"
-                      color="error"
-                      sx={{ height: 20, fontSize: '0.7rem' }}
-                    />
-                  )}
-                </Box>
-              }
-              sx={{ textTransform: 'none' }}
-            />
           </Tabs>
 
           {/* Tab 1: Create Lease */}
@@ -890,6 +887,12 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                           iconPosition="start"
                           label={`${t('terminatedLeases') || 'Terminados'} (${filterCounts.terminated})`}
                         />
+                        <Tab
+                          value="DELETED"
+                          icon={<Delete sx={{ fontSize: 16 }} />}
+                          iconPosition="start"
+                          label={`${t('deletedContractsMenu') || 'Eliminados'} (${filterCounts.deleted})`}
+                        />
                       </Tabs>
                       <TextField
                         size="small"
@@ -955,8 +958,17 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                             <TableCell>{t('propertyInfo') || 'Propiedad'}</TableCell>
                             <TableCell>{t('tenant')}</TableCell>
                             <TableCell>{t('leasePeriod') || 'Período'}</TableCell>
-                            <TableCell>{t('monthlyRent') || 'Alquiler'}</TableCell>
-                            <TableCell>{t('status')}</TableCell>
+                            {isShowingDeleted ? (
+                              <>
+                                <TableCell>{t('deletedAt') || 'Eliminado'}</TableCell>
+                                <TableCell align="center">{t('actions')}</TableCell>
+                              </>
+                            ) : (
+                              <>
+                                <TableCell>{t('monthlyRent') || 'Alquiler'}</TableCell>
+                                <TableCell>{t('status')}</TableCell>
+                              </>
+                            )}
                           </TableRow>
                         </TableHead>
                         <TableBody>
@@ -964,8 +976,8 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                             <TableRow
                               key={lease.id}
                               hover
-                              onClick={() => { setSelectedLease(lease); setDetailDialogOpen(true) }}
-                              sx={{ cursor: 'pointer' }}
+                              onClick={() => !isShowingDeleted && setSelectedLease(lease) && setDetailDialogOpen(true)}
+                              sx={{ cursor: isShowingDeleted ? 'default' : 'pointer', opacity: isShowingDeleted ? 0.8 : 1 }}
                             >
                               <TableCell>{lease.propertyAddress}</TableCell>
                               <TableCell>
@@ -973,15 +985,55 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                                   <Box key={idx}>{name}</Box>
                                 ))}
                               </TableCell>
-                              <TableCell>{lease.startDate} - {lease.endDate}</TableCell>
-                              <TableCell sx={{ fontWeight: 500 }}>{formatCurrency(lease.monthlyRent)}</TableCell>
                               <TableCell>
-                                <Chip
-                                  label={getStatusLabel(lease.status)}
-                                  size="small"
-                                  color={getStatusColor(lease.status)}
-                                />
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                                  <Typography variant="body2">{lease.startDate}</Typography>
+                                  <Typography variant="body2">{lease.endDate}</Typography>
+                                  {getLeaseDurationMonths(lease.startDate, lease.endDate) !== null && (
+                                    <Typography variant="caption" color="text.secondary">
+                                      {getLeaseDurationMonths(lease.startDate, lease.endDate)} {t('months') || 'meses'}
+                                    </Typography>
+                                  )}
+                                </Box>
                               </TableCell>
+                              {isShowingDeleted ? (
+                                <>
+                                  <TableCell>
+                                    {lease.deletedAt ? new Date(lease.deletedAt).toLocaleDateString() : '-'}
+                                  </TableCell>
+                                  <TableCell align="center">
+                                    <Tooltip title={t('restoreLease') || 'Restaurar'}>
+                                      <IconButton
+                                        color="primary"
+                                        onClick={(e) => { e.stopPropagation(); openRestoreDialog(lease) }}
+                                        size="small"
+                                      >
+                                        <Restore />
+                                      </IconButton>
+                                    </Tooltip>
+                                    <Tooltip title={t('permanentlyDelete') || 'Eliminar permanentemente'}>
+                                      <IconButton
+                                        color="error"
+                                        onClick={(e) => { e.stopPropagation(); openPermanentDeleteDialog(lease) }}
+                                        size="small"
+                                      >
+                                        <DeleteForever />
+                                      </IconButton>
+                                    </Tooltip>
+                                  </TableCell>
+                                </>
+                              ) : (
+                                <>
+                                  <TableCell sx={{ fontWeight: 500 }}>{formatCurrency(lease.monthlyRent)}</TableCell>
+                                  <TableCell>
+                                    <Chip
+                                      label={getStatusLabel(lease.status)}
+                                      size="small"
+                                      color={getStatusColor(lease.status)}
+                                    />
+                                  </TableCell>
+                                </>
+                              )}
                             </TableRow>
                           ))}
                         </TableBody>
@@ -994,23 +1046,44 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                       <Paper
                         key={lease.id}
                         variant="outlined"
-                        onClick={() => { setSelectedLease(lease); setDetailDialogOpen(true) }}
+                        onClick={() => !isShowingDeleted && setSelectedLease(lease) && setDetailDialogOpen(true)}
                         sx={{
                           p: 2,
                           mb: 2,
-                          cursor: 'pointer',
-                          '&:hover': { boxShadow: 2 }
+                          cursor: isShowingDeleted ? 'default' : 'pointer',
+                          opacity: isShowingDeleted ? 0.9 : 1,
+                          bgcolor: isShowingDeleted ? 'action.hover' : 'background.paper',
+                          '&:hover': { boxShadow: isShowingDeleted ? 0 : 2 }
                         }}
                       >
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
                           <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
                             {lease.propertyAddress}
                           </Typography>
-                          <Chip
-                            label={getStatusLabel(lease.status)}
-                            size="small"
-                            color={getStatusColor(lease.status)}
-                          />
+                          {isShowingDeleted ? (
+                            <Box sx={{ display: 'flex', gap: 0.5 }}>
+                              <IconButton
+                                color="primary"
+                                onClick={(e) => { e.stopPropagation(); openRestoreDialog(lease) }}
+                                size="small"
+                              >
+                                <Restore fontSize="small" />
+                              </IconButton>
+                              <IconButton
+                                color="error"
+                                onClick={(e) => { e.stopPropagation(); openPermanentDeleteDialog(lease) }}
+                                size="small"
+                              >
+                                <DeleteForever fontSize="small" />
+                              </IconButton>
+                            </Box>
+                          ) : (
+                            <Chip
+                              label={getStatusLabel(lease.status)}
+                              size="small"
+                              color={getStatusColor(lease.status)}
+                            />
+                          )}
                         </Box>
                         <Box sx={{ mb: 1 }}>
                           {(lease.tenantNames || [lease.tenantName]).filter(Boolean).map((name, idx) => (
@@ -1018,158 +1091,39 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                           ))}
                         </Box>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <Typography variant="body1" sx={{ fontWeight: 600, color: 'primary.main' }}>
-                            {formatCurrency(lease.monthlyRent)}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            {lease.startDate} - {lease.endDate}
-                          </Typography>
-                        </Box>
-                      </Paper>
-                    ))}
-                  </Box>
-                </>
-              )}
-                </>
-              )}
-            </Box>
-          )}
-
-          {/* Tab 2: Deleted Contracts */}
-          {activeTab === 2 && (
-            <Box>
-              {initialLoading ? (
-                <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
-                  <CircularProgress />
-                </Box>
-              ) : deletedLeases.length === 0 ? (
-                <Paper
-                  sx={{
-                    p: 4,
-                    textAlign: 'center',
-                    bgcolor: 'background.default',
-                    border: '2px dashed',
-                    borderColor: 'divider'
-                  }}
-                >
-                  <Delete sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
-                  <Typography variant="h6" color="text.secondary" gutterBottom>
-                    {t('noDeletedContracts') || 'No hay contratos eliminados'}
-                  </Typography>
-                  <Typography variant="body2" color="text.disabled">
-                    {t('noDeletedContractsDesc') || 'Los contratos eliminados aparecerán aquí'}
-                  </Typography>
-                </Paper>
-              ) : (
-                <>
-                  <Alert severity="info" sx={{ mb: 3 }}>
-                    {t('deletedContractsInfo') || 'Estos contratos han sido eliminados pero pueden ser restaurados o eliminados permanentemente.'}
-                  </Alert>
-                  <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
-                    <TableContainer>
-                      <Table>
-                        <TableHead>
-                          <TableRow>
-                            <TableCell>{t('propertyInfo') || 'Propiedad'}</TableCell>
-                            <TableCell>{t('tenant')}</TableCell>
-                            <TableCell>{t('leasePeriod') || 'Período'}</TableCell>
-                            <TableCell>{t('deletedAt') || 'Eliminado'}</TableCell>
-                            <TableCell align="center">{t('actions')}</TableCell>
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {deletedLeases.map((lease) => (
-                            <TableRow key={lease.id} sx={{ opacity: 0.8 }}>
-                              <TableCell>{lease.propertyAddress}</TableCell>
-                              <TableCell>
-                                {(lease.tenantNames || [lease.tenantName]).filter(Boolean).map((name, idx) => (
-                                  <Box key={idx}>{name}</Box>
-                                ))}
-                              </TableCell>
-                              <TableCell>{lease.startDate} - {lease.endDate}</TableCell>
-                              <TableCell>
-                                {lease.deletedAt ? new Date(lease.deletedAt).toLocaleDateString() : '-'}
-                              </TableCell>
-                              <TableCell align="center">
-                                <Tooltip title={t('restoreLease') || 'Restaurar'}>
-                                  <IconButton
-                                    color="primary"
-                                    onClick={() => openRestoreDialog(lease)}
-                                    size="small"
-                                  >
-                                    <Restore />
-                                  </IconButton>
-                                </Tooltip>
-                                <Tooltip title={t('permanentlyDelete') || 'Eliminar permanentemente'}>
-                                  <IconButton
-                                    color="error"
-                                    onClick={() => openPermanentDeleteDialog(lease)}
-                                    size="small"
-                                  >
-                                    <DeleteForever />
-                                  </IconButton>
-                                </Tooltip>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </TableContainer>
-                  </Box>
-
-                  <Box sx={{ display: { xs: 'block', sm: 'none' } }}>
-                    {deletedLeases.map((lease) => (
-                      <Paper
-                        key={lease.id}
-                        variant="outlined"
-                        sx={{
-                          p: 2,
-                          mb: 2,
-                          opacity: 0.9,
-                          bgcolor: 'action.hover'
-                        }}
-                      >
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                            {lease.propertyAddress}
-                          </Typography>
-                          <Box sx={{ display: 'flex', gap: 0.5 }}>
-                            <IconButton
-                              color="primary"
-                              onClick={() => openRestoreDialog(lease)}
-                              size="small"
-                            >
-                              <Restore fontSize="small" />
-                            </IconButton>
-                            <IconButton
-                              color="error"
-                              onClick={() => openPermanentDeleteDialog(lease)}
-                              size="small"
-                            >
-                              <DeleteForever fontSize="small" />
-                            </IconButton>
+                          {isShowingDeleted ? (
+                            <Typography variant="caption" color="text.disabled">
+                              {t('deletedAt')}: {lease.deletedAt ? new Date(lease.deletedAt).toLocaleDateString() : '-'}
+                            </Typography>
+                          ) : (
+                            <Typography variant="body1" sx={{ fontWeight: 600, color: 'primary.main' }}>
+                              {formatCurrency(lease.monthlyRent)}
+                            </Typography>
+                          )}
+                          <Box sx={{ textAlign: 'right' }}>
+                            <Typography variant="body2" color="text.secondary">
+                              {lease.startDate}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {lease.endDate}
+                            </Typography>
+                            {getLeaseDurationMonths(lease.startDate, lease.endDate) !== null && (
+                              <Typography variant="caption" color="text.disabled">
+                                {getLeaseDurationMonths(lease.startDate, lease.endDate)} {t('months') || 'meses'}
+                              </Typography>
+                            )}
                           </Box>
                         </Box>
-                        <Box sx={{ mb: 1 }}>
-                          {(lease.tenantNames || [lease.tenantName]).filter(Boolean).map((name, idx) => (
-                            <Typography key={idx} variant="body2" color="text.secondary">{name}</Typography>
-                          ))}
-                        </Box>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <Typography variant="body2" color="text.secondary">
-                            {lease.startDate} - {lease.endDate}
-                          </Typography>
-                          <Typography variant="caption" color="text.disabled">
-                            {t('deletedAt')}: {lease.deletedAt ? new Date(lease.deletedAt).toLocaleDateString() : '-'}
-                          </Typography>
-                        </Box>
                       </Paper>
                     ))}
                   </Box>
                 </>
               )}
+                </>
+              )}
             </Box>
           )}
+
         </Paper>
 
         {/* Lease Detail Dialog */}
