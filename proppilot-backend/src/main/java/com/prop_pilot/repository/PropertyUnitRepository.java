@@ -24,4 +24,10 @@ public interface PropertyUnitRepository extends JpaRepository<PropertyUnit, Long
            "LEFT JOIN FETCH pu.leases l " +
            "WHERE pu.owner.id = :ownerId")
     List<PropertyUnit> findByOwnerIdWithLeases(@Param("ownerId") Long ownerId);
+
+    @Query("SELECT DISTINCT pu FROM PropertyUnit pu " +
+           "LEFT JOIN FETCH pu.leases l " +
+           "LEFT JOIN FETCH l.payments " +
+           "WHERE pu.owner.id = :ownerId")
+    List<PropertyUnit> findByOwnerIdWithLeasesAndPayments(@Param("ownerId") Long ownerId);
 }
