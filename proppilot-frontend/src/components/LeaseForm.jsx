@@ -34,7 +34,9 @@ import {
   ListItemText,
   Divider,
   Checkbox,
-  OutlinedInput
+  OutlinedInput,
+  ToggleButtonGroup,
+  ToggleButton
 } from '@mui/material'
 import Grid from '@mui/material/Grid'
 import {
@@ -60,7 +62,7 @@ import {
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
-import { format, addYears } from 'date-fns'
+import { format, addYears, addMonths } from 'date-fns'
 import axios from 'axios'
 import { useLanguage } from '../contexts/LanguageContext'
 import { API_BASE_URL } from '../config/api'
@@ -74,11 +76,13 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
     propertyUnitId: '',
     tenantIds: [],
     startDate: new Date(),
-    endDate: null,
+    endDate: addYears(new Date(), 2),
     monthlyRent: '',
     adjustmentIndex: 'ICL',
     adjustmentFrequencyMonths: 12
   })
+
+  const [selectedPeriod, setSelectedPeriod] = useState(24)
 
   const [validationErrors, setValidationErrors] = useState({})
   const [propertyUnits, setPropertyUnits] = useState([])
@@ -124,6 +128,14 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
     { value: 'ICL', label: t('indexICL') },
     { value: 'IPC', label: t('indexIPC') },
     { value: 'NONE', label: t('indexFixed') }
+  ], [t])
+
+  const periodOptions = useMemo(() => [
+    { value: 6, label: t('sixMonths') },
+    { value: 12, label: t('oneYear') },
+    { value: 24, label: t('twoYears') },
+    { value: 36, label: t('threeYears') },
+    { value: 'custom', label: t('customPeriod') }
   ], [t])
 
   const fetchData = useCallback(async () => {
@@ -204,11 +216,33 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
   }, [propertyUnits])
 
   const handleStartDateChange = useCallback((date) => {
-    setFormData(prev => ({
-      ...prev,
-      startDate: date,
-      endDate: date ? addYears(date, 1) : prev.endDate
-    }))
+    setFormData(prev => {
+      let newEndDate = prev.endDate
+      if (date && selectedPeriod !== 'custom') {
+        newEndDate = addMonths(date, selectedPeriod)
+      }
+      return {
+        ...prev,
+        startDate: date,
+        endDate: newEndDate
+      }
+    })
+  }, [selectedPeriod])
+
+  const handlePeriodChange = useCallback((event, newPeriod) => {
+    if (newPeriod === null) return
+    setSelectedPeriod(newPeriod)
+    if (newPeriod !== 'custom' && formData.startDate) {
+      setFormData(prev => ({
+        ...prev,
+        endDate: addMonths(prev.startDate, newPeriod)
+      }))
+    }
+  }, [formData.startDate])
+
+  const handleEndDateChange = useCallback((date) => {
+    setSelectedPeriod('custom')
+    setFormData(prev => ({ ...prev, endDate: date }))
   }, [])
 
   const validateForm = useCallback(() => {
@@ -283,11 +317,12 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
       if (response.status === 201) {
         setSuccess(t('leaseCreatedSuccess') || 'Contrato creado exitosamente')
         setLeases(prev => [response.data, ...prev])
+        setSelectedPeriod(24)
         setFormData({
           propertyUnitId: '',
           tenantIds: [],
           startDate: new Date(),
-          endDate: null,
+          endDate: addYears(new Date(), 2),
           monthlyRent: '',
           adjustmentIndex: 'ICL',
           adjustmentFrequencyMonths: 12
@@ -685,6 +720,34 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                       </Box>
                     </Grid>
 
+                    <Grid size={{ xs: 12 }}>
+                      <Box sx={{ mb: 1 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                          {t('leaseDuration')}
+                        </Typography>
+                        <ToggleButtonGroup
+                          value={selectedPeriod}
+                          exclusive
+                          onChange={handlePeriodChange}
+                          size="small"
+                          sx={{
+                            flexWrap: 'wrap',
+                            '& .MuiToggleButton-root': {
+                              px: { xs: 1.5, sm: 2 },
+                              py: 0.75,
+                              textTransform: 'none'
+                            }
+                          }}
+                        >
+                          {periodOptions.map((option) => (
+                            <ToggleButton key={option.value} value={option.value}>
+                              {option.label}
+                            </ToggleButton>
+                          ))}
+                        </ToggleButtonGroup>
+                      </Box>
+                    </Grid>
+
                     <Grid size={{ xs: 12, md: 6 }}>
                       <DatePicker
                         label={t('startDate') || 'Fecha de Inicio'}
@@ -705,7 +768,7 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                       <DatePicker
                         label={t('endDate') || 'Fecha de Fin'}
                         value={formData.endDate}
-                        onChange={(date) => setFormData(prev => ({ ...prev, endDate: date }))}
+                        onChange={handleEndDateChange}
                         minDate={formData.startDate}
                         slotProps={{
                           textField: {
@@ -806,11 +869,12 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                           type="button"
                           variant="outlined"
                           onClick={() => {
+                            setSelectedPeriod(24)
                             setFormData({
                               propertyUnitId: '',
                               tenantIds: [],
                               startDate: new Date(),
-                              endDate: null,
+                              endDate: addYears(new Date(), 2),
                               monthlyRent: '',
                               adjustmentIndex: 'ICL',
                               adjustmentFrequencyMonths: 12
