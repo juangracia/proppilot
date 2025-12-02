@@ -34,6 +34,7 @@ public class DatabaseMigrationRunner {
         try (Connection conn = dataSource.getConnection()) {
             addDeletedColumnIfNotExists(conn);
             addDeletedAtColumnIfNotExists(conn);
+            makeTenantIdNullable(conn);
             log.info("Database migrations completed successfully");
         } catch (Exception e) {
             log.error("Database migration failed", e);
@@ -65,6 +66,16 @@ public class DatabaseMigrationRunner {
             } else {
                 log.info("'deleted_at' column already exists in leases table");
             }
+        }
+    }
+
+    private void makeTenantIdNullable(Connection conn) throws Exception {
+        log.info("Making tenant_id column nullable (multi-tenant support migration)");
+        try (Statement stmt = conn.createStatement()) {
+            stmt.execute("ALTER TABLE leases ALTER COLUMN tenant_id DROP NOT NULL");
+            log.info("tenant_id column is now nullable");
+        } catch (Exception e) {
+            log.info("tenant_id column already nullable or doesn't exist: " + e.getMessage());
         }
     }
 }
