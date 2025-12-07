@@ -147,6 +147,20 @@ const PaymentForm = memo(function PaymentForm({
     }
   }, [openAddForm, onAddFormOpened])
 
+  // Transform payments with normalized field names
+  const transformedPayments = useMemo(() => {
+    return payments.map(payment => ({
+      ...payment,
+      propertyAddress: payment.propertyAddress || 'Unknown',
+      tenantNames: payment.tenantNames || [payment.tenantName].filter(Boolean),
+      tenantName: (payment.tenantNames || [payment.tenantName]).filter(Boolean).join(', ') || 'Sin inquilino',
+      propertyId: payment.propertyUnitId,
+      tenantIds: payment.tenantIds || [payment.tenantId].filter(Boolean),
+      tenantId: payment.tenantId,
+      leaseId: payment.leaseIdRef
+    }))
+  }, [payments])
+
   // Auto-open detail dialog when initialPaymentId is provided
   useEffect(() => {
     if (initialPaymentId && transformedPayments.length > 0) {
@@ -261,20 +275,6 @@ const PaymentForm = memo(function PaymentForm({
   const handleTabChange = useCallback((e, newValue) => {
     setActiveTab(newValue)
   }, [])
-
-  // Transform payments with normalized field names
-  const transformedPayments = useMemo(() => {
-    return payments.map(payment => ({
-      ...payment,
-      propertyAddress: payment.propertyAddress || 'Unknown',
-      tenantNames: payment.tenantNames || [payment.tenantName].filter(Boolean),
-      tenantName: (payment.tenantNames || [payment.tenantName]).filter(Boolean).join(', ') || 'Sin inquilino',
-      propertyId: payment.propertyUnitId,
-      tenantIds: payment.tenantIds || [payment.tenantId].filter(Boolean),
-      tenantId: payment.tenantId,
-      leaseId: payment.leaseIdRef
-    }))
-  }, [payments])
 
   // Filter transformed payments for display
   const displayPayments = useMemo(() => {
