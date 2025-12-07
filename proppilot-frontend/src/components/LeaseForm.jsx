@@ -127,6 +127,9 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
   const adjustmentIndices = useMemo(() => [
     { value: 'ICL', label: t('indexICL') },
     { value: 'IPC', label: t('indexIPC') },
+    { value: 'DOLAR_BLUE', label: t('indexDolarBlue') },
+    { value: 'DOLAR_OFICIAL', label: t('indexDolarOficial') },
+    { value: 'DOLAR_MEP', label: t('indexDolarMep') },
     { value: 'NONE', label: t('indexFixed') }
   ], [t])
 

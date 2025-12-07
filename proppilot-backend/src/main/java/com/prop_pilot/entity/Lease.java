@@ -157,8 +157,11 @@ public class Lease {
     }
 
     public enum AdjustmentIndex {
-        ICL,    // Índice para Contratos de Locación (Argentina)
-        IPC,    // Índice de Precios al Consumidor
-        NONE    // Sin ajuste (monto fijo)
+        ICL,            // Índice para Contratos de Locación (Argentina)
+        IPC,            // Índice de Precios al Consumidor
+        DOLAR_BLUE,     // Dólar Blue (informal market rate)
+        DOLAR_OFICIAL,  // Dólar Oficial (official exchange rate)
+        DOLAR_MEP,      // Dólar MEP (stock market exchange rate)
+        NONE            // Sin ajuste (monto fijo)
     }
 }
