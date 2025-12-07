@@ -394,10 +394,10 @@ const DashboardView = memo(({ onNavigate, onNavigateToPayment }) => {
               >
                 <Box>
                   <Typography sx={{ fontWeight: 500, fontSize: { xs: '0.875rem', sm: '1rem' } }}>
-                    {contract.tenantName || 'Inquilino'}
+                    {contract.tenantName || t('noTenantAssigned') || 'Sin asignar'}
                   </Typography>
                   <Typography sx={{ opacity: 0.8, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                    {contract.propertyAddress || 'Propiedad'}
+                    {contract.propertyAddress || t('unknownProperty') || 'Propiedad'}
                   </Typography>
                 </Box>
                 <Chip
