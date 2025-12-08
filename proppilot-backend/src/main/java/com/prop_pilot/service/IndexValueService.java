@@ -27,4 +27,17 @@ public interface IndexValueService {
     void refreshIndicesForCountry(String countryCode);
 
     IndexValue saveIndexValue(IndexValue indexValue);
+
+    /**
+     * Import all historical data for all indices.
+     * Used for initial data population.
+     */
+    void importAllHistoricalData();
+
+    /**
+     * Calculate the annual percentage change for an index.
+     * For ICL: (current / year_ago - 1) * 100
+     * For IPC: accumulated inflation over the last 12 months
+     */
+    BigDecimal calculateAnnualPercentageChange(String countryCode, IndexType indexType);
 }

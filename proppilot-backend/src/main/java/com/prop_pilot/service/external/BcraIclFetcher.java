@@ -46,6 +46,16 @@ public class BcraIclFetcher implements ExternalIndexFetcher {
 
     @Override
     public List<IndexValue> fetchLatestValues() {
+        List<IndexValue> allValues = fetchAllHistoricalValues();
+        if (allValues.isEmpty()) {
+            return allValues;
+        }
+        // Return only the latest value
+        return List.of(allValues.get(allValues.size() - 1));
+    }
+
+    @Override
+    public List<IndexValue> fetchAllHistoricalValues() {
         List<IndexValue> results = new ArrayList<>();
 
         try {
@@ -65,10 +75,6 @@ public class BcraIclFetcher implements ExternalIndexFetcher {
                     return results;
                 }
 
-                // Find the last row with data (ICL values are typically in a two-column format: date, value)
-                LocalDate latestDate = null;
-                BigDecimal latestValue = null;
-
                 // Start from row 3 (0-indexed row 2) to skip headers
                 for (int rowNum = 2; rowNum <= sheet.getLastRowNum(); rowNum++) {
                     Row row = sheet.getRow(rowNum);
@@ -83,26 +89,20 @@ public class BcraIclFetcher implements ExternalIndexFetcher {
                     BigDecimal value = extractNumeric(valueCell);
 
                     if (date != null && value != null) {
-                        if (latestDate == null || date.isAfter(latestDate)) {
-                            latestDate = date;
-                            latestValue = value;
-                        }
+                        IndexValue indexValue = IndexValue.builder()
+                            .indexType(IndexType.ICL)
+                            .countryCode(getCountryCode())
+                            .valueDate(date)
+                            .value(value)
+                            .source(SOURCE)
+                            .build();
+                        results.add(indexValue);
                     }
                 }
 
-                if (latestDate != null && latestValue != null) {
-                    IndexValue indexValue = IndexValue.builder()
-                        .indexType(IndexType.ICL)
-                        .countryCode(getCountryCode())
-                        .valueDate(latestDate)
-                        .value(latestValue)
-                        .source(SOURCE)
-                        .rawResponse("Excel row - date: " + latestDate + ", value: " + latestValue)
-                        .build();
-
-                    results.add(indexValue);
-                    log.info("Fetched ICL = {} for date {}", latestValue, latestDate);
-                }
+                // Sort by date ascending
+                results.sort((a, b) -> a.getValueDate().compareTo(b.getValueDate()));
+                log.info("Fetched {} ICL historical values from BCRA Excel", results.size());
             }
         } catch (Exception e) {
             log.error("Error fetching ICL from BCRA Excel: {}", e.getMessage(), e);

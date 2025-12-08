@@ -143,4 +143,91 @@ public class IndexValueServiceImpl implements IndexValueService {
                 indexValue.getIndexType(), indexValue.getCountryCode(), indexValue.getValueDate());
         }
     }
+
+    @Override
+    @Transactional
+    public void importAllHistoricalData() {
+        log.info("Starting import of all historical index data...");
+
+        for (ExternalIndexFetcher fetcher : fetchers) {
+            try {
+                List<IndexValue> values = fetcher.fetchAllHistoricalValues();
+                int imported = 0;
+                for (IndexValue value : values) {
+                    boolean exists = indexValueRepository.existsByIndexTypeAndCountryCodeAndValueDate(
+                        value.getIndexType(),
+                        value.getCountryCode(),
+                        value.getValueDate()
+                    );
+                    if (!exists) {
+                        indexValueRepository.save(value);
+                        imported++;
+                    }
+                }
+                log.info("Imported {} new values from {} (fetched {} total)",
+                    imported, fetcher.getClass().getSimpleName(), values.size());
+            } catch (Exception e) {
+                log.error("Error importing historical data from {}: {}",
+                    fetcher.getClass().getSimpleName(), e.getMessage(), e);
+            }
+        }
+
+        log.info("Finished importing all historical index data");
+    }
+
+    @Override
+    public BigDecimal calculateAnnualPercentageChange(String countryCode, IndexType indexType) {
+        if (indexType == IndexType.NONE) {
+            return BigDecimal.ZERO;
+        }
+
+        LocalDate now = LocalDate.now();
+        LocalDate oneYearAgo = now.minusYears(1);
+
+        if (indexType == IndexType.IPC) {
+            // For IPC, calculate accumulated inflation over last 12 months
+            // Formula: ((1 + m1/100) * (1 + m2/100) * ... * (1 + m12/100) - 1) * 100
+            List<IndexValue> history = getHistory(countryCode, indexType, oneYearAgo, now);
+            if (history.isEmpty()) {
+                log.warn("No IPC history found for annual change calculation");
+                return BigDecimal.ZERO;
+            }
+
+            BigDecimal accumulated = BigDecimal.ONE;
+            for (IndexValue value : history) {
+                // IPC values are monthly percentage (e.g., 2.3 means 2.3%)
+                BigDecimal factor = BigDecimal.ONE.add(
+                    value.getValue().divide(BigDecimal.valueOf(100), 6, RoundingMode.HALF_UP)
+                );
+                accumulated = accumulated.multiply(factor);
+            }
+
+            // Convert to percentage: (accumulated - 1) * 100
+            return accumulated.subtract(BigDecimal.ONE)
+                .multiply(BigDecimal.valueOf(100))
+                .setScale(2, RoundingMode.HALF_UP);
+        } else {
+            // For ICL, DOLAR_*, CER, UVA etc: (current / year_ago - 1) * 100
+            Optional<IndexValue> currentValue = getLatestValue(countryCode, indexType);
+            Optional<IndexValue> yearAgoValue = getClosestValue(countryCode, indexType, oneYearAgo);
+
+            if (currentValue.isEmpty() || yearAgoValue.isEmpty()) {
+                log.warn("Cannot calculate annual change: missing values for {}", indexType);
+                return BigDecimal.ZERO;
+            }
+
+            BigDecimal current = currentValue.get().getValue();
+            BigDecimal yearAgo = yearAgoValue.get().getValue();
+
+            if (yearAgo.compareTo(BigDecimal.ZERO) == 0) {
+                return BigDecimal.ZERO;
+            }
+
+            // (current / yearAgo - 1) * 100
+            return current.divide(yearAgo, 6, RoundingMode.HALF_UP)
+                .subtract(BigDecimal.ONE)
+                .multiply(BigDecimal.valueOf(100))
+                .setScale(2, RoundingMode.HALF_UP);
+        }
+    }
 }

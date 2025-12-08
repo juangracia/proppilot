@@ -148,6 +148,45 @@ public class IndexController {
         return ResponseEntity.ok(Map.of("status", "Refresh completed for " + countryCode.toUpperCase()));
     }
 
+    @PostMapping("/import-historical")
+    @Operation(summary = "Import all historical data", description = "Imports all historical index values from external sources (one-time use)")
+    @ApiResponse(responseCode = "200", description = "Import completed successfully")
+    public ResponseEntity<Map<String, String>> importHistoricalData() {
+        indexValueService.importAllHistoricalData();
+        return ResponseEntity.ok(Map.of("status", "Historical data import completed"));
+    }
+
+    @GetMapping("/{countryCode}/{type}/annual-change")
+    @Operation(summary = "Get annual percentage change", description = "Returns the annual percentage change for an index (like ARquiler displays)")
+    @ApiResponse(responseCode = "200", description = "Successfully calculated annual change")
+    public ResponseEntity<Map<String, Object>> getAnnualChange(
+            @PathVariable String countryCode,
+            @PathVariable IndexType type) {
+
+        BigDecimal annualChange = indexValueService.calculateAnnualPercentageChange(countryCode.toUpperCase(), type);
+
+        return ResponseEntity.ok(Map.of(
+            "country", countryCode.toUpperCase(),
+            "indexType", type,
+            "annualChangePercent", annualChange
+        ));
+    }
+
+    @GetMapping("/{countryCode}/all/annual-changes")
+    @Operation(summary = "Get all annual percentage changes", description = "Returns the annual percentage changes for all indices in a country")
+    @ApiResponse(responseCode = "200", description = "Successfully calculated all annual changes")
+    public ResponseEntity<List<Map<String, Object>>> getAllAnnualChanges(@PathVariable String countryCode) {
+        List<Map<String, Object>> results = List.of(
+            Map.of("indexType", IndexType.ICL, "annualChangePercent", indexValueService.calculateAnnualPercentageChange(countryCode, IndexType.ICL)),
+            Map.of("indexType", IndexType.IPC, "annualChangePercent", indexValueService.calculateAnnualPercentageChange(countryCode, IndexType.IPC)),
+            Map.of("indexType", IndexType.DOLAR_OFICIAL, "annualChangePercent", indexValueService.calculateAnnualPercentageChange(countryCode, IndexType.DOLAR_OFICIAL)),
+            Map.of("indexType", IndexType.DOLAR_BLUE, "annualChangePercent", indexValueService.calculateAnnualPercentageChange(countryCode, IndexType.DOLAR_BLUE)),
+            Map.of("indexType", IndexType.DOLAR_MEP, "annualChangePercent", indexValueService.calculateAnnualPercentageChange(countryCode, IndexType.DOLAR_MEP))
+        );
+
+        return ResponseEntity.ok(results);
+    }
+
     private IndexValueDto toDto(IndexValue entity) {
         return IndexValueDto.builder()
             .id(entity.getId())

@@ -38,6 +38,16 @@ public class ArgentinaDatosIpcFetcher implements ExternalIndexFetcher {
 
     @Override
     public List<IndexValue> fetchLatestValues() {
+        List<IndexValue> allValues = fetchAllHistoricalValues();
+        if (allValues.isEmpty()) {
+            return allValues;
+        }
+        // Return only the latest value
+        return List.of(allValues.get(allValues.size() - 1));
+    }
+
+    @Override
+    public List<IndexValue> fetchAllHistoricalValues() {
         List<IndexValue> results = new ArrayList<>();
 
         try {
@@ -49,22 +59,21 @@ public class ArgentinaDatosIpcFetcher implements ExternalIndexFetcher {
                 .block();
 
             if (responses != null && !responses.isEmpty()) {
-                // Get the latest value (API returns sorted by date ascending - oldest first)
-                IpcResponse latest = responses.get(responses.size() - 1);
-
-                if (latest.getFecha() != null && latest.getValor() != null) {
-                    IndexValue indexValue = IndexValue.builder()
-                        .indexType(IndexType.IPC)
-                        .countryCode(getCountryCode())
-                        .valueDate(latest.getFecha())
-                        .value(latest.getValor())
-                        .source(SOURCE)
-                        .rawResponse(latest.toString())
-                        .build();
-
-                    results.add(indexValue);
-                    log.info("Fetched IPC = {} for date {}", latest.getValor(), latest.getFecha());
+                for (IpcResponse response : responses) {
+                    if (response.getFecha() != null && response.getValor() != null) {
+                        IndexValue indexValue = IndexValue.builder()
+                            .indexType(IndexType.IPC)
+                            .countryCode(getCountryCode())
+                            .valueDate(response.getFecha())
+                            .value(response.getValor())
+                            .source(SOURCE)
+                            .build();
+                        results.add(indexValue);
+                    }
                 }
+                // Sort by date ascending
+                results.sort((a, b) -> a.getValueDate().compareTo(b.getValueDate()));
+                log.info("Fetched {} IPC historical values from ArgentinaDatos", results.size());
             }
         } catch (Exception e) {
             log.error("Error fetching IPC from ArgentinaDatos: {}", e.getMessage(), e);

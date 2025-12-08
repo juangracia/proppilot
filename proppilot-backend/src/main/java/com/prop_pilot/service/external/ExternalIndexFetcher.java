@@ -12,4 +12,12 @@ public interface ExternalIndexFetcher {
     String getCountryCode();
 
     List<IndexValue> fetchLatestValues();
+
+    /**
+     * Fetch all historical values from the external source.
+     * Used for initial data population.
+     */
+    default List<IndexValue> fetchAllHistoricalValues() {
+        return fetchLatestValues();
+    }
 }
