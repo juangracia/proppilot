@@ -894,10 +894,14 @@ export const LanguageProvider = ({ children }) => {
     return `${symbol}${formattedAmount}`
   }
 
-  const formatNumber = (number) => {
+  const formatNumber = (number, decimals = 2) => {
     if (!number && number !== 0) return ''
-    const numStr = String(number).replace(/\D/g, '')
-    return new Intl.NumberFormat(language === 'es' ? 'es-AR' : 'en-US', { useGrouping: true }).format(numStr)
+    const num = typeof number === 'string' ? parseFloat(number) : number
+    if (isNaN(num)) return ''
+    return new Intl.NumberFormat(language === 'es' ? 'es-AR' : 'en-US', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: decimals
+    }).format(num)
   }
 
   const value = {
