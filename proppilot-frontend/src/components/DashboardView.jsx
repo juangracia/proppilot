@@ -30,9 +30,11 @@ import {
 import { useLanguage } from '../contexts/LanguageContext'
 import { API_BASE_URL } from '../config/api'
 import axios from 'axios'
+import { useIndices } from '../hooks/useIndices'
 
 const DashboardView = memo(({ onNavigate, onNavigateToPayment }) => {
-  const { t, formatCurrency } = useLanguage()
+  const { t, formatCurrency, formatNumber } = useLanguage()
+  const { indices, loading: indicesLoading } = useIndices('AR')
   const [loading, setLoading] = useState(true)
   const [propertyUnits, setPropertyUnits] = useState([])
   const [tenants, setTenants] = useState([])
@@ -299,6 +301,42 @@ const DashboardView = memo(({ onNavigate, onNavigateToPayment }) => {
           </Grid>
         ))}
       </Grid>
+
+      {/* Economic Indices Widget */}
+      {indices.length > 0 && (
+        <Paper sx={{ p: { xs: 2, sm: 3 }, mb: { xs: 3, sm: 4 } }}>
+          <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+            {t('economicIndices') || 'Índices Económicos'}
+          </Typography>
+          <Grid container spacing={2}>
+            {indices.filter(idx => idx.indexType !== 'NONE').map((index) => (
+              <Grid size={{ xs: 6, sm: 4, md: 2.4 }} key={index.indexType}>
+                <Box sx={{
+                  p: 1.5,
+                  borderRadius: 1,
+                  bgcolor: 'background.default',
+                  textAlign: 'center'
+                }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                    {index.indexType.replace('_', ' ')}
+                  </Typography>
+                  <Typography variant="h6" sx={{ fontWeight: 600, color: index.indexType.includes('DOLAR') ? 'success.main' : 'primary.main' }}>
+                    {index.indexType.includes('DOLAR')
+                      ? `$${formatNumber(index.value)}`
+                      : index.indexType === 'IPC'
+                        ? `${index.value}%`
+                        : formatNumber(index.value)
+                    }
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+                    {index.valueDate}
+                  </Typography>
+                </Box>
+              </Grid>
+            ))}
+          </Grid>
+        </Paper>
+      )}
 
       {/* Next Payment Due Card */}
       {nextPaymentDue && (
