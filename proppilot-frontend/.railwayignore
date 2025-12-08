@@ -1,0 +1,8 @@
+node_modules
+*.log
+*.pid
+ios
+android
+*.apk
+*.ipa
+*.aab

@@ -1,0 +1,14 @@
+node_modules
+*.log
+*.pid
+ios
+android
+*.apk
+*.ipa
+*.aab
+.git
+.gitignore
+dist
+playwright-report
+test-results
+e2e
