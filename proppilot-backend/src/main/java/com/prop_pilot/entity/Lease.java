@@ -67,6 +67,9 @@ public class Lease {
     @Column
     private Integer adjustmentFrequencyMonths = 12;
 
+    @Column(name = "country_code", length = 2)
+    private String countryCode = "AR";  // ISO 3166-1 alpha-2, default Argentina
+
     @OneToMany(mappedBy = "lease", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference("lease-payments")
     private List<Payment> payments = new ArrayList<>();

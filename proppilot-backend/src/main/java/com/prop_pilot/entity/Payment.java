@@ -54,6 +54,16 @@ public class Payment {
     @Column(nullable = false)
     private PaymentStatus status = PaymentStatus.PAID;
 
+    // Index tracking - records the index value at payment creation time
+    @Column(name = "index_type", length = 20)
+    private String indexType;
+
+    @Column(name = "index_value_at_payment", precision = 18, scale = 6)
+    private BigDecimal indexValueAtPayment;
+
+    @Column(name = "index_date")
+    private LocalDate indexDate;
+
     @Transient
     @JsonProperty("leaseId")
     private Long inputLeaseId;

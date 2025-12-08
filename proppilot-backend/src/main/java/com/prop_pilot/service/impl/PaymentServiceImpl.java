@@ -1,12 +1,16 @@
 package com.prop_pilot.service.impl;
 
+import com.prop_pilot.entity.IndexValue;
 import com.prop_pilot.entity.Lease;
+import com.prop_pilot.entity.Lease.AdjustmentIndex;
 import com.prop_pilot.entity.Payment;
 import com.prop_pilot.exception.BusinessLogicException;
 import com.prop_pilot.exception.ResourceNotFoundException;
 import com.prop_pilot.repository.LeaseRepository;
 import com.prop_pilot.repository.PaymentRepository;
+import com.prop_pilot.service.IndexValueService;
 import com.prop_pilot.service.PaymentService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,16 +19,31 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
+@Slf4j
 @Service
 public class PaymentServiceImpl implements PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final LeaseRepository leaseRepository;
+    private final IndexValueService indexValueService;
 
-    public PaymentServiceImpl(PaymentRepository paymentRepository, LeaseRepository leaseRepository) {
+    private static final Map<AdjustmentIndex, IndexValue.IndexType> ADJUSTMENT_TO_INDEX_TYPE = Map.of(
+        AdjustmentIndex.ICL, IndexValue.IndexType.ICL,
+        AdjustmentIndex.IPC, IndexValue.IndexType.IPC,
+        AdjustmentIndex.DOLAR_BLUE, IndexValue.IndexType.DOLAR_BLUE,
+        AdjustmentIndex.DOLAR_OFICIAL, IndexValue.IndexType.DOLAR_OFICIAL,
+        AdjustmentIndex.DOLAR_MEP, IndexValue.IndexType.DOLAR_MEP
+    );
+
+    public PaymentServiceImpl(PaymentRepository paymentRepository,
+                              LeaseRepository leaseRepository,
+                              IndexValueService indexValueService) {
         this.paymentRepository = paymentRepository;
         this.leaseRepository = leaseRepository;
+        this.indexValueService = indexValueService;
     }
 
     @Override
@@ -63,7 +82,38 @@ public class PaymentServiceImpl implements PaymentService {
 
         payment.setLease(lease);
         payment.setOwner(lease.getOwner());
+
+        // Track index value at payment time
+        trackIndexValueForPayment(payment, lease);
+
         return paymentRepository.save(payment);
+    }
+
+    private void trackIndexValueForPayment(Payment payment, Lease lease) {
+        AdjustmentIndex adjustmentIndex = lease.getAdjustmentIndex();
+        if (adjustmentIndex == null || adjustmentIndex == AdjustmentIndex.NONE) {
+            return;
+        }
+
+        IndexValue.IndexType indexType = ADJUSTMENT_TO_INDEX_TYPE.get(adjustmentIndex);
+        if (indexType == null) {
+            log.warn("No mapping found for adjustment index: {}", adjustmentIndex);
+            return;
+        }
+
+        String countryCode = lease.getCountryCode() != null ? lease.getCountryCode() : "AR";
+
+        Optional<IndexValue> latestValue = indexValueService.getLatestValue(countryCode, indexType);
+        if (latestValue.isPresent()) {
+            IndexValue indexValue = latestValue.get();
+            payment.setIndexType(indexType.name());
+            payment.setIndexValueAtPayment(indexValue.getValue());
+            payment.setIndexDate(indexValue.getValueDate());
+            log.info("Tracked index value for payment: {} = {} (date: {})",
+                indexType, indexValue.getValue(), indexValue.getValueDate());
+        } else {
+            log.warn("No index value found for {} in country {}", indexType, countryCode);
+        }
     }
 
     @Override

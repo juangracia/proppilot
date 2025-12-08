@@ -10,6 +10,7 @@ import com.prop_pilot.repository.LeaseRepository;
 import com.prop_pilot.repository.PropertyUnitRepository;
 import com.prop_pilot.repository.TenantRepository;
 import com.prop_pilot.repository.UserRepository;
+import com.prop_pilot.service.CountryConfigService;
 import com.prop_pilot.service.LeaseService;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
@@ -28,15 +29,18 @@ public class LeaseServiceImpl implements LeaseService {
     private final PropertyUnitRepository propertyUnitRepository;
     private final TenantRepository tenantRepository;
     private final UserRepository userRepository;
+    private final CountryConfigService countryConfigService;
 
     public LeaseServiceImpl(LeaseRepository leaseRepository,
                            PropertyUnitRepository propertyUnitRepository,
                            TenantRepository tenantRepository,
-                           UserRepository userRepository) {
+                           UserRepository userRepository,
+                           CountryConfigService countryConfigService) {
         this.leaseRepository = leaseRepository;
         this.propertyUnitRepository = propertyUnitRepository;
         this.tenantRepository = tenantRepository;
         this.userRepository = userRepository;
+        this.countryConfigService = countryConfigService;
     }
 
     @Override
@@ -91,6 +95,26 @@ public class LeaseServiceImpl implements LeaseService {
         if (hasOverlappingLease(propertyUnitId, lease.getStartDate(), lease.getEndDate(), null)) {
             throw new BusinessLogicException("There is already an active lease for this property during the specified period");
         }
+
+        // Validate country code and adjustment index
+        String countryCode = lease.getCountryCode();
+        if (countryCode == null || countryCode.isEmpty()) {
+            countryCode = "AR";  // Default to Argentina
+        }
+        countryCode = countryCode.toUpperCase();
+
+        if (!countryConfigService.isCountrySupported(countryCode)) {
+            throw new BusinessLogicException("Unsupported country code: " + countryCode);
+        }
+
+        // Validate that the adjustment index is valid for the country
+        if (lease.getAdjustmentIndex() != null &&
+            !countryConfigService.isValidIndexForCountry(lease.getAdjustmentIndex(), countryCode)) {
+            throw new BusinessLogicException("Adjustment index " + lease.getAdjustmentIndex() +
+                " is not available for country " + countryCode);
+        }
+
+        lease.setCountryCode(countryCode);
 
         // Set the relationships
         lease.setPropertyUnit(propertyUnit);
@@ -189,6 +213,29 @@ public class LeaseServiceImpl implements LeaseService {
 
         if (lease.getStatus() != null) {
             existingLease.setStatus(lease.getStatus());
+        }
+
+        // Validate country and adjustment index if being updated
+        if (lease.getCountryCode() != null) {
+            String countryCode = lease.getCountryCode().toUpperCase();
+            if (!countryConfigService.isCountrySupported(countryCode)) {
+                throw new BusinessLogicException("Unsupported country code: " + countryCode);
+            }
+            existingLease.setCountryCode(countryCode);
+        }
+
+        if (lease.getAdjustmentIndex() != null) {
+            String countryCode = existingLease.getCountryCode() != null ?
+                existingLease.getCountryCode() : "AR";
+            if (!countryConfigService.isValidIndexForCountry(lease.getAdjustmentIndex(), countryCode)) {
+                throw new BusinessLogicException("Adjustment index " + lease.getAdjustmentIndex() +
+                    " is not available for country " + countryCode);
+            }
+            existingLease.setAdjustmentIndex(lease.getAdjustmentIndex());
+        }
+
+        if (lease.getAdjustmentFrequencyMonths() != null) {
+            existingLease.setAdjustmentFrequencyMonths(lease.getAdjustmentFrequencyMonths());
         }
 
         return leaseRepository.save(existingLease);
