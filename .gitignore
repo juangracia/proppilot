@@ -81,3 +81,4 @@ logs/
 
 # Claude MCP config (already in gitignore)
 proppilot-backend/.claude_mcp_config.json
+.playwright-mcp/
