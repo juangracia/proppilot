@@ -232,6 +232,48 @@ public class IndexValueServiceImpl implements IndexValueService {
     }
 
     @Override
+    public BigDecimal calculateMonthlyPercentageChange(String countryCode, IndexType indexType) {
+        if (indexType == IndexType.NONE) {
+            return BigDecimal.ZERO;
+        }
+
+        if (indexType == IndexType.IPC) {
+            // For IPC, the stored value IS the monthly percentage change
+            Optional<IndexValue> latestValue = getLatestValue(countryCode, indexType);
+            if (latestValue.isEmpty()) {
+                log.warn("No IPC value found for monthly change");
+                return BigDecimal.ZERO;
+            }
+            return latestValue.get().getValue().setScale(2, RoundingMode.HALF_UP);
+        } else {
+            // For ICL, DOLAR_*, etc: (current / month_ago - 1) * 100
+            LocalDate now = LocalDate.now();
+            LocalDate oneMonthAgo = now.minusMonths(1);
+
+            Optional<IndexValue> currentValue = getLatestValue(countryCode, indexType);
+            Optional<IndexValue> monthAgoValue = getClosestValue(countryCode, indexType, oneMonthAgo);
+
+            if (currentValue.isEmpty() || monthAgoValue.isEmpty()) {
+                log.warn("Cannot calculate monthly change: missing values for {}", indexType);
+                return BigDecimal.ZERO;
+            }
+
+            BigDecimal current = currentValue.get().getValue();
+            BigDecimal monthAgo = monthAgoValue.get().getValue();
+
+            if (monthAgo.compareTo(BigDecimal.ZERO) == 0) {
+                return BigDecimal.ZERO;
+            }
+
+            // (current / monthAgo - 1) * 100
+            return current.divide(monthAgo, 6, RoundingMode.HALF_UP)
+                .subtract(BigDecimal.ONE)
+                .multiply(BigDecimal.valueOf(100))
+                .setScale(2, RoundingMode.HALF_UP);
+        }
+    }
+
+    @Override
     public BigDecimal calculateAdjustedRent(BigDecimal baseRent, String countryCode, IndexType indexType,
                                              LocalDate leaseStartDate, LocalDate paymentDate) {
         if (baseRent == null || baseRent.compareTo(BigDecimal.ZERO) <= 0) {

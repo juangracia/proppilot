@@ -34,7 +34,7 @@ import { useIndices } from '../hooks/useIndices'
 
 const DashboardView = memo(({ onNavigate, onNavigateToPayment }) => {
   const { t, formatCurrency, formatNumber } = useLanguage()
-  const { indices, getAnnualChange, loading: indicesLoading } = useIndices('AR')
+  const { indices, getMonthlyChange, loading: indicesLoading } = useIndices('AR')
   const [loading, setLoading] = useState(true)
   const [propertyUnits, setPropertyUnits] = useState([])
   const [tenants, setTenants] = useState([])
@@ -311,8 +311,8 @@ const DashboardView = memo(({ onNavigate, onNavigateToPayment }) => {
           <Grid container spacing={2}>
             {indices.filter(idx => idx.indexType !== 'NONE').map((index) => {
               const isDolar = index.indexType.includes('DOLAR')
-              const isAnnualChangeIndex = index.indexType === 'ICL' || index.indexType === 'IPC'
-              const annualChange = isAnnualChangeIndex ? getAnnualChange(index.indexType) : null
+              const isMonthlyChangeIndex = index.indexType === 'ICL' || index.indexType === 'IPC'
+              const monthlyChange = isMonthlyChangeIndex ? getMonthlyChange(index.indexType) : null
 
               return (
                 <Grid size={{ xs: 6, sm: 4, md: 2.4 }} key={index.indexType}>
@@ -328,14 +328,14 @@ const DashboardView = memo(({ onNavigate, onNavigateToPayment }) => {
                     <Typography variant="h6" sx={{ fontWeight: 600, color: isDolar ? 'success.main' : 'primary.main' }}>
                       {isDolar
                         ? `$${formatNumber(index.value)}`
-                        : isAnnualChangeIndex && annualChange
-                          ? `${formatNumber(annualChange, 2)}%`
+                        : isMonthlyChangeIndex && monthlyChange !== null
+                          ? `${formatNumber(monthlyChange, 2)}%`
                           : formatNumber(index.value)
                       }
                     </Typography>
                     <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
-                      {isAnnualChangeIndex
-                        ? (t('annualChange') || 'var. anual')
+                      {isMonthlyChangeIndex
+                        ? (t('monthlyChange') || 'var. mensual')
                         : index.valueDate
                       }
                     </Typography>

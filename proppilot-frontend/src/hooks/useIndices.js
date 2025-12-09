@@ -4,14 +4,14 @@ import { API_BASE_URL } from '../config/api'
 
 export const useIndices = (countryCode = 'AR') => {
   const [indices, setIndices] = useState([])
-  const [annualChanges, setAnnualChanges] = useState([])
+  const [monthlyChanges, setMonthlyChanges] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
   const fetchIndices = useCallback(async () => {
     if (!countryCode) {
       setIndices([])
-      setAnnualChanges([])
+      setMonthlyChanges([])
       setLoading(false)
       return
     }
@@ -20,19 +20,19 @@ export const useIndices = (countryCode = 'AR') => {
       setLoading(true)
       setError(null)
 
-      // Fetch both latest values and annual changes in parallel
-      const [latestResponse, annualResponse] = await Promise.all([
+      // Fetch both latest values and monthly changes in parallel
+      const [latestResponse, monthlyResponse] = await Promise.all([
         axios.get(`${API_BASE_URL}/indices/${countryCode}/all/latest`),
-        axios.get(`${API_BASE_URL}/indices/${countryCode}/all/annual-changes`).catch(() => ({ data: [] }))
+        axios.get(`${API_BASE_URL}/indices/${countryCode}/all/monthly-changes`).catch(() => ({ data: [] }))
       ])
 
       setIndices(Array.isArray(latestResponse.data) ? latestResponse.data : [])
-      setAnnualChanges(Array.isArray(annualResponse.data) ? annualResponse.data : [])
+      setMonthlyChanges(Array.isArray(monthlyResponse.data) ? monthlyResponse.data : [])
     } catch (err) {
       console.error('Error fetching indices:', err)
       setError(err.message || 'Failed to fetch indices')
       setIndices([])
-      setAnnualChanges([])
+      setMonthlyChanges([])
     } finally {
       setLoading(false)
     }
@@ -46,10 +46,10 @@ export const useIndices = (countryCode = 'AR') => {
     return indices.find(i => i.indexType === indexType) || null
   }, [indices])
 
-  const getAnnualChange = useCallback((indexType) => {
-    const change = annualChanges.find(c => c.indexType === indexType)
-    return change?.annualChangePercent || 0
-  }, [annualChanges])
+  const getMonthlyChange = useCallback((indexType) => {
+    const change = monthlyChanges.find(c => c.indexType === indexType)
+    return change?.monthlyChangePercent || 0
+  }, [monthlyChanges])
 
   const refreshIndices = useCallback(async () => {
     try {
@@ -63,13 +63,13 @@ export const useIndices = (countryCode = 'AR') => {
 
   return {
     indices,
-    annualChanges,
+    monthlyChanges,
     loading,
     error,
     refetch: fetchIndices,
     refresh: refreshIndices,
     getIndexValue,
-    getAnnualChange
+    getMonthlyChange
   }
 }
 

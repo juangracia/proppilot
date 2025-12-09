@@ -42,6 +42,13 @@ public interface IndexValueService {
     BigDecimal calculateAnnualPercentageChange(String countryCode, IndexType indexType);
 
     /**
+     * Calculate the monthly percentage change for an index.
+     * For ICL: (current / month_ago - 1) * 100
+     * For IPC: returns the latest monthly value directly (already a monthly percentage)
+     */
+    BigDecimal calculateMonthlyPercentageChange(String countryCode, IndexType indexType);
+
+    /**
      * Calculate the adjusted rent for a lease at a given payment date.
      * Formula: baseRent * (indexAtPaymentDate / indexAtLeaseStart)
      *

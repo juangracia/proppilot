@@ -187,6 +187,37 @@ public class IndexController {
         return ResponseEntity.ok(results);
     }
 
+    @GetMapping("/{countryCode}/{type}/monthly-change")
+    @Operation(summary = "Get monthly percentage change", description = "Returns the monthly percentage change for an index")
+    @ApiResponse(responseCode = "200", description = "Successfully calculated monthly change")
+    public ResponseEntity<Map<String, Object>> getMonthlyChange(
+            @PathVariable String countryCode,
+            @PathVariable IndexType type) {
+
+        BigDecimal monthlyChange = indexValueService.calculateMonthlyPercentageChange(countryCode.toUpperCase(), type);
+
+        return ResponseEntity.ok(Map.of(
+            "country", countryCode.toUpperCase(),
+            "indexType", type,
+            "monthlyChangePercent", monthlyChange
+        ));
+    }
+
+    @GetMapping("/{countryCode}/all/monthly-changes")
+    @Operation(summary = "Get all monthly percentage changes", description = "Returns the monthly percentage changes for all indices in a country")
+    @ApiResponse(responseCode = "200", description = "Successfully calculated all monthly changes")
+    public ResponseEntity<List<Map<String, Object>>> getAllMonthlyChanges(@PathVariable String countryCode) {
+        List<Map<String, Object>> results = List.of(
+            Map.of("indexType", IndexType.ICL, "monthlyChangePercent", indexValueService.calculateMonthlyPercentageChange(countryCode, IndexType.ICL)),
+            Map.of("indexType", IndexType.IPC, "monthlyChangePercent", indexValueService.calculateMonthlyPercentageChange(countryCode, IndexType.IPC)),
+            Map.of("indexType", IndexType.DOLAR_OFICIAL, "monthlyChangePercent", indexValueService.calculateMonthlyPercentageChange(countryCode, IndexType.DOLAR_OFICIAL)),
+            Map.of("indexType", IndexType.DOLAR_BLUE, "monthlyChangePercent", indexValueService.calculateMonthlyPercentageChange(countryCode, IndexType.DOLAR_BLUE)),
+            Map.of("indexType", IndexType.DOLAR_MEP, "monthlyChangePercent", indexValueService.calculateMonthlyPercentageChange(countryCode, IndexType.DOLAR_MEP))
+        );
+
+        return ResponseEntity.ok(results);
+    }
+
     private IndexValueDto toDto(IndexValue entity) {
         return IndexValueDto.builder()
             .id(entity.getId())
