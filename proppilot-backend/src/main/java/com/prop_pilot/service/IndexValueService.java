@@ -40,4 +40,18 @@ public interface IndexValueService {
      * For IPC: accumulated inflation over the last 12 months
      */
     BigDecimal calculateAnnualPercentageChange(String countryCode, IndexType indexType);
+
+    /**
+     * Calculate the adjusted rent for a lease at a given payment date.
+     * Formula: baseRent * (indexAtPaymentDate / indexAtLeaseStart)
+     *
+     * @param baseRent The base monthly rent from the lease
+     * @param countryCode The country code (e.g., "AR")
+     * @param indexType The adjustment index type
+     * @param leaseStartDate The lease start date
+     * @param paymentDate The date for which to calculate adjusted rent
+     * @return The adjusted rent amount, or the base rent if calculation fails
+     */
+    BigDecimal calculateAdjustedRent(BigDecimal baseRent, String countryCode, IndexType indexType,
+                                      LocalDate leaseStartDate, LocalDate paymentDate);
 }

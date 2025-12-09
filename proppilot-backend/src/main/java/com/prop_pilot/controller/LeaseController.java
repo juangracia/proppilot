@@ -1,18 +1,26 @@
 package com.prop_pilot.controller;
 
+import com.prop_pilot.entity.IndexValue;
 import com.prop_pilot.entity.Lease;
 import com.prop_pilot.service.CurrentUserService;
+import com.prop_pilot.service.IndexValueService;
 import com.prop_pilot.service.LeaseService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/leases")
@@ -21,10 +29,21 @@ public class LeaseController {
 
     private final LeaseService leaseService;
     private final CurrentUserService currentUserService;
+    private final IndexValueService indexValueService;
 
-    public LeaseController(LeaseService leaseService, CurrentUserService currentUserService) {
+    private static final Map<Lease.AdjustmentIndex, IndexValue.IndexType> ADJUSTMENT_TO_INDEX_TYPE = Map.of(
+        Lease.AdjustmentIndex.ICL, IndexValue.IndexType.ICL,
+        Lease.AdjustmentIndex.IPC, IndexValue.IndexType.IPC,
+        Lease.AdjustmentIndex.DOLAR_BLUE, IndexValue.IndexType.DOLAR_BLUE,
+        Lease.AdjustmentIndex.DOLAR_OFICIAL, IndexValue.IndexType.DOLAR_OFICIAL,
+        Lease.AdjustmentIndex.DOLAR_MEP, IndexValue.IndexType.DOLAR_MEP
+    );
+
+    public LeaseController(LeaseService leaseService, CurrentUserService currentUserService,
+                           IndexValueService indexValueService) {
         this.leaseService = leaseService;
         this.currentUserService = currentUserService;
+        this.indexValueService = indexValueService;
     }
 
     @PostMapping
@@ -166,5 +185,70 @@ public class LeaseController {
         Long ownerId = currentUserService.getCurrentUserId();
         leaseService.permanentlyDeleteLease(id, ownerId);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/adjusted-rent")
+    @Operation(summary = "Calculate adjusted rent", description = "Calculates the adjusted rent for a lease based on the adjustment index. Returns the base rent if no adjustment is configured.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Adjusted rent calculated successfully"),
+        @ApiResponse(responseCode = "404", description = "Lease not found")
+    })
+    public ResponseEntity<Map<String, Object>> getAdjustedRent(
+            @PathVariable Long id,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate paymentDate) {
+        Long ownerId = currentUserService.getCurrentUserId();
+        Lease lease = leaseService.getLeaseById(id, ownerId);
+
+        LocalDate effectiveDate = paymentDate != null ? paymentDate : LocalDate.now();
+        String countryCode = lease.getCountryCode() != null ? lease.getCountryCode() : "AR";
+        Lease.AdjustmentIndex adjustmentIndex = lease.getAdjustmentIndex();
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("leaseId", lease.getId());
+        result.put("baseRent", lease.getMonthlyRent());
+        result.put("adjustmentIndex", adjustmentIndex != null ? adjustmentIndex.name() : "NONE");
+        result.put("leaseStartDate", lease.getStartDate());
+        result.put("paymentDate", effectiveDate);
+
+        if (adjustmentIndex == null || adjustmentIndex == Lease.AdjustmentIndex.NONE) {
+            result.put("adjustedRent", lease.getMonthlyRent());
+            result.put("adjustmentFactor", 1.0);
+            result.put("message", "No adjustment index configured for this lease");
+        } else {
+            IndexValue.IndexType indexType = ADJUSTMENT_TO_INDEX_TYPE.get(adjustmentIndex);
+            if (indexType != null) {
+                BigDecimal adjustedRent = indexValueService.calculateAdjustedRent(
+                    lease.getMonthlyRent(),
+                    countryCode,
+                    indexType,
+                    lease.getStartDate(),
+                    effectiveDate
+                );
+                BigDecimal adjustmentFactor = indexValueService.calculateAdjustmentFactor(
+                    countryCode, indexType, lease.getStartDate(), effectiveDate
+                );
+
+                result.put("adjustedRent", adjustedRent);
+                result.put("adjustmentFactor", adjustmentFactor);
+
+                Optional<IndexValue> startValue = indexValueService.getClosestValue(countryCode, indexType, lease.getStartDate());
+                Optional<IndexValue> currentValue = indexValueService.getClosestValue(countryCode, indexType, effectiveDate);
+
+                if (startValue.isPresent()) {
+                    result.put("indexAtLeaseStart", startValue.get().getValue());
+                    result.put("indexDateAtLeaseStart", startValue.get().getValueDate());
+                }
+                if (currentValue.isPresent()) {
+                    result.put("indexAtPaymentDate", currentValue.get().getValue());
+                    result.put("indexDateAtPaymentDate", currentValue.get().getValueDate());
+                }
+            } else {
+                result.put("adjustedRent", lease.getMonthlyRent());
+                result.put("adjustmentFactor", 1.0);
+                result.put("message", "Unknown adjustment index type");
+            }
+        }
+
+        return ResponseEntity.ok(result);
     }
 }

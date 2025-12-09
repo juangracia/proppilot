@@ -97,6 +97,8 @@ const PaymentForm = memo(function PaymentForm({
   const [detailDialogOpen, setDetailDialogOpen] = useState(false)
   const [selectedPayment, setSelectedPayment] = useState(null)
   const [payments, setPayments] = useState([])
+  const [adjustedRentInfo, setAdjustedRentInfo] = useState(null)
+  const [loadingAdjustedRent, setLoadingAdjustedRent] = useState(false)
 
   const paymentTypes = useMemo(() => [
     { value: 'RENT', label: t('rentPayment') },
@@ -174,15 +176,66 @@ const PaymentForm = memo(function PaymentForm({
     }
   }, [initialPaymentId, transformedPayments, onPaymentViewed])
 
+  // Fetch adjusted rent for a lease
+  const fetchAdjustedRent = useCallback(async (leaseId, paymentDate) => {
+    if (!leaseId) {
+      setAdjustedRentInfo(null)
+      return null
+    }
+
+    try {
+      setLoadingAdjustedRent(true)
+      const params = paymentDate ? `?paymentDate=${format(paymentDate, 'yyyy-MM-dd')}` : ''
+      const response = await axios.get(`${API_BASE_URL}/leases/${leaseId}/adjusted-rent${params}`)
+      setAdjustedRentInfo(response.data)
+      return response.data
+    } catch (err) {
+      console.error('Error fetching adjusted rent:', err)
+      setAdjustedRentInfo(null)
+      return null
+    } finally {
+      setLoadingAdjustedRent(false)
+    }
+  }, [])
+
   // Auto-fill rent amount when lease is selected
-  const handleLeaseChange = useCallback((leaseId) => {
+  const handleLeaseChange = useCallback(async (leaseId) => {
     const selectedLease = leases.find(l => l.id === parseInt(leaseId))
     setFormData(prev => ({
       ...prev,
       leaseId: leaseId,
-      amount: selectedLease && !prev.isPartialPayment ? selectedLease.monthlyRent.toString() : prev.amount
+      amount: '' // Clear amount while fetching
     }))
-  }, [leases])
+
+    if (selectedLease) {
+      const adjustedInfo = await fetchAdjustedRent(leaseId, formData.paymentDate || new Date())
+      if (adjustedInfo && !formData.isPartialPayment) {
+        setFormData(prev => ({
+          ...prev,
+          amount: adjustedInfo.adjustedRent?.toString() || selectedLease.monthlyRent.toString()
+        }))
+      } else {
+        setFormData(prev => ({
+          ...prev,
+          amount: selectedLease.monthlyRent.toString()
+        }))
+      }
+    }
+  }, [leases, fetchAdjustedRent, formData.paymentDate, formData.isPartialPayment])
+
+  // Re-fetch adjusted rent when payment date changes
+  useEffect(() => {
+    if (formData.leaseId && formData.paymentDate && !formData.isPartialPayment) {
+      fetchAdjustedRent(formData.leaseId, formData.paymentDate).then(adjustedInfo => {
+        if (adjustedInfo) {
+          setFormData(prev => ({
+            ...prev,
+            amount: adjustedInfo.adjustedRent?.toString() || prev.amount
+          }))
+        }
+      })
+    }
+  }, [formData.paymentDate, formData.leaseId, formData.isPartialPayment, fetchAdjustedRent])
 
   const validateForm = useCallback(() => {
     const errors = {}
@@ -253,6 +306,7 @@ const PaymentForm = memo(function PaymentForm({
           isPartialPayment: false
         })
         setValidationErrors({})
+        setAdjustedRentInfo(null)
       }
     } catch (err) {
       console.error('Error creating payment:', err)
@@ -558,6 +612,50 @@ const PaymentForm = memo(function PaymentForm({
                           <strong>{t('adjustmentIndex')}:</strong> {selectedLease.adjustmentIndex}
                         </Typography>
                       </Box>
+
+                      {/* Adjusted Rent Info */}
+                      {adjustedRentInfo && selectedLease.adjustmentIndex !== 'NONE' && (
+                        <Box sx={{
+                          mt: 2,
+                          pt: 2,
+                          borderTop: 1,
+                          borderColor: 'divider'
+                        }}>
+                          <Typography
+                            variant="subtitle2"
+                            gutterBottom
+                            color="success.main"
+                            sx={{ fontSize: { xs: '0.875rem', sm: '0.875rem' }, display: 'flex', alignItems: 'center', gap: 1 }}
+                          >
+                            {loadingAdjustedRent ? (
+                              <CircularProgress size={14} color="inherit" />
+                            ) : null}
+                            {t('adjustedRentCalc') || 'Alquiler Ajustado'}
+                          </Typography>
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                            <Typography
+                              variant="body2"
+                              sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' }, color: 'success.main', fontWeight: 600 }}
+                            >
+                              <strong>{t('adjustedRent') || 'Monto Ajustado'}:</strong> {formatCurrency(adjustedRentInfo.adjustedRent)}
+                            </Typography>
+                            <Typography
+                              variant="body2"
+                              sx={{ fontSize: { xs: '0.75rem', sm: '0.8125rem' }, color: 'text.secondary' }}
+                            >
+                              {t('adjustmentFactor') || 'Factor de Ajuste'}: {Number(adjustedRentInfo.adjustmentFactor).toFixed(4)}x
+                            </Typography>
+                            {adjustedRentInfo.indexAtLeaseStart && adjustedRentInfo.indexAtPaymentDate && (
+                              <Typography
+                                variant="body2"
+                                sx={{ fontSize: { xs: '0.75rem', sm: '0.8125rem' }, color: 'text.secondary' }}
+                              >
+                                {adjustedRentInfo.adjustmentIndex}: {Number(adjustedRentInfo.indexAtLeaseStart).toFixed(2)} → {Number(adjustedRentInfo.indexAtPaymentDate).toFixed(2)}
+                              </Typography>
+                            )}
+                          </Box>
+                        </Box>
+                      )}
                     </Box>
                   </Grid>
                 )}
@@ -587,6 +685,7 @@ const PaymentForm = memo(function PaymentForm({
                         setError('')
                         setSuccess('')
                         setValidationErrors({})
+                        setAdjustedRentInfo(null)
                       }}
                       sx={{
                         minWidth: { xs: '100%', sm: 100 },

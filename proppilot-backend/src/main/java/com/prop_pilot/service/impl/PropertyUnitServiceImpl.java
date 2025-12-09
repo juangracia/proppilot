@@ -41,7 +41,7 @@ public class PropertyUnitServiceImpl implements PropertyUnitService {
 
     @Override
     public List<PropertyUnit> getAllPropertyUnits(@NonNull Long ownerId) {
-        return propertyUnitRepository.findByOwnerIdWithLeasesAndPayments(ownerId);
+        return propertyUnitRepository.findByOwnerIdWithLeases(ownerId);
     }
 
     @Override

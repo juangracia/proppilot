@@ -34,7 +34,7 @@ import { useIndices } from '../hooks/useIndices'
 
 const DashboardView = memo(({ onNavigate, onNavigateToPayment }) => {
   const { t, formatCurrency, formatNumber } = useLanguage()
-  const { indices, loading: indicesLoading } = useIndices('AR')
+  const { indices, getAnnualChange, loading: indicesLoading } = useIndices('AR')
   const [loading, setLoading] = useState(true)
   const [propertyUnits, setPropertyUnits] = useState([])
   const [tenants, setTenants] = useState([])
@@ -309,31 +309,40 @@ const DashboardView = memo(({ onNavigate, onNavigateToPayment }) => {
             {t('economicIndices') || 'Índices Económicos'}
           </Typography>
           <Grid container spacing={2}>
-            {indices.filter(idx => idx.indexType !== 'NONE').map((index) => (
-              <Grid size={{ xs: 6, sm: 4, md: 2.4 }} key={index.indexType}>
-                <Box sx={{
-                  p: 1.5,
-                  borderRadius: 1,
-                  bgcolor: 'background.default',
-                  textAlign: 'center'
-                }}>
-                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
-                    {index.indexType.replace('_', ' ')}
-                  </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 600, color: index.indexType.includes('DOLAR') ? 'success.main' : 'primary.main' }}>
-                    {index.indexType.includes('DOLAR')
-                      ? `$${formatNumber(index.value)}`
-                      : index.indexType === 'IPC'
-                        ? `${index.value}%`
-                        : formatNumber(index.value)
-                    }
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
-                    {index.valueDate}
-                  </Typography>
-                </Box>
-              </Grid>
-            ))}
+            {indices.filter(idx => idx.indexType !== 'NONE').map((index) => {
+              const isDolar = index.indexType.includes('DOLAR')
+              const isAnnualChangeIndex = index.indexType === 'ICL' || index.indexType === 'IPC'
+              const annualChange = isAnnualChangeIndex ? getAnnualChange(index.indexType) : null
+
+              return (
+                <Grid size={{ xs: 6, sm: 4, md: 2.4 }} key={index.indexType}>
+                  <Box sx={{
+                    p: 1.5,
+                    borderRadius: 1,
+                    bgcolor: 'background.default',
+                    textAlign: 'center'
+                  }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                      {index.indexType.replace('_', ' ')}
+                    </Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 600, color: isDolar ? 'success.main' : 'primary.main' }}>
+                      {isDolar
+                        ? `$${formatNumber(index.value)}`
+                        : isAnnualChangeIndex && annualChange
+                          ? `${formatNumber(annualChange, 2)}%`
+                          : formatNumber(index.value)
+                      }
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+                      {isAnnualChangeIndex
+                        ? (t('annualChange') || 'var. anual')
+                        : index.valueDate
+                      }
+                    </Typography>
+                  </Box>
+                </Grid>
+              )
+            })}
           </Grid>
         </Paper>
       )}

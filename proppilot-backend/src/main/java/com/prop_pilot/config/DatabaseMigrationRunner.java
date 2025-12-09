@@ -35,6 +35,7 @@ public class DatabaseMigrationRunner {
             addDeletedColumnIfNotExists(conn);
             addDeletedAtColumnIfNotExists(conn);
             makeTenantIdNullable(conn);
+            updateAdjustmentIndexConstraint(conn);
             log.info("Database migrations completed successfully");
         } catch (Exception e) {
             log.error("Database migration failed", e);
@@ -76,6 +77,23 @@ public class DatabaseMigrationRunner {
             log.info("tenant_id column is now nullable");
         } catch (Exception e) {
             log.info("tenant_id column already nullable or doesn't exist: " + e.getMessage());
+        }
+    }
+
+    private void updateAdjustmentIndexConstraint(Connection conn) {
+        log.info("Updating adjustment_index check constraint to include dollar indices...");
+        try (Statement stmt = conn.createStatement()) {
+            // Drop old constraint
+            stmt.execute("ALTER TABLE leases DROP CONSTRAINT IF EXISTS leases_adjustment_index_check");
+
+            // Add new constraint with all adjustment index values including dollar indices
+            stmt.execute(
+                "ALTER TABLE leases ADD CONSTRAINT leases_adjustment_index_check " +
+                "CHECK (adjustment_index IN ('ICL', 'IPC', 'NONE', 'DOLAR_BLUE', 'DOLAR_MEP', 'DOLAR_OFICIAL'))"
+            );
+            log.info("Successfully updated adjustment_index check constraint");
+        } catch (Exception e) {
+            log.warn("Could not update adjustment_index constraint (may already be correct): " + e.getMessage());
         }
     }
 }

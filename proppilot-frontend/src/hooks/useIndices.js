@@ -4,12 +4,14 @@ import { API_BASE_URL } from '../config/api'
 
 export const useIndices = (countryCode = 'AR') => {
   const [indices, setIndices] = useState([])
+  const [annualChanges, setAnnualChanges] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
   const fetchIndices = useCallback(async () => {
     if (!countryCode) {
       setIndices([])
+      setAnnualChanges([])
       setLoading(false)
       return
     }
@@ -17,12 +19,20 @@ export const useIndices = (countryCode = 'AR') => {
     try {
       setLoading(true)
       setError(null)
-      const response = await axios.get(`${API_BASE_URL}/indices/${countryCode}/all/latest`)
-      setIndices(Array.isArray(response.data) ? response.data : [])
+
+      // Fetch both latest values and annual changes in parallel
+      const [latestResponse, annualResponse] = await Promise.all([
+        axios.get(`${API_BASE_URL}/indices/${countryCode}/all/latest`),
+        axios.get(`${API_BASE_URL}/indices/${countryCode}/all/annual-changes`).catch(() => ({ data: [] }))
+      ])
+
+      setIndices(Array.isArray(latestResponse.data) ? latestResponse.data : [])
+      setAnnualChanges(Array.isArray(annualResponse.data) ? annualResponse.data : [])
     } catch (err) {
       console.error('Error fetching indices:', err)
       setError(err.message || 'Failed to fetch indices')
       setIndices([])
+      setAnnualChanges([])
     } finally {
       setLoading(false)
     }
@@ -36,6 +46,11 @@ export const useIndices = (countryCode = 'AR') => {
     return indices.find(i => i.indexType === indexType) || null
   }, [indices])
 
+  const getAnnualChange = useCallback((indexType) => {
+    const change = annualChanges.find(c => c.indexType === indexType)
+    return change?.annualChangePercent || 0
+  }, [annualChanges])
+
   const refreshIndices = useCallback(async () => {
     try {
       await axios.post(`${API_BASE_URL}/indices/refresh/${countryCode}`)
@@ -48,11 +63,13 @@ export const useIndices = (countryCode = 'AR') => {
 
   return {
     indices,
+    annualChanges,
     loading,
     error,
     refetch: fetchIndices,
     refresh: refreshIndices,
-    getIndexValue
+    getIndexValue,
+    getAnnualChange
   }
 }
 

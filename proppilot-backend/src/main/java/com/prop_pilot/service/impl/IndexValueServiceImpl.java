@@ -230,4 +230,24 @@ public class IndexValueServiceImpl implements IndexValueService {
                 .setScale(2, RoundingMode.HALF_UP);
         }
     }
+
+    @Override
+    public BigDecimal calculateAdjustedRent(BigDecimal baseRent, String countryCode, IndexType indexType,
+                                             LocalDate leaseStartDate, LocalDate paymentDate) {
+        if (baseRent == null || baseRent.compareTo(BigDecimal.ZERO) <= 0) {
+            return baseRent;
+        }
+
+        if (indexType == null || indexType == IndexType.NONE) {
+            return baseRent;
+        }
+
+        BigDecimal adjustmentFactor = calculateAdjustmentFactor(countryCode, indexType, leaseStartDate, paymentDate);
+
+        BigDecimal adjustedRent = baseRent.multiply(adjustmentFactor).setScale(2, RoundingMode.HALF_UP);
+        log.info("Calculated adjusted rent: base={}, factor={}, adjusted={} (index={}, from={}, to={})",
+            baseRent, adjustmentFactor, adjustedRent, indexType, leaseStartDate, paymentDate);
+
+        return adjustedRent;
+    }
 }
