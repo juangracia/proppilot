@@ -69,7 +69,7 @@ import { API_BASE_URL } from '../config/api'
 import MoneyInput from './MoneyInput'
 import { useCountries } from '../hooks/useCountries'
 
-const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTenant, initialLeaseId, onLeaseViewed, openAddForm, onAddFormOpened }) {
+const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTenant, onNavigateToPayment, initialLeaseId, onLeaseViewed, openAddForm, onAddFormOpened }) {
   const { t, formatCurrency, currency, formatNumber } = useLanguage()
   const { countries, getAvailableIndices } = useCountries()
   const [activeTab, setActiveTab] = useState(0)
@@ -1427,9 +1427,25 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                       <CircularProgress size={24} />
                     </Box>
                   ) : leasePayments.length === 0 ? (
-                    <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 1 }}>
-                      {t('noPaymentsForLease')}
-                    </Typography>
+                    <Box sx={{ textAlign: 'center', py: 2 }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        {t('noPaymentsForLease')}
+                      </Typography>
+                      {onNavigateToPayment && (
+                        <Button
+                          variant="contained"
+                          size="small"
+                          startIcon={<PaymentIcon />}
+                          onClick={() => {
+                            setDetailDialogOpen(false)
+                            onNavigateToPayment({ leaseId: selectedLease?.id })
+                          }}
+                          sx={{ textTransform: 'none' }}
+                        >
+                          {t('registerPayment')}
+                        </Button>
+                      )}
+                    </Box>
                   ) : (
                     <>
                       {/* Payment Status Indicator */}

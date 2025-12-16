@@ -66,6 +66,7 @@ const PaymentForm = memo(function PaymentForm({
   initialStatusFilter,
   initialPropertyFilter,
   initialTenantFilter,
+  initialLeaseFilter,
   onFiltersCleared,
   openAddForm,
   onAddFormOpened
@@ -197,6 +198,19 @@ const PaymentForm = memo(function PaymentForm({
       setLoadingAdjustedRent(false)
     }
   }, [])
+
+  // Auto-switch to register tab and pre-select lease when initialLeaseFilter is provided
+  useEffect(() => {
+    if (initialLeaseFilter && leases.length > 0) {
+      const lease = leases.find(l => l.id === initialLeaseFilter)
+      if (lease) {
+        setFormData(prev => ({ ...prev, leaseId: initialLeaseFilter }))
+        setActiveTab(1) // Tab 1 is "Register Payment"
+        // Trigger adjusted rent fetch for the pre-selected lease
+        fetchAdjustedRent(initialLeaseFilter, null)
+      }
+    }
+  }, [initialLeaseFilter, leases, fetchAdjustedRent])
 
   // Auto-fill rent amount when lease is selected
   const handleLeaseChange = useCallback(async (leaseId) => {
