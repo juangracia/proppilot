@@ -23,7 +23,7 @@ export const LanguageProvider = ({ children }) => {
       // Tabs
       propertyUnits: 'PROPIEDADES',
       registerPayment: 'Registrar Pago',
-      tenants: 'INQUILINOS',
+      tenantsTab: 'INQUILINOS',
 
       // Property List
       propertyUnitsTitle: 'Propiedades',
@@ -445,6 +445,21 @@ export const LanguageProvider = ({ children }) => {
       tourNext: 'Siguiente',
       tourSkip: 'Saltar tour',
       startTour: 'Iniciar Tour',
+
+      // Onboarding / Welcome
+      welcomeTitle: '¡Bienvenido a PropPilot!',
+      welcomeSubtitle: 'Comienza agregando tu primera propiedad para gestionar tus alquileres de manera eficiente.',
+      addFirstProperty: 'Agregar Tu Primera Propiedad',
+      howItWorks: 'Cómo funciona',
+      step1Title: '1. Propiedades',
+      step1Desc: 'Registra las propiedades que deseas alquilar',
+      step2Title: '2. Inquilinos',
+      step2Desc: 'Agrega los datos de tus inquilinos',
+      step3Title: '3. Contratos',
+      step3Desc: 'Vincula propiedades con inquilinos',
+      step4Title: '4. Pagos',
+      step4Desc: 'Lleva el control de los cobros',
+      orAddTenant: 'o agregar un inquilino primero',
     },
     en: {
       // Header
@@ -454,7 +469,7 @@ export const LanguageProvider = ({ children }) => {
       // Tabs
       propertyUnits: 'PROPERTY UNITS',
       registerPayment: 'Register Payment',
-      tenants: 'TENANTS',
+      tenantsTab: 'TENANTS',
 
       // Property List
       propertyUnitsTitle: 'Property Units',
@@ -877,6 +892,21 @@ export const LanguageProvider = ({ children }) => {
       tourNext: 'Next',
       tourSkip: 'Skip tour',
       startTour: 'Start Tour',
+
+      // Onboarding / Welcome
+      welcomeTitle: 'Welcome to PropPilot!',
+      welcomeSubtitle: 'Start by adding your first property to manage your rentals efficiently.',
+      addFirstProperty: 'Add Your First Property',
+      howItWorks: 'How it works',
+      step1Title: '1. Properties',
+      step1Desc: 'Register properties you want to rent',
+      step2Title: '2. Tenants',
+      step2Desc: 'Add your tenant information',
+      step3Title: '3. Leases',
+      step3Desc: 'Link properties with tenants',
+      step4Title: '4. Payments',
+      step4Desc: 'Track your rent collections',
+      orAddTenant: 'or add a tenant first',
     }
   }
 

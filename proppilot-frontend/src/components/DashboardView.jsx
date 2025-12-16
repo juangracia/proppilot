@@ -10,7 +10,10 @@ import {
   ListItem,
   Chip,
   Divider,
-  CircularProgress
+  CircularProgress,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails
 } from '@mui/material'
 import Grid from '@mui/material/Grid'
 import {
@@ -25,12 +28,16 @@ import {
   ChevronRight,
   Schedule,
   Description,
-  EventNote
+  EventNote,
+  ExpandMore,
+  Apartment,
+  ArrowForward
 } from '@mui/icons-material'
 import { useLanguage } from '../contexts/LanguageContext'
 import { API_BASE_URL } from '../config/api'
 import axios from 'axios'
 import { useIndices } from '../hooks/useIndices'
+import PullToRefresh from './PullToRefresh'
 
 const DashboardView = memo(({ onNavigate, onNavigateToPayment }) => {
   const { t, formatCurrency, formatNumber } = useLanguage()
@@ -40,29 +47,31 @@ const DashboardView = memo(({ onNavigate, onNavigateToPayment }) => {
   const [tenants, setTenants] = useState([])
   const [payments, setPayments] = useState([])
   const [leases, setLeases] = useState([])
+  const [indicesExpanded, setIndicesExpanded] = useState(false)
+
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true)
+      const [propertiesRes, tenantsRes, paymentsRes, leasesRes] = await Promise.all([
+        axios.get(`${API_BASE_URL}/property-units`),
+        axios.get(`${API_BASE_URL}/tenants`),
+        axios.get(`${API_BASE_URL}/payments`),
+        axios.get(`${API_BASE_URL}/leases`)
+      ])
+      setPropertyUnits(Array.isArray(propertiesRes.data) ? propertiesRes.data : [])
+      setTenants(Array.isArray(tenantsRes.data) ? tenantsRes.data : [])
+      setPayments(Array.isArray(paymentsRes.data) ? paymentsRes.data : [])
+      setLeases(Array.isArray(leasesRes.data) ? leasesRes.data : [])
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true)
-        const [propertiesRes, tenantsRes, paymentsRes, leasesRes] = await Promise.all([
-          axios.get(`${API_BASE_URL}/property-units`),
-          axios.get(`${API_BASE_URL}/tenants`),
-          axios.get(`${API_BASE_URL}/payments`),
-          axios.get(`${API_BASE_URL}/leases`)
-        ])
-        setPropertyUnits(Array.isArray(propertiesRes.data) ? propertiesRes.data : [])
-        setTenants(Array.isArray(tenantsRes.data) ? tenantsRes.data : [])
-        setPayments(Array.isArray(paymentsRes.data) ? paymentsRes.data : [])
-        setLeases(Array.isArray(leasesRes.data) ? leasesRes.data : [])
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
     fetchData()
-  }, [])
+  }, [fetchData])
 
   // Calculate dashboard stats from real data
   const dashboardStats = useMemo(() => {
@@ -86,6 +95,11 @@ const DashboardView = memo(({ onNavigate, onNavigateToPayment }) => {
     }).length
     return { totalProperties, vacantProperties, occupiedProperties, activeTenants, monthlyRevenue, outstandingPayments, activeLeases, expiringLeases }
   }, [propertyUnits, tenants, payments, leases])
+
+  // Check if user is new (no properties)
+  const isNewUser = useMemo(() => {
+    return dashboardStats.totalProperties === 0
+  }, [dashboardStats.totalProperties])
 
   // Get recent completed payments
   const recentPaymentsData = useMemo(() => {
@@ -234,386 +248,380 @@ const DashboardView = memo(({ onNavigate, onNavigateToPayment }) => {
   }
 
   return (
-    <Box>
+    <PullToRefresh onRefresh={fetchData}>
+      <Box>
 
-      {/* Stats Cards */}
-      <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ mb: { xs: 3, sm: 4 } }} data-tour="dashboard-stats">
-        {stats.map((stat, index) => (
-          <Grid size={{ xs: 12, sm: 6, lg: 3 }} key={index}>
-            <Card
-              onClick={() => handleStatClick(stat)}
-              sx={{
-                height: '100%',
-                cursor: 'pointer',
-                transition: 'transform 0.2s, box-shadow 0.2s',
-                '&:hover': {
-                  transform: { xs: 'none', sm: 'translateY(-4px)' },
-                  boxShadow: { xs: 2, sm: 4 }
-                }
-              }}
-            >
-              <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
-                <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 1.5 }}>
-                  <Box sx={{ mr: 1.5, pt: 0.25, flexShrink: 0 }}>
-                    {React.cloneElement(stat.icon, { sx: { fontSize: { xs: 28, sm: 32, md: 36 }, color: stat.color } })}
-                  </Box>
-                  <Box sx={{ flexGrow: 1, minWidth: 0, overflow: 'hidden' }}>
-                    <Typography
-                      variant="h4"
-                      sx={{
-                        fontWeight: 700,
-                        fontSize: 'clamp(1.25rem, 2vw, 2rem)',
-                        lineHeight: 1.1,
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      {stat.value}
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.8rem' }, mt: 0.5, lineHeight: 1.3 }}
-                    >
-                      {stat.title}
-                    </Typography>
-                  </Box>
-                  <ChevronRight sx={{ fontSize: { xs: 20, sm: 24 }, color: 'text.disabled', ml: 1 }} />
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  {stat.trendPositive ? (
-                    <TrendingUp sx={{ fontSize: { xs: 14, sm: 16 }, color: '#4CAF50', mr: 0.5, flexShrink: 0 }} />
-                  ) : (
-                    <TrendingDown sx={{ fontSize: { xs: 14, sm: 16 }, color: '#F44336', mr: 0.5, flexShrink: 0 }} />
-                  )}
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: stat.trendPositive ? '#4CAF50' : '#F44336',
-                      fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.8rem' },
-                      lineHeight: 1.3
-                    }}
-                  >
-                    {stat.change}
-                  </Typography>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
+      {/* Onboarding View for New Users */}
+      {isNewUser ? (
+        <Box sx={{ textAlign: 'center', py: { xs: 4, sm: 6 } }}>
+          <Apartment sx={{ fontSize: { xs: 60, sm: 80 }, color: 'primary.main', mb: 3 }} />
 
-      {/* Economic Indices Widget */}
-      {indices.length > 0 && (
-        <Paper sx={{ p: { xs: 2, sm: 3 }, mb: { xs: 3, sm: 4 } }}>
-          <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-            {t('economicIndices') || 'Índices Económicos'}
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: 700,
+              mb: 2,
+              fontSize: { xs: '1.5rem', sm: '2rem' }
+            }}
+          >
+            {t('welcomeTitle')}
           </Typography>
-          <Grid container spacing={2}>
-            {indices.filter(idx => idx.indexType !== 'NONE').map((index) => {
-              const isDolar = index.indexType.includes('DOLAR')
-              const isMonthlyChangeIndex = index.indexType === 'ICL' || index.indexType === 'IPC'
-              const monthlyChange = isMonthlyChangeIndex ? getMonthlyChange(index.indexType) : null
 
-              return (
-                <Grid size={{ xs: 6, sm: 4, md: 2.4 }} key={index.indexType}>
-                  <Box sx={{
-                    p: 1.5,
-                    borderRadius: 1,
-                    bgcolor: 'background.default',
-                    textAlign: 'center'
-                  }}>
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
-                      {index.indexType.replace('_', ' ')}
+          <Typography
+            variant="body1"
+            color="text.secondary"
+            sx={{
+              mb: 4,
+              maxWidth: 500,
+              mx: 'auto',
+              px: 2,
+              fontSize: { xs: '0.9rem', sm: '1rem' }
+            }}
+          >
+            {t('welcomeSubtitle')}
+          </Typography>
+
+          <Button
+            variant="contained"
+            size="large"
+            startIcon={<Add />}
+            onClick={() => onNavigate(1, { openAdd: true })}
+            sx={{
+              py: 1.5,
+              px: 4,
+              fontSize: { xs: '0.9rem', sm: '1.1rem' },
+              mb: 2
+            }}
+          >
+            {t('addFirstProperty')}
+          </Button>
+
+          <Box sx={{ mt: 1 }}>
+            <Button
+              variant="text"
+              size="small"
+              startIcon={<People />}
+              onClick={() => onNavigate(2, { openAdd: true })}
+              sx={{ textTransform: 'none' }}
+            >
+              {t('orAddTenant')}
+            </Button>
+          </Box>
+
+          {/* How it works section */}
+          <Paper sx={{ mt: 5, p: { xs: 2, sm: 3 }, maxWidth: 600, mx: 'auto' }}>
+            <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
+              {t('howItWorks')}
+            </Typography>
+            <Grid container spacing={2}>
+              {[
+                { title: t('step1Title'), desc: t('step1Desc'), icon: <Home /> },
+                { title: t('step2Title'), desc: t('step2Desc'), icon: <People /> },
+                { title: t('step3Title'), desc: t('step3Desc'), icon: <Description /> },
+                { title: t('step4Title'), desc: t('step4Desc'), icon: <Payment /> }
+              ].map((step, index) => (
+                <Grid size={{ xs: 6, sm: 3 }} key={index}>
+                  <Box sx={{ textAlign: 'center' }}>
+                    <Box sx={{
+                      color: 'primary.main',
+                      mb: 1,
+                      '& > svg': { fontSize: { xs: 28, sm: 32 } }
+                    }}>
+                      {step.icon}
+                    </Box>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                      {step.title}
                     </Typography>
-                    <Typography variant="h6" sx={{ fontWeight: 600, color: isDolar ? 'success.main' : 'primary.main' }}>
-                      {isDolar
-                        ? `$${formatNumber(index.value)}`
-                        : isMonthlyChangeIndex && monthlyChange !== null
-                          ? `${formatNumber(monthlyChange, 2)}%`
-                          : formatNumber(index.value)
-                      }
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
-                      {isMonthlyChangeIndex
-                        ? (t('monthlyChange') || 'var. mensual')
-                        : index.valueDate
-                      }
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.3 }}>
+                      {step.desc}
                     </Typography>
                   </Box>
                 </Grid>
-              )
-            })}
+              ))}
+            </Grid>
+          </Paper>
+        </Box>
+      ) : (
+        <>
+        {/* DASHBOARD FOR USERS WITH DATA */}
+
+        {/* 1. Alerts Section - Pending Payments & Expiring Contracts */}
+        {(nextPaymentDue || upcomingExpiringContracts.length > 0) && (
+          <Grid container spacing={2} sx={{ mb: 3 }}>
+            {nextPaymentDue && (
+              <Grid size={{ xs: 12, md: upcomingExpiringContracts.length > 0 ? 6 : 12 }}>
+                <Paper
+                  sx={{
+                    p: 2,
+                    background: 'linear-gradient(135deg, #FF9800 0%, #F57C00 100%)',
+                    color: 'white',
+                    cursor: 'pointer',
+                    transition: 'transform 0.2s',
+                    '&:hover': { transform: { xs: 'none', sm: 'translateY(-2px)' } }
+                  }}
+                  onClick={() => handlePaymentClick('pending')}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Schedule sx={{ fontSize: 28 }} />
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="caption" sx={{ opacity: 0.9 }}>
+                        {t('nextPaymentDue')}
+                      </Typography>
+                      <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                        {formatCurrency(nextPaymentDue.amount)}
+                      </Typography>
+                      <Typography variant="caption" sx={{ opacity: 0.9 }}>
+                        {nextPaymentDue.tenant} • {nextPaymentDue.daysUntil} {t('daysLeft')}
+                      </Typography>
+                    </Box>
+                    <ChevronRight />
+                  </Box>
+                </Paper>
+              </Grid>
+            )}
+            {upcomingExpiringContracts.length > 0 && (
+              <Grid size={{ xs: 12, md: nextPaymentDue ? 6 : 12 }}>
+                <Paper
+                  sx={{
+                    p: 2,
+                    background: 'linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%)',
+                    color: 'white',
+                    cursor: 'pointer',
+                    transition: 'transform 0.2s',
+                    '&:hover': { transform: { xs: 'none', sm: 'translateY(-2px)' } }
+                  }}
+                  onClick={handleContractClick}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <EventNote sx={{ fontSize: 28 }} />
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="caption" sx={{ opacity: 0.9 }}>
+                        {t('expiringContracts')}
+                      </Typography>
+                      <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                        {upcomingExpiringContracts.length} {t('expiringSoon')}
+                      </Typography>
+                      <Typography variant="caption" sx={{ opacity: 0.9 }}>
+                        {upcomingExpiringContracts[0]?.tenantName} - {upcomingExpiringContracts[0]?.daysUntilExpiry} {t('daysLabel')}
+                      </Typography>
+                    </Box>
+                    <ChevronRight />
+                  </Box>
+                </Paper>
+              </Grid>
+            )}
           </Grid>
-        </Paper>
-      )}
+        )}
 
-      {/* Next Payment Due Card */}
-      {nextPaymentDue && (
-        <Paper
-          sx={{
-            p: { xs: 2, sm: 3 },
-            mb: { xs: 3, sm: 4 },
-            background: 'linear-gradient(135deg, #FF9800 0%, #F57C00 100%)',
-            color: 'white',
-            cursor: 'pointer',
-            transition: 'transform 0.2s, box-shadow 0.2s',
-            '&:hover': {
-              transform: { xs: 'none', sm: 'translateY(-2px)' },
-              boxShadow: 4
-            }
-          }}
-          onClick={() => handlePaymentClick('pending')}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.5, sm: 2 } }}>
-              <Schedule sx={{ fontSize: { xs: 32, sm: 40 } }} />
-              <Box>
-                <Typography
-                  variant="body2"
-                  sx={{ opacity: 0.9, fontSize: { xs: '0.75rem', sm: '0.875rem' }, mb: 0.5 }}
-                >
-                  {t('nextPaymentDue') || 'Next Payment Due'}
-                </Typography>
-                <Typography
-                  variant="h5"
-                  sx={{ fontWeight: 700, fontSize: { xs: '1.25rem', sm: '1.5rem' } }}
-                >
-                  {formatCurrency(nextPaymentDue.amount)} - {nextPaymentDue.tenant}
-                </Typography>
-                <Typography
-                  variant="body2"
-                  sx={{ opacity: 0.9, fontSize: { xs: '0.75rem', sm: '0.875rem' }, mt: 0.5 }}
-                >
-                  {nextPaymentDue.property} • {nextPaymentDue.dueDate}
-                </Typography>
-              </Box>
-            </Box>
-            <Box sx={{ textAlign: 'right', display: { xs: 'none', sm: 'block' } }}>
-              <Chip
-                label={`${nextPaymentDue.daysUntil} ${t('daysLeft') || 'days left'}`}
-                sx={{
-                  bgcolor: 'rgba(255,255,255,0.2)',
-                  color: 'white',
-                  fontWeight: 600
-                }}
-              />
-            </Box>
-            <ChevronRight sx={{ fontSize: 24, ml: 1 }} />
-          </Box>
-        </Paper>
-      )}
-
-      {/* Expiring Contracts Alert */}
-      {upcomingExpiringContracts.length > 0 && (
-        <Paper
-          sx={{
-            p: { xs: 2, sm: 3 },
-            mb: { xs: 3, sm: 4 },
-            background: 'linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%)',
-            color: 'white',
-            cursor: 'pointer',
-            transition: 'transform 0.2s, box-shadow 0.2s',
-            '&:hover': {
-              transform: { xs: 'none', sm: 'translateY(-2px)' },
-              boxShadow: 4
-            }
-          }}
-          onClick={handleContractClick}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.5, sm: 2 }, mb: 2 }}>
-            <EventNote sx={{ fontSize: { xs: 28, sm: 32 } }} />
-            <Typography variant="h6" sx={{ fontWeight: 600, fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-              {t('expiringContracts') || 'Contratos por Vencer'}
-            </Typography>
-          </Box>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-            {upcomingExpiringContracts.map((contract, index) => (
-              <Box
+        {/* 2. Quick Actions - Prominent */}
+        <Paper sx={{ p: 2, mb: 3 }}>
+          <Box sx={{
+            display: 'flex',
+            gap: 1,
+            flexWrap: 'wrap',
+            justifyContent: { xs: 'stretch', sm: 'center' }
+          }}>
+            {quickActions.map((action, index) => (
+              <Button
                 key={index}
+                variant="outlined"
+                startIcon={action.icon}
+                color={action.color}
+                onClick={() => handleStatClick(action)}
                 sx={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  bgcolor: 'rgba(255,255,255,0.1)',
-                  borderRadius: 1,
-                  p: 1.5
+                  textTransform: 'none',
+                  flex: { xs: '1 1 45%', sm: '0 0 auto' },
+                  minWidth: { sm: 140 },
+                  py: 1.25
                 }}
               >
-                <Box>
-                  <Typography sx={{ fontWeight: 500, fontSize: { xs: '0.875rem', sm: '1rem' } }}>
-                    {contract.tenantName || t('noTenantAssigned') || 'Sin asignar'}
-                  </Typography>
-                  <Typography sx={{ opacity: 0.8, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                    {contract.propertyAddress || t('unknownProperty') || 'Propiedad'}
-                  </Typography>
-                </Box>
-                <Chip
-                  label={`${contract.daysUntilExpiry} ${t('daysLabel') || 'días'}`}
-                  sx={{
-                    bgcolor: contract.daysUntilExpiry <= 30 ? 'rgba(244,67,54,0.3)' : 'rgba(255,255,255,0.2)',
-                    color: 'white',
-                    fontWeight: 600,
-                    fontSize: { xs: '0.7rem', sm: '0.75rem' }
-                  }}
-                />
-              </Box>
+                {action.title}
+              </Button>
             ))}
           </Box>
         </Paper>
-      )}
 
-      <Grid container spacing={{ xs: 2, sm: 3 }}>
-        {/* Recent Payments */}
-        <Grid size={{ xs: 12, md: 8 }}>
-          <Paper
-            onClick={() => handlePaymentClick('paid')}
+        {/* 3. Compact Stats Cards */}
+        <Grid container spacing={2} sx={{ mb: 3 }} data-tour="dashboard-stats">
+          {stats.map((stat, index) => (
+            <Grid size={{ xs: 6, sm: 4, md: 2.4 }} key={index}>
+              <Card
+                onClick={() => handleStatClick(stat)}
+                sx={{
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  '&:hover': { transform: 'translateY(-2px)', boxShadow: 3 }
+                }}
+              >
+                <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    {React.cloneElement(stat.icon, { sx: { fontSize: 24, color: stat.color } })}
+                    <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                      {stat.value}
+                    </Typography>
+                  </Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.2 }}>
+                    {stat.title}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+
+        {/* 4. Economic Indices - Collapsible */}
+        {indices.length > 0 && (
+          <Accordion
+            expanded={indicesExpanded}
+            onChange={() => setIndicesExpanded(!indicesExpanded)}
+            sx={{ mb: 3 }}
+          >
+            <AccordionSummary expandIcon={<ExpandMore />}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                <TrendingUp color="primary" sx={{ fontSize: 20 }} />
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                  {t('economicIndices')}
+                </Typography>
+                {!indicesExpanded && (
+                  <Box sx={{ display: 'flex', gap: 1, ml: 'auto', mr: 2 }}>
+                    {indices.filter(idx => idx.indexType !== 'NONE').slice(0, 2).map(idx => {
+                      const isDolar = idx.indexType.includes('DOLAR')
+                      const isMonthlyChangeIndex = idx.indexType === 'ICL' || idx.indexType === 'IPC'
+                      const monthlyChange = isMonthlyChangeIndex ? getMonthlyChange(idx.indexType) : null
+                      return (
+                        <Chip
+                          key={idx.indexType}
+                          label={`${idx.indexType.replace('_', ' ')}: ${isDolar ? `$${formatNumber(idx.value)}` : isMonthlyChangeIndex && monthlyChange !== null ? `${formatNumber(monthlyChange, 2)}%` : formatNumber(idx.value)}`}
+                          size="small"
+                          variant="outlined"
+                          sx={{ display: { xs: 'none', sm: 'flex' } }}
+                        />
+                      )
+                    })}
+                  </Box>
+                )}
+              </Box>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Grid container spacing={2}>
+                {indices.filter(idx => idx.indexType !== 'NONE').map((index) => {
+                  const isDolar = index.indexType.includes('DOLAR')
+                  const isMonthlyChangeIndex = index.indexType === 'ICL' || index.indexType === 'IPC'
+                  const monthlyChange = isMonthlyChangeIndex ? getMonthlyChange(index.indexType) : null
+
+                  return (
+                    <Grid size={{ xs: 6, sm: 4, md: 2.4 }} key={index.indexType}>
+                      <Box sx={{
+                        p: 1.5,
+                        borderRadius: 1,
+                        bgcolor: 'background.default',
+                        textAlign: 'center'
+                      }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                          {index.indexType.replace('_', ' ')}
+                        </Typography>
+                        <Typography variant="h6" sx={{ fontWeight: 600, color: isDolar ? 'success.main' : 'primary.main' }}>
+                          {isDolar
+                            ? `$${formatNumber(index.value)}`
+                            : isMonthlyChangeIndex && monthlyChange !== null
+                              ? `${formatNumber(monthlyChange, 2)}%`
+                              : formatNumber(index.value)
+                          }
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+                          {isMonthlyChangeIndex
+                            ? (t('monthlyChange'))
+                            : index.valueDate
+                          }
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  )
+                })}
+              </Grid>
+            </AccordionDetails>
+          </Accordion>
+        )}
+
+        {/* 5. Recent Payments - Full Width */}
+        <Paper
+          onClick={() => handlePaymentClick('paid')}
+          sx={{
+            p: { xs: 2, sm: 3 },
+            cursor: 'pointer',
+            transition: 'transform 0.2s, box-shadow 0.2s',
+            '&:hover': {
+              transform: { xs: 'none', sm: 'translateY(-2px)' },
+              boxShadow: { xs: 2, sm: 4 }
+            }
+          }}
+        >
+          <Typography
+            variant="h6"
             sx={{
-              p: { xs: 2, sm: 3 },
-              height: 'fit-content',
-              cursor: 'pointer',
-              transition: 'transform 0.2s, box-shadow 0.2s',
-              '&:hover': {
-                transform: { xs: 'none', sm: 'translateY(-4px)' },
-                boxShadow: { xs: 2, sm: 4 }
-              }
+              fontWeight: 600,
+              mb: 2,
+              fontSize: { xs: '1rem', sm: '1.25rem' }
             }}
           >
-            <Typography
-              variant="h6"
-              sx={{
-                fontWeight: 600,
-                mb: { xs: 1.5, sm: 2 },
-                fontSize: { xs: '1rem', sm: '1.25rem' }
-              }}
-            >
-              {t('recentPayments')}
-            </Typography>
-            {recentPaymentsData.length > 0 ? (
-              <List>
-                {recentPaymentsData.map((payment, index) => (
-                  <React.Fragment key={index}>
-                    <ListItem
-                      sx={{
-                        px: 0,
-                        py: { xs: 1.5, sm: 2 },
-                        display: 'flex',
-                        flexDirection: { xs: 'column', sm: 'row' },
-                        justifyContent: 'space-between',
-                        alignItems: { xs: 'flex-start', sm: 'flex-start' },
-                        gap: { xs: 1, sm: 0 }
-                      }}
-                    >
-                      <Box sx={{ flex: 1, minWidth: 0, width: '100%' }}>
-                        <Box sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          mb: 0.5,
-                          gap: 1,
-                          flexWrap: 'wrap'
-                        }}>
-                          <Typography
-                            variant="subtitle1"
-                            sx={{
-                              fontWeight: 500,
-                              fontSize: { xs: '0.875rem', sm: '1rem' }
-                            }}
-                          >
-                            {payment.tenant}
-                          </Typography>
-                          <Chip
-                            label={t('paid')}
-                            size="small"
-                            color="success"
-                            sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' }, height: { xs: 20, sm: 24 } }}
-                          />
-                        </Box>
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                        >
-                          {payment.property}
+            {t('recentPayments')}
+          </Typography>
+          {recentPaymentsData.length > 0 ? (
+            <List sx={{ py: 0 }}>
+              {recentPaymentsData.map((payment, index) => (
+                <React.Fragment key={index}>
+                  <ListItem
+                    sx={{
+                      px: 0,
+                      py: 1.5,
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      gap: 2
+                    }}
+                  >
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 500 }}>
+                          {payment.tenant}
                         </Typography>
+                        <Chip
+                          label={t('paid')}
+                          size="small"
+                          color="success"
+                          sx={{ fontSize: '0.7rem', height: 20 }}
+                        />
                       </Box>
-                      <Box sx={{
-                        textAlign: { xs: 'left', sm: 'right' },
-                        ml: { xs: 0, sm: 2 },
-                        flexShrink: 0,
-                        width: { xs: '100%', sm: 'auto' }
-                      }}>
-                        <Typography
-                          variant="h6"
-                          sx={{
-                            fontWeight: 600,
-                            mb: 0.5,
-                            fontSize: { xs: '1rem', sm: '1.25rem' }
-                          }}
-                        >
-                          {formatCurrency(payment.amount)}
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                        >
-                          {payment.date}
-                        </Typography>
-                      </Box>
-                    </ListItem>
-                    {index < recentPaymentsData.length - 1 && <Divider />}
-                  </React.Fragment>
-                ))}
-              </List>
-            ) : (
-              <Box sx={{ py: 4, textAlign: 'center' }}>
-                <Payment sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
-                <Typography variant="body2" color="text.secondary">
-                  {t('noRecentPayments') || 'No recent payments'}
-                </Typography>
-              </Box>
-            )}
-          </Paper>
-        </Grid>
-
-        {/* Quick Actions */}
-        <Grid size={{ xs: 12, md: 4 }}>
-          <Paper sx={{ p: { xs: 2, sm: 3 }, height: 'fit-content' }}>
-            <Typography
-              variant="h6"
-              sx={{
-                fontWeight: 600,
-                mb: { xs: 1.5, sm: 2 },
-                fontSize: { xs: '1rem', sm: '1.25rem' }
-              }}
-            >
-              {t('quickActions')}
-            </Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              {quickActions.map((action, index) => (
-                <Button
-                  key={index}
-                  variant="outlined"
-                  startIcon={action.icon}
-                  color={action.color}
-                  onClick={() => handleStatClick(action)}
-                  sx={{
-                    justifyContent: 'flex-start',
-                    py: { xs: 1.25, sm: 1.5 },
-                    textTransform: 'none',
-                    fontSize: { xs: '0.875rem', sm: '1rem' },
-                    '&:hover': {
-                      backgroundColor: `${action.color === 'primary' ? '#2196F3' : action.color === 'secondary' ? '#FF9800' : '#F44336'}10`
-                    }
-                  }}
-                >
-                  {action.title}
-                </Button>
+                      <Typography variant="caption" color="text.secondary">
+                        {payment.property}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                        {formatCurrency(payment.amount)}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {payment.date}
+                      </Typography>
+                    </Box>
+                  </ListItem>
+                  {index < recentPaymentsData.length - 1 && <Divider />}
+                </React.Fragment>
               ))}
+            </List>
+          ) : (
+            <Box sx={{ py: 3, textAlign: 'center' }}>
+              <Payment sx={{ fontSize: 40, color: 'text.disabled', mb: 1 }} />
+              <Typography variant="body2" color="text.secondary">
+                {t('noRecentPayments') || 'No recent payments'}
+              </Typography>
             </Box>
-          </Paper>
-        </Grid>
-      </Grid>
-    </Box>
+          )}
+        </Paper>
+        </>
+      )}
+      </Box>
+    </PullToRefresh>
   )
 })
 
