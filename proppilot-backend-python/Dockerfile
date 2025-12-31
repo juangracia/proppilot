@@ -4,16 +4,16 @@ FROM python:3.11-slim AS builder
 WORKDIR /app
 
 # Install poetry
-RUN pip install poetry==1.7.1
+RUN pip install poetry==1.8.5
 
 # Copy dependency files
-COPY pyproject.toml ./
+COPY pyproject.toml poetry.lock ./
 
 # Configure poetry to not create virtual env (we're in container)
 RUN poetry config virtualenvs.create false
 
 # Install dependencies (without dev dependencies)
-RUN poetry install --no-dev --no-interaction --no-ansi
+RUN poetry install --only main --no-interaction --no-ansi
 
 # Runtime stage
 FROM python:3.11-slim
