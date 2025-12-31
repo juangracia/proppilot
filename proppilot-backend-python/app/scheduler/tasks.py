@@ -1,8 +1,10 @@
 import logging
 from contextlib import asynccontextmanager
+from datetime import datetime, timedelta
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
+from apscheduler.triggers.date import DateTrigger
 from pytz import timezone
 
 from app.database import async_session_maker
@@ -121,9 +123,10 @@ def setup_scheduler():
     )
 
     # Initial data load: 30 seconds after startup
+    run_time = datetime.now(BUENOS_AIRES_TZ) + timedelta(seconds=30)
     scheduler.add_job(
         initial_data_load,
-        "date",
+        DateTrigger(run_date=run_time, timezone=BUENOS_AIRES_TZ),
         id="initial_data_load",
         name="Initial index data load",
         replace_existing=True,
