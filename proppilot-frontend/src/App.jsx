@@ -30,7 +30,8 @@ import {
   Menu,
   Logout,
   HelpOutline,
-  Description
+  Description,
+  ImportExport
 } from '@mui/icons-material'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
@@ -45,6 +46,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext'
 import LanguageCurrencySelector from './components/LanguageCurrencySelector'
 import ProductTour, { useTour } from './components/ProductTour'
 import MobileBottomNav from './components/MobileBottomNav'
+import DataPortabilityDialog from './components/DataPortabilityDialog'
 import './App.css'
 
 const drawerWidth = 240
@@ -67,6 +69,7 @@ function AppContent() {
   const [paymentTenantFilter, setPaymentTenantFilter] = useState(null)
   const [paymentLeaseFilter, setPaymentLeaseFilter] = useState(null)
   const [openAddForm, setOpenAddForm] = useState(false)
+  const [openDataPortability, setOpenDataPortability] = useState(false)
   const { t, language } = useLanguage()
   const { user, logout, isAuthenticated, loading, isNative } = useAuth()
   const { startTour } = useTour()
@@ -87,6 +90,11 @@ function AppContent() {
   const handleStartTour = () => {
     handleUserMenuClose()
     startTour()
+  }
+
+  const handleOpenDataPortability = () => {
+    handleUserMenuClose()
+    setOpenDataPortability(true)
   }
 
   const menuItems = useMemo(() => [
@@ -735,6 +743,10 @@ function AppContent() {
                   <HelpOutline fontSize="small" sx={{ mr: 1 }} />
                   {t('startTour')}
                 </MenuItem>
+                <MenuItem onClick={handleOpenDataPortability}>
+                  <ImportExport fontSize="small" sx={{ mr: 1 }} />
+                  {language === 'es' ? 'Importar/Exportar' : 'Import/Export'}
+                </MenuItem>
                 <MenuItem onClick={handleLogout}>
                   <Logout fontSize="small" sx={{ mr: 1 }} />
                   {language === 'es' ? 'Cerrar Sesión' : 'Logout'}
@@ -817,6 +829,11 @@ function AppContent() {
           )}
 
           <ProductTour onNavigate={handleNavigate} currentView={selectedView} />
+
+          <DataPortabilityDialog
+            open={openDataPortability}
+            onClose={() => setOpenDataPortability(false)}
+          />
         </Box>
       </LocalizationProvider>
     </ThemeProvider>
