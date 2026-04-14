@@ -503,7 +503,12 @@ const PaymentForm = memo(function PaymentForm({
                     onChange={(value) => setFormData(prev => ({ ...prev, amount: value }))}
                     required
                     error={!!validationErrors.amount}
-                    helperText={validationErrors.amount}
+                    helperText={
+                      validationErrors.amount ||
+                      (adjustedRentInfo && selectedLease?.adjustmentIndex !== 'NONE' && !loadingAdjustedRent
+                        ? `Monto ajustado por ${adjustedRentInfo.adjustmentIndex} al dia de hoy`
+                        : undefined)
+                    }
                   />
                   <FormControlLabel
                     control={
