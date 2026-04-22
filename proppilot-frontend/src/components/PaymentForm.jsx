@@ -565,12 +565,6 @@ const PaymentForm = memo(function PaymentForm({
                         >
                           <strong>{t('leasePeriod')}:</strong> {selectedLease.startDate} - {selectedLease.endDate}
                         </Typography>
-                        <Typography
-                          variant="body2"
-                          sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
-                        >
-                          <strong>{t('adjustmentIndex')}:</strong> {selectedLease.adjustmentIndex}
-                        </Typography>
                       </Box>
                     </Box>
                   </Grid>
@@ -976,31 +970,6 @@ const PaymentForm = memo(function PaymentForm({
                         {onNavigateToLease && selectedPayment.leaseId && (
                           <OpenInNew sx={{ fontSize: 16, color: 'text.secondary' }} />
                         )}
-                      </Box>
-                    </Paper>
-                  </>
-                )}
-
-                {/* Index Info */}
-                {selectedPayment.indexType && selectedPayment.indexType !== 'NONE' && (
-                  <>
-                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, textTransform: 'uppercase', fontSize: '0.75rem' }}>
-                      {t('indexInfo') || 'Información del Índice'}
-                    </Typography>
-                    <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                        <Receipt sx={{ fontSize: 20, color: 'info.main' }} />
-                        <Box sx={{ flex: 1 }}>
-                          <Typography variant="caption" color="text.secondary">{t('indexAtPayment') || 'Índice al Pago'}</Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                            {selectedPayment.indexType}: {selectedPayment.indexValueAtPayment?.toFixed(2) || '-'}
-                          </Typography>
-                          {selectedPayment.indexDate && (
-                            <Typography variant="caption" color="text.secondary">
-                              {t('indexDate') || 'Fecha del índice'}: {selectedPayment.indexDate}
-                            </Typography>
-                          )}
-                        </Box>
                       </Box>
                     </Paper>
                   </>

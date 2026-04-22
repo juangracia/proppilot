@@ -107,13 +107,6 @@ public class LeaseServiceImpl implements LeaseService {
             throw new BusinessLogicException("Unsupported country code: " + countryCode);
         }
 
-        // Validate that the adjustment index is valid for the country
-        if (lease.getAdjustmentIndex() != null &&
-            !countryConfigService.isValidIndexForCountry(lease.getAdjustmentIndex(), countryCode)) {
-            throw new BusinessLogicException("Adjustment index " + lease.getAdjustmentIndex() +
-                " is not available for country " + countryCode);
-        }
-
         lease.setCountryCode(countryCode);
 
         // Set the relationships
@@ -225,12 +218,6 @@ public class LeaseServiceImpl implements LeaseService {
         }
 
         if (lease.getAdjustmentIndex() != null) {
-            String countryCode = existingLease.getCountryCode() != null ?
-                existingLease.getCountryCode() : "AR";
-            if (!countryConfigService.isValidIndexForCountry(lease.getAdjustmentIndex(), countryCode)) {
-                throw new BusinessLogicException("Adjustment index " + lease.getAdjustmentIndex() +
-                    " is not available for country " + countryCode);
-            }
             existingLease.setAdjustmentIndex(lease.getAdjustmentIndex());
         }
 

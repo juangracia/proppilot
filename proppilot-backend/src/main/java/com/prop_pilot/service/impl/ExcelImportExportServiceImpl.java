@@ -47,7 +47,7 @@ public class ExcelImportExportServiceImpl implements ExcelImportExportService {
     };
     private static final String[] LEASE_HEADERS = {
         "Direccion Propiedad", "DNI Inquilino", "Fecha Inicio", "Fecha Fin",
-        "Alquiler Mensual", "Indice Ajuste", "Frecuencia Ajuste (meses)", "Estado"
+        "Alquiler Mensual", "Estado"
     };
     private static final String[] PAYMENT_HEADERS = {
         "Direccion Propiedad", "DNI Inquilino", "Fecha Inicio Contrato",
@@ -273,9 +273,7 @@ public class ExcelImportExportServiceImpl implements ExcelImportExportService {
                 rentCell.setCellStyle(currencyStyle);
             }
 
-            row.createCell(5).setCellValue(l.getAdjustmentIndex() != null ? l.getAdjustmentIndex().name() : "");
-            row.createCell(6).setCellValue(l.getAdjustmentFrequencyMonths() != null ? l.getAdjustmentFrequencyMonths() : 12);
-            row.createCell(7).setCellValue(l.getStatus() != null ? l.getStatus().name() : "");
+            row.createCell(5).setCellValue(l.getStatus() != null ? l.getStatus().name() : "");
         }
         autoSizeColumns(sheet, LEASE_HEADERS.length);
     }
@@ -461,9 +459,7 @@ public class ExcelImportExportServiceImpl implements ExcelImportExportService {
                 .startDate(getDateValue(row.getCell(2)))
                 .endDate(getDateValue(row.getCell(3)))
                 .monthlyRent(getDecimalValue(row.getCell(4)))
-                .adjustmentIndex(getStringValue(row.getCell(5)))
-                .adjustmentFrequencyMonths(getIntValue(row.getCell(6)))
-                .status(getStringValue(row.getCell(7)))
+                .status(getStringValue(row.getCell(5)))
                 .build();
 
             ExcelRowPreview<LeaseExcelRow> preview = ExcelRowPreview.<LeaseExcelRow>builder()
@@ -599,15 +595,6 @@ public class ExcelImportExportServiceImpl implements ExcelImportExportService {
             preview.getErrors().add("Alquiler mensual debe ser mayor a 0");
         }
 
-        // Validate adjustment index
-        if (data.getAdjustmentIndex() != null && !data.getAdjustmentIndex().isBlank()) {
-            try {
-                Lease.AdjustmentIndex.valueOf(data.getAdjustmentIndex().toUpperCase());
-            } catch (IllegalArgumentException e) {
-                preview.getErrors().add("Indice de ajuste invalido: " + data.getAdjustmentIndex());
-            }
-        }
-
         // Validate status
         if (data.getStatus() != null && !data.getStatus().isBlank()) {
             try {
@@ -714,12 +701,6 @@ public class ExcelImportExportServiceImpl implements ExcelImportExportService {
         lease.setEndDate(data.getEndDate());
         lease.setMonthlyRent(data.getMonthlyRent());
 
-        if (data.getAdjustmentIndex() != null && !data.getAdjustmentIndex().isBlank()) {
-            lease.setAdjustmentIndex(Lease.AdjustmentIndex.valueOf(data.getAdjustmentIndex().toUpperCase()));
-        }
-        if (data.getAdjustmentFrequencyMonths() != null) {
-            lease.setAdjustmentFrequencyMonths(data.getAdjustmentFrequencyMonths());
-        }
         if (data.getStatus() != null && !data.getStatus().isBlank()) {
             lease.setStatus(Lease.LeaseStatus.valueOf(data.getStatus().toUpperCase()));
         }
@@ -830,7 +811,6 @@ public class ExcelImportExportServiceImpl implements ExcelImportExportService {
         addHelpRow(sheet, row++, "VALORES VALIDOS:", true);
         row++;
         addHelpRow(sheet, row++, "Tipo de propiedad: apartment, house, duplex, ph, studio, loft", false);
-        addHelpRow(sheet, row++, "Indice de ajuste: ICL, IPC, DOLAR_BLUE, DOLAR_OFICIAL, DOLAR_MEP, NONE", false);
         addHelpRow(sheet, row++, "Estado contrato: ACTIVE, EXPIRED, TERMINATED", false);
         addHelpRow(sheet, row++, "Tipo de pago: RENT, DEPOSIT, MAINTENANCE, UTILITY, OTHER", false);
         addHelpRow(sheet, row++, "Estado pago: PAID, PENDING", false);

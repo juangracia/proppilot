@@ -18,7 +18,5 @@ public class LeaseExcelRow {
     private LocalDate startDate;
     private LocalDate endDate;
     private BigDecimal monthlyRent;
-    private String adjustmentIndex;
-    private Integer adjustmentFrequencyMonths;
     private String status;
 }

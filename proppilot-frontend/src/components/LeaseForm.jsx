@@ -46,7 +46,6 @@ import {
   Person,
   CalendarToday,
   AttachMoney,
-  TrendingUp,
   CheckCircle,
   Cancel,
   OpenInNew,
@@ -71,7 +70,7 @@ import { useCountries } from '../hooks/useCountries'
 
 const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTenant, onNavigateToPayment, initialLeaseId, onLeaseViewed, openAddForm, onAddFormOpened }) {
   const { t, formatCurrency, currency, formatNumber } = useLanguage()
-  const { countries, getAvailableIndices } = useCountries()
+  const { countries } = useCountries()
   const [activeTab, setActiveTab] = useState(0)
 
   const [formData, setFormData] = useState({
@@ -80,9 +79,7 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
     startDate: new Date(),
     endDate: addYears(new Date(), 2),
     monthlyRent: '',
-    countryCode: 'AR',
-    adjustmentIndex: 'ICL',
-    adjustmentFrequencyMonths: 12
+    countryCode: 'AR'
   })
 
   const [selectedPeriod, setSelectedPeriod] = useState(24)
@@ -126,23 +123,6 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
   // Filter state
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('ACTIVE') // 'all', 'ACTIVE', 'EXPIRED', 'TERMINATED'
-
-  const indexLabels = useMemo(() => ({
-    ICL: t('indexICL'),
-    IPC: t('indexIPC'),
-    DOLAR_BLUE: t('indexDolarBlue'),
-    DOLAR_OFICIAL: t('indexDolarOficial'),
-    DOLAR_MEP: t('indexDolarMep'),
-    NONE: t('indexFixed')
-  }), [t])
-
-  const adjustmentIndices = useMemo(() => {
-    const availableIndices = getAvailableIndices(formData.countryCode)
-    return availableIndices.map(index => ({
-      value: index,
-      label: indexLabels[index] || index
-    }))
-  }, [formData.countryCode, getAvailableIndices, indexLabels])
 
   const periodOptions = useMemo(() => [
     { value: 6, label: t('sixMonths') },
@@ -322,9 +302,7 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
         startDate: format(formData.startDate, 'yyyy-MM-dd'),
         endDate: format(formData.endDate, 'yyyy-MM-dd'),
         monthlyRent: parseFloat(formData.monthlyRent),
-        countryCode: formData.countryCode,
-        adjustmentIndex: formData.adjustmentIndex,
-        adjustmentFrequencyMonths: parseInt(formData.adjustmentFrequencyMonths)
+        countryCode: formData.countryCode
       }
 
       const response = await axios.post(`${API_BASE_URL}/leases`, leaseData)
@@ -339,9 +317,7 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
           startDate: new Date(),
           endDate: addYears(new Date(), 2),
           monthlyRent: '',
-          countryCode: 'AR',
-          adjustmentIndex: 'ICL',
-          adjustmentFrequencyMonths: 12
+          countryCode: 'AR'
         })
         setValidationErrors({})
       }
@@ -813,18 +789,7 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                         select
                         label={t('country') || 'País'}
                         value={formData.countryCode}
-                        onChange={(e) => {
-                          const newCountry = e.target.value
-                          const availableForCountry = getAvailableIndices(newCountry)
-                          const newIndex = availableForCountry.includes(formData.adjustmentIndex)
-                            ? formData.adjustmentIndex
-                            : (availableForCountry.includes('ICL') ? 'ICL' : 'NONE')
-                          setFormData(prev => ({
-                            ...prev,
-                            countryCode: newCountry,
-                            adjustmentIndex: newIndex
-                          }))
-                        }}
+                        onChange={(e) => setFormData(prev => ({ ...prev, countryCode: e.target.value }))}
                         fullWidth
                         required
                       >
@@ -835,41 +800,6 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                         ))}
                       </TextField>
                     </Grid>
-
-                    <Grid size={{ xs: 12, md: 6 }}>
-                      <TextField
-                        select
-                        label={t('adjustmentIndex') || 'Índice de Ajuste'}
-                        value={formData.adjustmentIndex}
-                        onChange={(e) => setFormData(prev => ({ ...prev, adjustmentIndex: e.target.value }))}
-                        fullWidth
-                        required
-                      >
-                        {adjustmentIndices.map((option) => (
-                          <MenuItem key={option.value} value={option.value}>
-                            {option.label}
-                          </MenuItem>
-                        ))}
-                      </TextField>
-                    </Grid>
-
-                    {formData.adjustmentIndex !== 'NONE' && (
-                      <Grid size={{ xs: 12, md: 6 }}>
-                        <TextField
-                          select
-                          label={t('adjustmentFrequency')}
-                          value={formData.adjustmentFrequencyMonths}
-                          onChange={(e) => setFormData(prev => ({ ...prev, adjustmentFrequencyMonths: e.target.value }))}
-                          fullWidth
-                        >
-                          <MenuItem value={1}>{t('monthly')}</MenuItem>
-                          <MenuItem value={2}>{t('bimonthly')}</MenuItem>
-                          <MenuItem value={3}>{t('quarterly')}</MenuItem>
-                          <MenuItem value={6}>{t('semiannual')}</MenuItem>
-                          <MenuItem value={12}>{t('annual')}</MenuItem>
-                        </TextField>
-                      </Grid>
-                    )}
 
                     {(selectedPropertyUnit || selectedTenants.length > 0) && (
                       <Grid size={{ xs: 12 }}>
@@ -920,9 +850,7 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                               startDate: new Date(),
                               endDate: addYears(new Date(), 2),
                               monthlyRent: '',
-                              countryCode: 'AR',
-                              adjustmentIndex: 'ICL',
-                              adjustmentFrequencyMonths: 12
+                              countryCode: 'AR'
                             })
                             setError('')
                             setSuccess('')
@@ -1329,20 +1257,6 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                       <Typography variant="caption" color="text.secondary">{t('monthlyRent') || 'Alquiler Mensual'}</Typography>
                       <Typography variant="body2" sx={{ fontWeight: 500 }}>
                         {formatCurrency(selectedLease.monthlyRent)}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Paper>
-
-                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, textTransform: 'uppercase', fontSize: '0.75rem' }}>
-                  {t('adjustmentInfo') || 'Ajuste'}
-                </Typography>
-                <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <TrendingUp sx={{ fontSize: 20, color: 'text.secondary' }} />
-                    <Box>
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                        {selectedLease.adjustmentIndex} - cada {selectedLease.adjustmentFrequencyMonths} meses
                       </Typography>
                     </Box>
                   </Box>

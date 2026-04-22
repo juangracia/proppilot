@@ -10,10 +10,7 @@ import {
   ListItem,
   Chip,
   Divider,
-  CircularProgress,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails
+  CircularProgress
 } from '@mui/material'
 import Grid from '@mui/material/Grid'
 import {
@@ -23,31 +20,24 @@ import {
   Warning,
   Add,
   Payment,
-  TrendingUp,
-  TrendingDown,
   ChevronRight,
   Schedule,
   Description,
   EventNote,
-  ExpandMore,
-  Apartment,
-  ArrowForward
+  Apartment
 } from '@mui/icons-material'
 import { useLanguage } from '../contexts/LanguageContext'
 import { API_BASE_URL } from '../config/api'
 import axios from 'axios'
-import { useIndices } from '../hooks/useIndices'
 import PullToRefresh from './PullToRefresh'
 
 const DashboardView = memo(({ onNavigate, onNavigateToPayment }) => {
   const { t, formatCurrency, formatNumber } = useLanguage()
-  const { indices, getMonthlyChange, loading: indicesLoading } = useIndices('AR')
   const [loading, setLoading] = useState(true)
   const [propertyUnits, setPropertyUnits] = useState([])
   const [tenants, setTenants] = useState([])
   const [payments, setPayments] = useState([])
   const [leases, setLeases] = useState([])
-  const [indicesExpanded, setIndicesExpanded] = useState(false)
 
   const fetchData = useCallback(async () => {
     try {
@@ -469,81 +459,7 @@ const DashboardView = memo(({ onNavigate, onNavigateToPayment }) => {
           ))}
         </Grid>
 
-        {/* 4. Economic Indices - Collapsible */}
-        {indices.length > 0 && (
-          <Accordion
-            expanded={indicesExpanded}
-            onChange={() => setIndicesExpanded(!indicesExpanded)}
-            sx={{ mb: 3 }}
-          >
-            <AccordionSummary expandIcon={<ExpandMore />}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                <TrendingUp color="primary" sx={{ fontSize: 20 }} />
-                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                  {t('economicIndices')}
-                </Typography>
-                {!indicesExpanded && (
-                  <Box sx={{ display: 'flex', gap: 1, ml: 'auto', mr: 2 }}>
-                    {indices.filter(idx => idx.indexType !== 'NONE').slice(0, 2).map(idx => {
-                      const isDolar = idx.indexType.includes('DOLAR')
-                      const isMonthlyChangeIndex = idx.indexType === 'ICL' || idx.indexType === 'IPC'
-                      const monthlyChange = isMonthlyChangeIndex ? getMonthlyChange(idx.indexType) : null
-                      return (
-                        <Chip
-                          key={idx.indexType}
-                          label={`${idx.indexType.replace('_', ' ')}: ${isDolar ? `$${formatNumber(idx.value)}` : isMonthlyChangeIndex && monthlyChange !== null ? `${formatNumber(monthlyChange, 2)}%` : formatNumber(idx.value)}`}
-                          size="small"
-                          variant="outlined"
-                          sx={{ display: { xs: 'none', sm: 'flex' } }}
-                        />
-                      )
-                    })}
-                  </Box>
-                )}
-              </Box>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Grid container spacing={2}>
-                {indices.filter(idx => idx.indexType !== 'NONE').map((index) => {
-                  const isDolar = index.indexType.includes('DOLAR')
-                  const isMonthlyChangeIndex = index.indexType === 'ICL' || index.indexType === 'IPC'
-                  const monthlyChange = isMonthlyChangeIndex ? getMonthlyChange(index.indexType) : null
-
-                  return (
-                    <Grid size={{ xs: 6, sm: 4, md: 2.4 }} key={index.indexType}>
-                      <Box sx={{
-                        p: 1.5,
-                        borderRadius: 1,
-                        bgcolor: 'background.default',
-                        textAlign: 'center'
-                      }}>
-                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
-                          {index.indexType.replace('_', ' ')}
-                        </Typography>
-                        <Typography variant="h6" sx={{ fontWeight: 600, color: isDolar ? 'success.main' : 'primary.main' }}>
-                          {isDolar
-                            ? `$${formatNumber(index.value)}`
-                            : isMonthlyChangeIndex && monthlyChange !== null
-                              ? `${formatNumber(monthlyChange, 2)}%`
-                              : formatNumber(index.value)
-                          }
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
-                          {isMonthlyChangeIndex
-                            ? (t('monthlyChange'))
-                            : index.valueDate
-                          }
-                        </Typography>
-                      </Box>
-                    </Grid>
-                  )
-                })}
-              </Grid>
-            </AccordionDetails>
-          </Accordion>
-        )}
-
-        {/* 5. Recent Payments - Full Width */}
+        {/* 4. Recent Payments - Full Width */}
         <Paper
           onClick={() => handlePaymentClick('paid')}
           sx={{
