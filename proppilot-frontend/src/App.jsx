@@ -809,7 +809,7 @@ function AppContent() {
               // Account for AppBar height plus iOS safe area
               mt: { xs: 'calc(56px + env(safe-area-inset-top, 0px))', sm: 'calc(64px + env(safe-area-inset-top, 0px))' },
               backgroundColor: 'background.default',
-              minHeight: '100vh',
+              minHeight: { xs: 'calc(100vh - 56px - env(safe-area-inset-top, 0px))', sm: 'calc(100vh - 64px - env(safe-area-inset-top, 0px))' },
               // Extra bottom padding for native bottom nav
               pb: isNative ? 'calc(72px + env(safe-area-inset-bottom, 0px))' : { xs: 3, sm: 4 },
             }}
