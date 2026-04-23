@@ -82,3 +82,9 @@ logs/
 # Claude MCP config (already in gitignore)
 proppilot-backend/.claude_mcp_config.json
 .playwright-mcp/
+
+# Claude Code local settings (personal, per-user)
+.claude/settings.local.json
+
+# Legacy Python backend experiment (not deployed, Java is the official backend)
+proppilot-backend-python/
