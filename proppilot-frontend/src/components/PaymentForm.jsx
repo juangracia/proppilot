@@ -186,7 +186,7 @@ const PaymentForm = memo(function PaymentForm({
     }
   }, [initialLeaseFilter, leases])
 
-  // Auto-fill rent amount when lease is selected
+  // Auto-fill rent amount when lease is selected (optimistic fallback to base rent)
   const handleLeaseChange = useCallback((leaseId) => {
     const selectedLease = leases.find(l => l.id === parseInt(leaseId))
     setFormData(prev => ({
@@ -197,6 +197,36 @@ const PaymentForm = memo(function PaymentForm({
         : prev.amount
     }))
   }, [leases])
+
+  // Fetch adjusted rent and update amount if the user hasn't manually edited it
+  useEffect(() => {
+    if (!formData.leaseId) return
+
+    const selectedLease = leases.find(l => l.id === parseInt(formData.leaseId))
+    if (!selectedLease) return
+
+    let cancelled = false
+    const fallbackAmount = selectedLease.monthlyRent.toString()
+
+    axios.get(`${API_BASE_URL}/leases/${formData.leaseId}/adjusted-rent`)
+      .then(res => {
+        if (cancelled) return
+        const { hasAdjustment, adjustedRent } = res.data
+        if (!hasAdjustment) return
+        setFormData(prev => {
+          if (prev.isPartialPayment) return prev
+          if (prev.amount !== fallbackAmount) return prev
+          return { ...prev, amount: adjustedRent.toString() }
+        })
+      })
+      .catch(err => {
+        console.error('Error fetching adjusted rent:', err)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [formData.leaseId, leases])
 
   const validateForm = useCallback(() => {
     const errors = {}

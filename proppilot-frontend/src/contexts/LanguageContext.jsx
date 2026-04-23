@@ -441,6 +441,12 @@ export const LanguageProvider = ({ children }) => {
       step4Title: '4. Pagos',
       step4Desc: 'Lleva el control de los cobros',
       orAddTenant: 'o agregar un inquilino primero',
+
+      // Adjusted Rent
+      adjustedRent: 'Alquiler Ajustado',
+      adjustedAsOf: 'Ajustado al {month}',
+      noIndexDataAvailable: 'Sin datos de {index} disponibles',
+      adjustedRentBase: 'Base',
     },
     en: {
       // Header
@@ -869,6 +875,12 @@ export const LanguageProvider = ({ children }) => {
       step4Title: '4. Payments',
       step4Desc: 'Track your rent collections',
       orAddTenant: 'or add a tenant first',
+
+      // Adjusted Rent
+      adjustedRent: 'Adjusted Rent',
+      adjustedAsOf: 'Adjusted as of {month}',
+      noIndexDataAvailable: 'No {index} data available',
+      adjustedRentBase: 'Base',
     }
   }
 
