@@ -1283,7 +1283,12 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                 </Paper>
 
                 {adjustedRent && selectedLease.adjustmentIndex !== 'NONE' && (
-                  <AdjustedRentCard baseRent={selectedLease.monthlyRent} adjusted={adjustedRent} />
+                  <>
+                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, textTransform: 'uppercase', fontSize: '0.75rem' }}>
+                      {t('adjustedRent')}
+                    </Typography>
+                    <AdjustedRentCard baseRent={selectedLease.monthlyRent} adjusted={adjustedRent} />
+                  </>
                 )}
 
                 <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, textTransform: 'uppercase', fontSize: '0.75rem' }}>
