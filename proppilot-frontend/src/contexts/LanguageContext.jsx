@@ -441,6 +441,27 @@ export const LanguageProvider = ({ children }) => {
       step4Title: '4. Pagos',
       step4Desc: 'Lleva el control de los cobros',
       orAddTenant: 'o agregar un inquilino primero',
+
+      // Adjusted Rent
+      adjustedRent: 'Alquiler Ajustado',
+      adjustedTo: 'ajustado a',
+      preFilled: 'PRE-LLENO',
+      adjustmentExplanation: 'Monto ajustado por {index} al día de hoy (×{factor} · base {base})',
+      noAdjustmentAvailable: 'Sin datos de índice disponibles',
+      period: 'Período',
+      adjustedAsOfToday: 'Alquiler ajustado a hoy',
+      lastUpdate: 'Última Actualización',
+      calculationDate: 'Fecha de Cálculo',
+      accumulatedAdjustmentFactor: 'Factor de ajuste acumulado',
+      adjustedAmount: 'Monto Ajustado',
+      effectiveAs: 'Vigente al',
+      terminate: 'Terminar',
+      active: 'Activo',
+      expired: 'Vencido',
+      terminated: 'Terminado',
+      biannual: 'Semestral',
+      amount: 'Monto',
+      adjustmentIndexLabel: 'Índice de ajuste',
     },
     en: {
       // Header
@@ -869,6 +890,27 @@ export const LanguageProvider = ({ children }) => {
       step4Title: '4. Payments',
       step4Desc: 'Track your rent collections',
       orAddTenant: 'or add a tenant first',
+
+      // Adjusted Rent
+      adjustedRent: 'Adjusted Rent',
+      adjustedTo: 'adjusted to',
+      preFilled: 'PRE-FILLED',
+      adjustmentExplanation: 'Amount adjusted by {index} as of today (×{factor} · base {base})',
+      noAdjustmentAvailable: 'No index data available',
+      period: 'Period',
+      adjustedAsOfToday: 'Rent adjusted to today',
+      lastUpdate: 'Last Update',
+      calculationDate: 'Calculation Date',
+      accumulatedAdjustmentFactor: 'Accumulated adjustment factor',
+      adjustedAmount: 'Adjusted Amount',
+      effectiveAs: 'Effective as of',
+      terminate: 'Terminate',
+      active: 'Active',
+      expired: 'Expired',
+      terminated: 'Terminated',
+      biannual: 'Biannual',
+      amount: 'Amount',
+      adjustmentIndexLabel: 'Adjustment Index',
     }
   }
 
