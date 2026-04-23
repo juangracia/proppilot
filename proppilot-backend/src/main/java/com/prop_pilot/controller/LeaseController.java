@@ -1,8 +1,10 @@
 package com.prop_pilot.controller;
 
+import com.prop_pilot.dto.AdjustedRentResponse;
 import com.prop_pilot.entity.Lease;
 import com.prop_pilot.service.CurrentUserService;
 import com.prop_pilot.service.LeaseService;
+import com.prop_pilot.service.RentAdjustmentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -12,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -21,10 +24,21 @@ public class LeaseController {
 
     private final LeaseService leaseService;
     private final CurrentUserService currentUserService;
+    private final RentAdjustmentService rentAdjustmentService;
 
-    public LeaseController(LeaseService leaseService, CurrentUserService currentUserService) {
+    public LeaseController(LeaseService leaseService, CurrentUserService currentUserService, RentAdjustmentService rentAdjustmentService) {
         this.leaseService = leaseService;
         this.currentUserService = currentUserService;
+        this.rentAdjustmentService = rentAdjustmentService;
+    }
+
+    @GetMapping("/{id}/adjusted-rent")
+    @Operation(summary = "Get adjusted rent", description = "Calculates the adjusted rent for a lease as of today")
+    @ApiResponse(responseCode = "200", description = "Adjusted rent calculated successfully")
+    public ResponseEntity<AdjustedRentResponse> getAdjustedRent(@PathVariable Long id) {
+        Long ownerId = currentUserService.getCurrentUserId();
+        AdjustedRentResponse response = rentAdjustmentService.computeAdjustedRent(id, ownerId, LocalDate.now());
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping
