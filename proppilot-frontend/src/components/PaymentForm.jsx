@@ -46,8 +46,7 @@ import {
   OpenInNew,
   Description,
   Search as SearchIcon,
-  Clear as ClearIcon,
-  TrendingUp
+  Clear as ClearIcon
 } from '@mui/icons-material'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
@@ -91,8 +90,6 @@ const PaymentForm = memo(function PaymentForm({
   })
 
   const [validationErrors, setValidationErrors] = useState({})
-  const [adjustedInfo, setAdjustedInfo] = useState(null)
-  const [isPrefilledWithAdjusted, setIsPrefilledWithAdjusted] = useState(false)
   const [leases, setLeases] = useState([])
   const [loading, setLoading] = useState(false)
   const [initialLoading, setInitialLoading] = useState(true)
@@ -189,11 +186,9 @@ const PaymentForm = memo(function PaymentForm({
     }
   }, [initialLeaseFilter, leases])
 
-  // Auto-fill rent amount when lease is selected (optimistic fallback to base rent)
+  // Auto-fill rent amount when lease is selected
   const handleLeaseChange = useCallback((leaseId) => {
     const selectedLease = leases.find(l => l.id === parseInt(leaseId))
-    setAdjustedInfo(null)
-    setIsPrefilledWithAdjusted(false)
     setFormData(prev => ({
       ...prev,
       leaseId: leaseId,
@@ -202,39 +197,6 @@ const PaymentForm = memo(function PaymentForm({
         : prev.amount
     }))
   }, [leases])
-
-  // Fetch adjusted rent and update amount if the user hasn't manually edited it
-  useEffect(() => {
-    if (!formData.leaseId) return
-
-    const selectedLease = leases.find(l => l.id === parseInt(formData.leaseId))
-    if (!selectedLease) return
-
-    let cancelled = false
-    const fallbackAmount = selectedLease.monthlyRent.toString()
-
-    axios.get(`${API_BASE_URL}/leases/${formData.leaseId}/adjusted-rent`)
-      .then(res => {
-        if (cancelled) return
-        const data = res.data
-        setAdjustedInfo(data)
-        const { hasAdjustment, adjustedRent } = data
-        if (!hasAdjustment) return
-        setFormData(prev => {
-          if (prev.isPartialPayment) return prev
-          if (prev.amount !== fallbackAmount) return prev
-          return { ...prev, amount: adjustedRent.toString() }
-        })
-        setIsPrefilledWithAdjusted(true)
-      })
-      .catch(err => {
-        console.error('Error fetching adjusted rent:', err)
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [formData.leaseId, leases])
 
   const validateForm = useCallback(() => {
     const errors = {}
@@ -304,8 +266,6 @@ const PaymentForm = memo(function PaymentForm({
           description: '',
           isPartialPayment: false
         })
-        setAdjustedInfo(null)
-        setIsPrefilledWithAdjusted(false)
         setValidationErrors({})
       }
     } catch (err) {
@@ -483,60 +443,14 @@ const PaymentForm = memo(function PaymentForm({
                 </Grid>
 
                 <Grid size={{ xs: 12, md: 6 }}>
-                  <Box sx={{ position: 'relative' }}>
-                    {isPrefilledWithAdjusted && (
-                      <Chip
-                        icon={<TrendingUp sx={{ fontSize: '14px !important' }} />}
-                        label={t('prefilledBadge')}
-                        size="small"
-                        sx={{
-                          position: 'absolute',
-                          top: -10,
-                          right: 8,
-                          zIndex: 1,
-                          bgcolor: 'primary.main',
-                          color: 'white',
-                          fontWeight: 700,
-                          fontSize: '0.65rem',
-                          height: 20,
-                          '& .MuiChip-icon': { color: 'white' }
-                        }}
-                      />
-                    )}
-                    <MoneyInput
-                      label={t('paymentAmountLabel')}
-                      value={formData.amount}
-                      onChange={(value) => {
-                        setIsPrefilledWithAdjusted(false)
-                        setFormData(prev => ({ ...prev, amount: value }))
-                      }}
-                      required
-                      error={!!validationErrors.amount}
-                      helperText={
-                        validationErrors.amount ||
-                        (isPrefilledWithAdjusted && adjustedInfo?.hasAdjustment
-                          ? undefined
-                          : undefined)
-                      }
-                      sx={isPrefilledWithAdjusted ? {
-                        '& .MuiInputBase-input': { color: 'primary.main', fontWeight: 600 },
-                        '& .MuiOutlinedInput-root': { borderColor: 'primary.main' },
-                        '& .MuiOutlinedInput-notchedOutline': { borderColor: 'primary.main' }
-                      } : {}}
-                    />
-                    {isPrefilledWithAdjusted && adjustedInfo?.hasAdjustment && !validationErrors.amount && (
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5, ml: 1.75 }}>
-                        <TrendingUp sx={{ fontSize: 13, color: 'primary.main' }} />
-                        <Typography variant="caption" color="primary.main">
-                          {t('adjustedAmountHelper', {
-                            index: adjustedInfo.adjustmentIndex,
-                            factor: Number(adjustedInfo.adjustmentFactor).toFixed(4),
-                            base: formatCurrency(adjustedInfo.baseRent)
-                          })}
-                        </Typography>
-                      </Box>
-                    )}
-                  </Box>
+                  <MoneyInput
+                    label={t('paymentAmountLabel')}
+                    value={formData.amount}
+                    onChange={(value) => setFormData(prev => ({ ...prev, amount: value }))}
+                    required
+                    error={!!validationErrors.amount}
+                    helperText={validationErrors.amount}
+                  />
                   <FormControlLabel
                     control={
                       <Checkbox
@@ -649,16 +563,8 @@ const PaymentForm = memo(function PaymentForm({
                           variant="body2"
                           sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
                         >
-                          <strong>{t('leasePeriod')}:</strong> {selectedLease.startDate} — {selectedLease.endDate}
+                          <strong>{t('leasePeriod')}:</strong> {selectedLease.startDate} - {selectedLease.endDate}
                         </Typography>
-                        {selectedLease.adjustmentIndex && selectedLease.adjustmentIndex !== 'NONE' && (
-                          <Typography
-                            variant="body2"
-                            sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
-                          >
-                            <strong>{t('adjustmentIndexLabel')}:</strong> {selectedLease.adjustmentIndex}
-                          </Typography>
-                        )}
                       </Box>
                     </Box>
                   </Grid>
@@ -686,8 +592,6 @@ const PaymentForm = memo(function PaymentForm({
                           description: '',
                           isPartialPayment: false
                         })
-                        setAdjustedInfo(null)
-                        setIsPrefilledWithAdjusted(false)
                         setError('')
                         setSuccess('')
                         setValidationErrors({})
