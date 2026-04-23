@@ -441,6 +441,26 @@ export const LanguageProvider = ({ children }) => {
       step4Title: '4. Pagos',
       step4Desc: 'Lleva el control de los cobros',
       orAddTenant: 'o agregar un inquilino primero',
+
+      // Adjusted Rent
+      adjustedRent: 'Alquiler Ajustado',
+      adjustedAsOf: 'Ajustado al {month}',
+      noIndexDataAvailable: 'Sin datos de {index} disponibles',
+      adjustedRentBase: 'Base',
+      prefilledBadge: 'PRE-LLENO',
+      adjustedAmountHelper: 'Monto ajustado por {index} al día de hoy (×{factor} · base {base})',
+      adjustmentIndexLabel: 'Índice de ajuste',
+      adjustedToToday: 'Alquiler ajustado a hoy',
+      baseRentUpper: 'ALQUILER BASE',
+      contractStartUpper: 'INICIO DEL CONTRATO',
+      lastUpdateUpper: 'ÚLTIMA ACTUALIZACIÓN',
+      calculationDateUpper: 'FECHA DE CÁLCULO',
+      accumulatedFactor: 'Factor de ajuste acumulado',
+      adjustedAmountUpper: 'MONTO AJUSTADO',
+      effectiveAsOf: 'Vigente al {date}',
+      freqQuarterly: 'Trimestral',
+      freqBiannual: 'Semestral',
+      freqAnnual: 'Anual',
     },
     en: {
       // Header
@@ -869,6 +889,26 @@ export const LanguageProvider = ({ children }) => {
       step4Title: '4. Payments',
       step4Desc: 'Track your rent collections',
       orAddTenant: 'or add a tenant first',
+
+      // Adjusted Rent
+      adjustedRent: 'Adjusted Rent',
+      adjustedAsOf: 'Adjusted as of {month}',
+      noIndexDataAvailable: 'No {index} data available',
+      adjustedRentBase: 'Base',
+      prefilledBadge: 'PRE-FILLED',
+      adjustedAmountHelper: 'Amount adjusted by {index} as of today (×{factor} · base {base})',
+      adjustmentIndexLabel: 'Adjustment index',
+      adjustedToToday: 'Rent adjusted as of today',
+      baseRentUpper: 'BASE RENT',
+      contractStartUpper: 'CONTRACT START',
+      lastUpdateUpper: 'LAST UPDATE',
+      calculationDateUpper: 'CALCULATION DATE',
+      accumulatedFactor: 'Accumulated adjustment factor',
+      adjustedAmountUpper: 'ADJUSTED AMOUNT',
+      effectiveAsOf: 'Effective as of {date}',
+      freqQuarterly: 'Quarterly',
+      freqBiannual: 'Biannual',
+      freqAnnual: 'Annual',
     }
   }
 

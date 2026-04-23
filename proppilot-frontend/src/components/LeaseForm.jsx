@@ -67,6 +67,7 @@ import { useLanguage } from '../contexts/LanguageContext'
 import { API_BASE_URL } from '../config/api'
 import MoneyInput from './MoneyInput'
 import { useCountries } from '../hooks/useCountries'
+import AdjustedRentCard from './AdjustedRentCard'
 
 const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTenant, onNavigateToPayment, initialLeaseId, onLeaseViewed, openAddForm, onAddFormOpened }) {
   const { t, formatCurrency, currency, formatNumber } = useLanguage()
@@ -109,6 +110,7 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
   const [leaseToReactivate, setLeaseToReactivate] = useState(null)
   const [leasePayments, setLeasePayments] = useState([])
   const [loadingPayments, setLoadingPayments] = useState(false)
+  const [adjustedRent, setAdjustedRent] = useState(null)
 
   // Inline creation dialogs
   const [newTenantDialogOpen, setNewTenantDialogOpen] = useState(false)
@@ -196,6 +198,24 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
       fetchLeasePayments()
     } else {
       setLeasePayments([])
+    }
+  }, [selectedLease, detailDialogOpen])
+
+  // Fetch adjusted rent when a lease detail dialog opens
+  useEffect(() => {
+    if (selectedLease && detailDialogOpen) {
+      const fetchAdjustedRent = async () => {
+        try {
+          const res = await axios.get(`${API_BASE_URL}/leases/${selectedLease.id}/adjusted-rent`)
+          setAdjustedRent(res.data)
+        } catch (err) {
+          console.error('Failed to fetch adjusted rent for lease:', err)
+          setAdjustedRent(null)
+        }
+      }
+      fetchAdjustedRent()
+    } else {
+      setAdjustedRent(null)
     }
   }, [selectedLease, detailDialogOpen])
 
@@ -1261,6 +1281,15 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                     </Box>
                   </Box>
                 </Paper>
+
+                {adjustedRent && selectedLease.adjustmentIndex !== 'NONE' && (
+                  <>
+                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, textTransform: 'uppercase', fontSize: '0.75rem' }}>
+                      {t('adjustedRent')}
+                    </Typography>
+                    <AdjustedRentCard baseRent={selectedLease.monthlyRent} adjusted={adjustedRent} />
+                  </>
+                )}
 
                 <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, textTransform: 'uppercase', fontSize: '0.75rem' }}>
                   {t('propertyInfo')}
