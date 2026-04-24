@@ -32,6 +32,7 @@ import {
   Divider,
   InputAdornment
 } from '@mui/material'
+import MoneyInput from './MoneyInput'
 import Grid from '@mui/material/Grid'
 import {
   CheckCircle,
@@ -104,7 +105,7 @@ const PaymentForm = memo(function PaymentForm({
   const [payments, setPayments] = useState([])
 
   const paymentTypes = useMemo(() => [
-    { value: 'RENT', label: t('rentPayment') },
+    { value: 'RENT', label: 'Alquiler' },
     { value: 'DEPOSIT', label: t('depositPayment') },
     { value: 'MAINTENANCE', label: t('maintenancePayment') },
     { value: 'UTILITY', label: t('utilityPayment') },
@@ -472,48 +473,43 @@ const PaymentForm = memo(function PaymentForm({
                 </Grid>
 
                 <Grid size={{ xs: 12, md: 6 }}>
-                  <TextField
-                    label={
-                      <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
-                        {t('paymentAmountLabel') || 'Monto'} *
-                        {amountWasPrefilled && adjustedRent?.hasAdjustment && (
-                          <Chip
-                            icon={<AutoAwesome sx={{ fontSize: 14 }} />}
-                            label={t('preFilled') || 'PRE-LLENO'}
-                            size="small"
-                            sx={{
-                              height: 20,
-                              bgcolor: 'primary.50',
-                              color: 'primary.main',
-                              fontWeight: 600,
-                              fontSize: 11,
-                              '& .MuiChip-icon': { color: 'primary.main', ml: 0.5 }
-                            }}
-                          />
-                        )}
-                      </Box>
-                    }
-                    value={formData.amount}
-                    onChange={(e) => {
-                      setFormData(prev => ({ ...prev, amount: e.target.value }))
-                      setAmountWasPrefilled(false)
-                    }}
-                    fullWidth
-                    required
-                    type="number"
-                    InputProps={{
-                      startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                      sx: amountWasPrefilled && adjustedRent?.hasAdjustment ? {
+                  <Box sx={{ position: 'relative' }}>
+                    {amountWasPrefilled && adjustedRent?.hasAdjustment && (
+                      <Chip
+                        icon={<AutoAwesome sx={{ fontSize: 14 }} />}
+                        label={t('preFilled') || 'PRE-LLENO'}
+                        size="small"
+                        sx={{
+                          position: 'absolute',
+                          top: -10,
+                          right: 8,
+                          zIndex: 1,
+                          height: 20,
+                          bgcolor: 'primary.50',
+                          color: 'primary.main',
+                          fontWeight: 600,
+                          fontSize: 11,
+                          '& .MuiChip-icon': { color: 'primary.main', ml: 0.5 }
+                        }}
+                      />
+                    )}
+                    <MoneyInput
+                      label={t('amount') || 'Monto'}
+                      value={formData.amount}
+                      onChange={(numericValue) => {
+                        setFormData(prev => ({ ...prev, amount: numericValue }))
+                        setAmountWasPrefilled(false)
+                      }}
+                      required
+                      error={!!validationErrors.amount}
+                      helperText={validationErrors.amount}
+                      sx={amountWasPrefilled && adjustedRent?.hasAdjustment ? {
                         '& fieldset': { borderColor: 'primary.main', borderWidth: 2 },
-                        '& input': { color: 'primary.main', fontWeight: 600 }
-                      } : {}
-                    }}
-                    InputLabelProps={{
-                      sx: amountWasPrefilled && adjustedRent?.hasAdjustment ? { color: 'primary.main' } : {}
-                    }}
-                    error={!!validationErrors.amount}
-                    helperText={validationErrors.amount}
-                  />
+                        '& input': { color: 'primary.main', fontWeight: 600 },
+                        '& label': { color: 'primary.main' }
+                      } : {}}
+                    />
+                  </Box>
                   {amountWasPrefilled && adjustedRent?.hasAdjustment && (
                     <Box sx={{ mt: 0.5, display: 'flex', alignItems: 'center', gap: 0.5 }}>
                       <TrendingUp sx={{ fontSize: 16, color: 'primary.main' }} />
@@ -535,7 +531,7 @@ const PaymentForm = memo(function PaymentForm({
                     }
                     label={
                       <Typography variant="body2" sx={{ fontSize: '0.875rem' }}>
-                        {t('partialPayment')}
+                        {(t('partialPayment') || 'Pago parcial').replace('Pago Parcial', 'Pago parcial').replace('Partial Payment', 'Partial payment')}
                       </Typography>
                     }
                     sx={{ mt: 1 }}
@@ -601,7 +597,7 @@ const PaymentForm = memo(function PaymentForm({
                         <div><strong>{t('tenants') || 'Inquilino(s)'}:</strong> {(selectedLease.tenantNames || [selectedLease.tenantName]).filter(Boolean).join(', ')}</div>
                         <div><strong>{t('monthlyRent') || 'Alquiler Mensual'}:</strong> {formatCurrency(selectedLease.monthlyRent, currency)}</div>
                         <div>
-                          <strong>{t('leasePeriod') || 'Periodo'}:</strong>{' '}
+                          <strong>{t('period') || 'Período'}:</strong>{' '}
                           {format(new Date(selectedLease.startDate + 'T00:00:00'), 'dd/MM/yyyy')} — {format(new Date(selectedLease.endDate + 'T00:00:00'), 'dd/MM/yyyy')}
                         </div>
                         <div><strong>{t('adjustmentIndexLabel') || 'Indice de ajuste'}:</strong> {selectedLease.adjustmentIndex}</div>
@@ -643,7 +639,7 @@ const PaymentForm = memo(function PaymentForm({
                         fontSize: { xs: '0.875rem', sm: '1rem' }
                       }}
                     >
-                      {t('cancelAction') || 'CANCELAR'}
+                      {t('cancel') || 'Cancelar'}
                     </Button>
                     <Button
                       type="submit"

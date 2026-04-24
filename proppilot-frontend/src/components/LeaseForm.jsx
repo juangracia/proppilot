@@ -115,12 +115,12 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
 
   const frequencyLabel = (months) => {
     switch (months) {
-      case 1: return t('monthly') || 'Mensual'
-      case 2: return t('bimonthly') || 'Bimestral'
-      case 3: return t('quarterly') || 'Trimestral'
-      case 6: return t('biannual') || 'Semestral'
-      case 12: return t('annual') || 'Anual'
-      default: return `${months} ${t('months') || 'meses'}`
+      case 1: return 'Mensual'
+      case 2: return 'Bimestral'
+      case 3: return 'Trimestral'
+      case 6: return 'Semestral'
+      case 12: return 'Anual'
+      default: return `${months} meses`
     }
   }
 

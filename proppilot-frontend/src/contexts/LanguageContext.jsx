@@ -934,8 +934,11 @@ export const LanguageProvider = ({ children }) => {
 
   const formatCurrency = (amount, currencyCode = currency) => {
     const symbol = t(`currencySymbol.${currencyCode}`)
-    const formattedAmount = new Intl.NumberFormat(language === 'es' ? 'es-AR' : 'en-US').format(amount)
-    return `${symbol}${formattedAmount}`
+    const formattedAmount = new Intl.NumberFormat(language === 'es' ? 'es-AR' : 'en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amount)
+    return `${symbol} ${formattedAmount}`
   }
 
   const formatNumber = (number, decimals = 2) => {
