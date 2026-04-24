@@ -56,7 +56,9 @@ import {
   Search,
   Clear,
   Payment as PaymentIcon,
-  Schedule
+  Schedule,
+  TrendingUp,
+  DateRange
 } from '@mui/icons-material'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
@@ -109,6 +111,18 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
   const [leaseToReactivate, setLeaseToReactivate] = useState(null)
   const [leasePayments, setLeasePayments] = useState([])
   const [loadingPayments, setLoadingPayments] = useState(false)
+  const [adjustedRent, setAdjustedRent] = useState(null)
+
+  const frequencyLabel = (months) => {
+    switch (months) {
+      case 1: return 'Mensual'
+      case 2: return 'Bimestral'
+      case 3: return 'Trimestral'
+      case 6: return 'Semestral'
+      case 12: return 'Anual'
+      default: return `${months} meses`
+    }
+  }
 
   // Inline creation dialogs
   const [newTenantDialogOpen, setNewTenantDialogOpen] = useState(false)
@@ -197,6 +211,25 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
     } else {
       setLeasePayments([])
     }
+  }, [selectedLease, detailDialogOpen])
+
+  // Fetch adjusted rent when a lease is selected for detail view
+  useEffect(() => {
+    if (!selectedLease || !detailDialogOpen) {
+      setAdjustedRent(null)
+      return
+    }
+    let cancelled = false
+    const fetchAdjustedRent = async () => {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/leases/${selectedLease.id}/adjusted-rent`)
+        if (!cancelled) setAdjustedRent(response.data)
+      } catch (err) {
+        if (!cancelled) setAdjustedRent(null)
+      }
+    }
+    fetchAdjustedRent()
+    return () => { cancelled = true }
   }, [selectedLease, detailDialogOpen])
 
   // Auto-fill rent and set default end date when property or start date changes
@@ -1212,7 +1245,7 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
         >
           {selectedLease && (
             <>
-              <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <DialogTitle sx={{ pb: 1 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                   <Avatar sx={{ bgcolor: 'primary.main', width: 48, height: 48 }}>
                     <Description />
@@ -1221,55 +1254,195 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                     <Typography variant="h6" sx={{ fontWeight: 600 }}>
                       {t('leaseDetails') || 'Detalles del Contrato'}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="caption" color="text.secondary">
                       #{selectedLease.id}
                     </Typography>
                   </Box>
                 </Box>
-                <IconButton onClick={() => setDetailDialogOpen(false)} sx={{ display: { xs: 'flex', sm: 'none' } }}>
-                  <Close />
-                </IconButton>
               </DialogTitle>
+
               <DialogContent dividers>
-                <Box sx={{ mb: 3 }}>
+                {/* Status chip */}
+                <Box sx={{ mb: 2 }}>
                   <Chip
                     label={getStatusLabel(selectedLease.status)}
                     color={getStatusColor(selectedLease.status)}
+                    size="small"
                     sx={{ fontWeight: 500 }}
                   />
                 </Box>
 
-                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, textTransform: 'uppercase', fontSize: '0.75rem' }}>
-                  {t('leasePeriod') || 'Período'}
+                {/* PERIODO section */}
+                <Typography
+                  variant="overline"
+                  color="text.secondary"
+                  sx={{ display: 'block', letterSpacing: 1.5, fontSize: '0.7rem', mb: 0.75 }}
+                >
+                  {t('period') || 'PERÍODO'}
                 </Typography>
-                <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+                <Paper variant="outlined" sx={{ p: 2, mb: 2.5 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
                     <CalendarToday sx={{ fontSize: 20, color: 'text.secondary' }} />
-                    <Box>
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                        {selectedLease.startDate} - {selectedLease.endDate}
-                      </Typography>
-                    </Box>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      {selectedLease.startDate
+                        ? (() => { try { return format(new Date(selectedLease.startDate + 'T00:00:00'), 'dd/MM/yyyy') } catch { return selectedLease.startDate } })()
+                        : ''
+                      }
+                      {' — '}
+                      {selectedLease.endDate
+                        ? (() => { try { return format(new Date(selectedLease.endDate + 'T00:00:00'), 'dd/MM/yyyy') } catch { return selectedLease.endDate } })()
+                        : ''
+                      }
+                    </Typography>
                   </Box>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                     <AttachMoney sx={{ fontSize: 20, color: 'text.secondary' }} />
                     <Box>
-                      <Typography variant="caption" color="text.secondary">{t('monthlyRent') || 'Alquiler Mensual'}</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        {t('monthlyRent') || 'Alquiler Mensual'}
+                      </Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>
                         {formatCurrency(selectedLease.monthlyRent)}
                       </Typography>
                     </Box>
                   </Box>
                 </Paper>
 
-                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, textTransform: 'uppercase', fontSize: '0.75rem' }}>
-                  {t('propertyInfo')}
+                {/* ALQUILER AJUSTADO section - only if hasAdjustment */}
+                {adjustedRent && adjustedRent.hasAdjustment && (
+                  <>
+                    <Typography
+                      variant="overline"
+                      color="text.secondary"
+                      sx={{ display: 'block', letterSpacing: 1.5, fontSize: '0.7rem', mb: 0.75 }}
+                    >
+                      {t('adjustedRent') || 'ALQUILER AJUSTADO'}
+                    </Typography>
+                    <Paper
+                      variant="outlined"
+                      sx={{ mb: 2.5, overflow: 'hidden', borderColor: 'primary.light' }}
+                    >
+                      {/* Card header */}
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2, py: 1.5 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <TrendingUp sx={{ fontSize: 20, color: 'primary.main' }} />
+                          <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                            {t('adjustedAsOfToday') || 'Alquiler ajustado a hoy'}
+                          </Typography>
+                        </Box>
+                        <Chip
+                          label={`${adjustedRent.indexType} · ${frequencyLabel(selectedLease.adjustmentFrequencyMonths)}`}
+                          size="small"
+                          color="primary"
+                          sx={{ fontWeight: 600, fontSize: '0.7rem' }}
+                        />
+                      </Box>
+
+                      {/* 2x2 grid of fields */}
+                      <Grid container sx={{ px: 2, pb: 1.5 }} spacing={0}>
+                        <Grid size={{ xs: 6 }} sx={{ pr: 1, pb: 1.5 }}>
+                          <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem', letterSpacing: 1, display: 'block' }}>
+                            {t('baseRent') || 'ALQUILER BASE'}
+                          </Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                            {formatCurrency(adjustedRent.baseAmount)}
+                          </Typography>
+                        </Grid>
+                        <Grid size={{ xs: 6 }} sx={{ pl: 1, pb: 1.5 }}>
+                          <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem', letterSpacing: 1, display: 'block' }}>
+                            {t('leaseStart') || 'INICIO DEL CONTRATO'}
+                          </Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                            {selectedLease.startDate
+                              ? (() => { try { return format(new Date(selectedLease.startDate + 'T00:00:00'), 'dd/MM/yyyy') } catch { return selectedLease.startDate } })()
+                              : ''
+                            }
+                          </Typography>
+                        </Grid>
+                        <Grid size={{ xs: 6 }} sx={{ pr: 1 }}>
+                          <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem', letterSpacing: 1, display: 'block' }}>
+                            {t('lastUpdate') || 'ULTIMA ACTUALIZACION'}
+                          </Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                            {adjustedRent.indexDate
+                              ? (() => { try { return format(new Date(adjustedRent.indexDate + 'T00:00:00'), 'dd/MM/yyyy') } catch { return adjustedRent.indexDate } })()
+                              : ''
+                            }
+                          </Typography>
+                        </Grid>
+                        <Grid size={{ xs: 6 }} sx={{ pl: 1 }}>
+                          <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem', letterSpacing: 1, display: 'block' }}>
+                            {t('calculationDate') || 'FECHA DE CALCULO'}
+                          </Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                            {format(new Date(), 'dd/MM/yyyy')}
+                          </Typography>
+                        </Grid>
+                      </Grid>
+
+                      {/* Factor strip */}
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          px: 2,
+                          py: 1,
+                          bgcolor: 'primary.50',
+                          backgroundColor: 'rgba(25, 118, 210, 0.08)'
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <DateRange sx={{ fontSize: 18, color: 'primary.main' }} />
+                          <Typography variant="body2" color="primary.main">
+                            {t('accumulatedAdjustmentFactor') || 'Factor de ajuste acumulado'}
+                          </Typography>
+                        </Box>
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: 'primary.main' }}>
+                          x{adjustedRent.factor}
+                        </Typography>
+                      </Box>
+
+                      {/* Adjusted amount block */}
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          px: 2,
+                          py: 1.5,
+                          bgcolor: 'primary.main'
+                        }}
+                      >
+                        <Box>
+                          <Typography variant="caption" sx={{ color: 'primary.contrastText', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', display: 'block' }}>
+                            {t('adjustedAmount') || 'MONTO AJUSTADO'}
+                          </Typography>
+                          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.75)', display: 'block' }}>
+                            {t('effectiveAs') || 'Vigente al'} {format(new Date(), 'dd/MM/yyyy')}
+                          </Typography>
+                        </Box>
+                        <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.contrastText' }}>
+                          {formatCurrency(adjustedRent.adjustedAmount)}
+                        </Typography>
+                      </Box>
+                    </Paper>
+                  </>
+                )}
+
+                {/* PROPIEDAD section */}
+                <Typography
+                  variant="overline"
+                  color="text.secondary"
+                  sx={{ display: 'block', letterSpacing: 1.5, fontSize: '0.7rem', mb: 0.75 }}
+                >
+                  {t('property') || 'PROPIEDAD'}
                 </Typography>
                 <Paper
                   variant="outlined"
                   sx={{
                     p: 2,
-                    mb: 2,
+                    mb: 2.5,
                     cursor: onNavigateToProperty && selectedLease.propertyUnitIdRef ? 'pointer' : 'default',
                     '&:hover': onNavigateToProperty && selectedLease.propertyUnitIdRef ? { borderColor: 'primary.main', bgcolor: 'action.hover' } : {}
                   }}
@@ -1281,16 +1454,25 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                   }}
                 >
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <Home sx={{ fontSize: 20, color: 'primary.main' }} />
+                    <Home sx={{ fontSize: 20, color: 'text.secondary' }} />
                     <Typography variant="body2" sx={{ fontWeight: 500, flex: 1 }}>
                       {selectedLease.propertyAddress}
                     </Typography>
-                    {onNavigateToProperty && selectedLease.propertyUnitIdRef && <OpenInNew sx={{ fontSize: 16, color: 'text.secondary' }} />}
+                    {onNavigateToProperty && selectedLease.propertyUnitIdRef && (
+                      <IconButton size="small" sx={{ color: 'text.secondary' }}>
+                        <OpenInNew sx={{ fontSize: 16 }} />
+                      </IconButton>
+                    )}
                   </Box>
                 </Paper>
 
-                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, textTransform: 'uppercase', fontSize: '0.75rem' }}>
-                  {t('tenants') || 'Inquilino(s)'}
+                {/* INQUILINO section */}
+                <Typography
+                  variant="overline"
+                  color="text.secondary"
+                  sx={{ display: 'block', letterSpacing: 1.5, fontSize: '0.7rem', mb: 0.75 }}
+                >
+                  {t('tenant') || 'INQUILINO'}
                 </Typography>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                   {(selectedLease.tenantNames || [selectedLease.tenantName]).map((tenantName, index) => {
@@ -1313,121 +1495,36 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                         }}
                       >
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                          <Person sx={{ fontSize: 20, color: 'primary.main' }} />
+                          <Person sx={{ fontSize: 20, color: 'text.secondary' }} />
                           <Box sx={{ flex: 1 }}>
                             <Typography variant="body2" sx={{ fontWeight: 500 }}>
                               {tenantName}
                             </Typography>
                             {tenantEmail && (
-                              <Typography variant="caption" color="text.secondary">
+                              <Typography variant="caption" color="text.secondary" display="block">
                                 {tenantEmail}
                               </Typography>
                             )}
                           </Box>
-                          {onNavigateToTenant && tenantId && <OpenInNew sx={{ fontSize: 16, color: 'text.secondary' }} />}
+                          {onNavigateToTenant && tenantId && (
+                            <IconButton size="small" sx={{ color: 'text.secondary' }}>
+                              <OpenInNew sx={{ fontSize: 16 }} />
+                            </IconButton>
+                          )}
                         </Box>
                       </Paper>
                     )
                   })}
                 </Box>
-
-                {/* Latest Payments Section */}
-                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, mt: 3, textTransform: 'uppercase', fontSize: '0.75rem' }}>
-                  {t('latestPayments')}
-                </Typography>
-                <Paper variant="outlined" sx={{ p: 2 }}>
-                  {loadingPayments ? (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
-                      <CircularProgress size={24} />
-                    </Box>
-                  ) : leasePayments.length === 0 ? (
-                    <Box sx={{ textAlign: 'center', py: 2 }}>
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                        {t('noPaymentsForLease')}
-                      </Typography>
-                      {onNavigateToPayment && (
-                        <Button
-                          variant="contained"
-                          size="small"
-                          startIcon={<PaymentIcon />}
-                          onClick={() => {
-                            setDetailDialogOpen(false)
-                            onNavigateToPayment({ leaseId: selectedLease?.id })
-                          }}
-                          sx={{ textTransform: 'none' }}
-                        >
-                          {t('registerPayment')}
-                        </Button>
-                      )}
-                    </Box>
-                  ) : (
-                    <>
-                      {/* Payment Status Indicator */}
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                        {leasePayments.some(p => p.status === 'PENDING') ? (
-                          <Chip
-                            icon={<Schedule sx={{ fontSize: 16 }} />}
-                            label={t('paymentsPending')}
-                            color="warning"
-                            size="small"
-                            sx={{ fontWeight: 500 }}
-                          />
-                        ) : (
-                          <Chip
-                            icon={<CheckCircle sx={{ fontSize: 16 }} />}
-                            label={t('upToDate')}
-                            color="success"
-                            size="small"
-                            sx={{ fontWeight: 500 }}
-                          />
-                        )}
-                      </Box>
-
-                      {/* Recent Payments List (max 3) */}
-                      <List dense sx={{ py: 0 }}>
-                        {leasePayments.slice(0, 3).map((payment, index) => (
-                          <React.Fragment key={payment.id}>
-                            {index > 0 && <Divider />}
-                            <ListItem sx={{ px: 0 }}>
-                              <ListItemIcon sx={{ minWidth: 36 }}>
-                                <PaymentIcon sx={{ fontSize: 20, color: payment.status === 'PAID' ? 'success.main' : 'warning.main' }} />
-                              </ListItemIcon>
-                              <ListItemText
-                                primary={
-                                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                      {formatCurrency(payment.amount)}
-                                    </Typography>
-                                    <Chip
-                                      label={payment.status === 'PAID' ? t('paid') : t('pending')}
-                                      color={payment.status === 'PAID' ? 'success' : 'warning'}
-                                      size="small"
-                                      sx={{ height: 20, fontSize: '0.7rem' }}
-                                    />
-                                  </Box>
-                                }
-                                secondary={payment.paymentDate}
-                              />
-                            </ListItem>
-                          </React.Fragment>
-                        ))}
-                      </List>
-                      {leasePayments.length > 3 && (
-                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mt: 1 }}>
-                          +{leasePayments.length - 3} {t('paymentsMenu').toLowerCase()}
-                        </Typography>
-                      )}
-                    </>
-                  )}
-                </Paper>
               </DialogContent>
+
               <DialogActions sx={{ px: 3, py: 2, justifyContent: 'space-between' }}>
                 <Button
                   color="error"
                   startIcon={<Delete />}
                   onClick={() => openDeleteDialog(selectedLease)}
                 >
-                  {t('delete')}
+                  {t('delete') || 'Eliminar'}
                 </Button>
                 <Box sx={{ display: 'flex', gap: 1 }}>
                   {selectedLease.status === 'ACTIVE' && (
@@ -1437,7 +1534,7 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                       startIcon={<Cancel />}
                       onClick={() => openTerminateDialog(selectedLease)}
                     >
-                      {t('terminateLease') || 'Terminar'}
+                      {t('terminate') || 'Terminar'}
                     </Button>
                   )}
                   {selectedLease.status === 'TERMINATED' && (
