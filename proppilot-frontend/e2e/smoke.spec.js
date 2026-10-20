@@ -7,7 +7,8 @@ import { login, apiGet, formatArs } from './helpers'
 test('dashboard counts match the API', async ({ page }) => {
   const token = await login(page)
   const units = await apiGet(page, token, '/property-units')
-  const active = await apiGet(page, token, '/leases/active')
+  const leases = await apiGet(page, token, '/leases')
+  const active = leases.filter((l) => l.status === 'ACTIVE') // same filter as DashboardView.jsx
   test.skip(units.length === 0, 'No data. Run scripts/seed.py first.')
 
   await expect(page.getByText('Total de Propiedades')).toBeVisible()

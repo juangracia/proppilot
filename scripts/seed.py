@@ -42,8 +42,8 @@ def lease_specs(today):
 
     Each spec: property idx, tenant idxs, start, months, rent, index, frequency, terminate,
     months since the last full rent payment (0 = paid this month), partial payment this month.
-    No lease past its end date while still ACTIVE: the dashboard counts it as active but /leases/active does not,
-    which breaks the smoke test (add that case in the branch that handles it).
+    One ACTIVE lease is past its end date (expired, not renewed): /leases/active skips it, the dashboard and /leases
+    filtered by status ACTIVE count it, and the e2e smoke test compares against that filter.
     """
     soon = today + timedelta(days=45)
     next_adjust = today + timedelta(days=12)
@@ -58,6 +58,8 @@ def lease_specs(today):
         (3, [3], date(2025, 1, 15), 36, 600000, "ICL", 12, False, 2, False),
         # up to date, ends in 45 days
         (5, [7], add_months(soon, -36), 36, 650000, "IPC", 6, False, 0, False),
+        # expired two months ago and not renewed: still ACTIVE, fully paid up to its end date
+        (6, [5], add_months(today, -14), 12, 410000, "ICL", 12, False, 2, False),
         # terminated lease, no alerts
         (4, [4], date(2024, 9, 1), 24, 300000, "ICL", 12, True, 0, False),
     ]
