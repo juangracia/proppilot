@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Card, CardActionArea, CardContent, Typography, Box } from '@mui/material'
+import { alpha, Card, CardActionArea, CardContent, Typography, Box } from '@mui/material'
 import { ErrorOutline } from '@mui/icons-material'
 import axios from 'axios'
 import { useLanguage } from '../contexts/LanguageContext'
@@ -25,7 +25,7 @@ const DelinquencyCard = () => {
     <>
       <Card
         data-testid="delinquency-card"
-        sx={{ mb: 3, border: 1, borderColor: 'error.main', bgcolor: 'error.50' }}
+        sx={{ mb: 3, border: 1, borderColor: 'error.main', bgcolor: (theme) => alpha(theme.palette.error.main, 0.08) }}
       >
         <CardActionArea onClick={() => setOpen(true)}>
           <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>

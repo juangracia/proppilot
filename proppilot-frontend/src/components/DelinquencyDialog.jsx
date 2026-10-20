@@ -10,10 +10,13 @@ const DelinquencyDialog = ({ open, onClose, items }) => {
   const [reminderItem, setReminderItem] = useState(null)
   const [notice, setNotice] = useState('')
 
+  // a partly paid month still counts as a month behind
+  const monthsBehind = (item) => item.monthsOwed + (Number(item.partialAmount) > 0 ? 1 : 0)
+
   const buildMessage = (item) => t('delinquencyReminderTemplate', {
     name: item.tenantName,
     address: item.propertyAddress,
-    months: item.monthsOwed + (Number(item.partialAmount) > 0 ? 1 : 0),
+    months: monthsBehind(item),
     amount: formatCurrency(item.amountOwed)
   })
 
@@ -55,7 +58,7 @@ const DelinquencyDialog = ({ open, onClose, items }) => {
                     <TableCell>{item.propertyAddress}</TableCell>
                     <TableCell>
                       <Typography variant="body2">
-                        {t('delinquencyLate', { months: item.monthsOwed, days: item.daysLate })}
+                        {t('delinquencyLate', { months: monthsBehind(item), days: item.daysLate })}
                       </Typography>
                       <Chip size="small" color="error" label={t('delinquencyOverdueChip')} />
                     </TableCell>

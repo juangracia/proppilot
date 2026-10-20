@@ -1,6 +1,11 @@
 package com.prop_pilot.service;
 
 import com.prop_pilot.entity.Lease;
+import com.prop_pilot.entity.PropertyUnit;
+import com.prop_pilot.entity.Tenant;
+import com.prop_pilot.entity.User;
+import java.time.LocalDate;
+import java.util.List;
 import com.prop_pilot.exception.BusinessLogicException;
 import com.prop_pilot.repository.LeaseRepository;
 import com.prop_pilot.repository.PropertyUnitRepository;
@@ -18,6 +23,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -92,5 +98,25 @@ class LeaseServiceImplPaymentDueDayTest {
                     .hasMessage("El día de vencimiento debe estar entre 1 y 28");
         }
         verify(leaseRepository, never()).save(any(Lease.class));
+    }
+
+    @Test
+    void createKeepsPaymentDueDay() {
+        when(propertyUnitRepository.findByIdAndOwnerId(5L, OWNER_ID)).thenReturn(Optional.of(new PropertyUnit()));
+        when(tenantRepository.findByIdAndOwnerId(6L, OWNER_ID)).thenReturn(Optional.of(new Tenant()));
+        when(leaseRepository.existsOverlappingLease(anyLong(), any(), any())).thenReturn(false);
+        when(countryConfigService.isCountrySupported("AR")).thenReturn(true);
+        when(userRepository.findById(OWNER_ID)).thenReturn(Optional.of(new User()));
+        when(leaseRepository.save(any(Lease.class))).thenAnswer(inv -> inv.getArgument(0));
+        Lease lease = new Lease();
+        lease.setInputPropertyUnitId(5L);
+        lease.setInputTenantIds(List.of(6L));
+        lease.setStartDate(LocalDate.of(2026, 9, 1));
+        lease.setEndDate(LocalDate.of(2027, 9, 1));
+        lease.setPaymentDueDay(15);
+
+        Lease saved = service.createLease(lease, OWNER_ID);
+
+        assertThat(saved.getPaymentDueDay()).isEqualTo(15);
     }
 }
