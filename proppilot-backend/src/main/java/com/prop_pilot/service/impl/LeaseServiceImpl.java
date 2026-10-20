@@ -225,6 +225,13 @@ public class LeaseServiceImpl implements LeaseService {
             existingLease.setAdjustmentFrequencyMonths(lease.getAdjustmentFrequencyMonths());
         }
 
+        if (lease.getPaymentDueDay() != null) {
+            if (lease.getPaymentDueDay() < 1 || lease.getPaymentDueDay() > 28) {
+                throw new BusinessLogicException("El día de vencimiento debe estar entre 1 y 28");
+            }
+            existingLease.setPaymentDueDay(lease.getPaymentDueDay());
+        }
+
         return leaseRepository.save(existingLease);
     }
 

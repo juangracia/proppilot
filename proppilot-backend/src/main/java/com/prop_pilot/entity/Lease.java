@@ -67,6 +67,12 @@ public class Lease {
     @Column
     private Integer adjustmentFrequencyMonths = 12;
 
+    // Day of month rent is due (1-28). Null is read as 10 by DelinquencyService.
+    @Column(name = "payment_due_day")
+    @Min(value = 1, message = "El día de vencimiento debe estar entre 1 y 28")
+    @Max(value = 28, message = "El día de vencimiento debe estar entre 1 y 28")
+    private Integer paymentDueDay;
+
     @Column(name = "country_code", length = 2)
     private String countryCode = "AR";  // ISO 3166-1 alpha-2, default Argentina
 
