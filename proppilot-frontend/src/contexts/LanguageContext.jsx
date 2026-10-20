@@ -462,6 +462,12 @@ export const LanguageProvider = ({ children }) => {
       biannual: 'Semestral',
       amount: 'Monto',
       adjustmentIndexLabel: 'Índice de ajuste',
+
+      // REQ-001 (delinquency): only the REQ-001 branch adds keys here
+      // END REQ-001
+
+      // REQ-002 (lease agenda): only the REQ-002 branch adds keys here
+      // END REQ-002
     },
     en: {
       // Header
@@ -911,6 +917,12 @@ export const LanguageProvider = ({ children }) => {
       biannual: 'Biannual',
       amount: 'Amount',
       adjustmentIndexLabel: 'Adjustment Index',
+
+      // REQ-001 (delinquency): only the REQ-001 branch adds keys here
+      // END REQ-001
+
+      // REQ-002 (lease agenda): only the REQ-002 branch adds keys here
+      // END REQ-002
     }
   }
 

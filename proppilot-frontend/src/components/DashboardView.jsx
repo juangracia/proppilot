@@ -335,6 +335,9 @@ const DashboardView = memo(({ onNavigate, onNavigateToPayment }) => {
         <>
         {/* DASHBOARD FOR USERS WITH DATA */}
 
+        {/* REQ-001 slot: the REQ-001 branch mounts <DelinquencyCard /> here, nothing else. */}
+        {/* REQ-002 slot: the REQ-002 branch mounts <AgendaSummaryCard /> here and removes the purple expiring-contracts card below. */}
+
         {/* 1. Alerts Section - Pending Payments & Expiring Contracts */}
         {(nextPaymentDue || upcomingExpiringContracts.length > 0) && (
           <Grid container spacing={2} sx={{ mb: 3 }}>

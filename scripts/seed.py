@@ -13,7 +13,7 @@ import subprocess
 import sys
 import urllib.error
 import urllib.request
-from datetime import date
+from datetime import date, timedelta
 
 PROPERTIES = [
     ("Av. Santa Fe 2450, Piso 3 A, CABA", "Departamento", 450000),
@@ -37,15 +37,31 @@ TENANTS = [
     ("Kiosco El Sol SRL", "30-71234567-9", "admin@kioscoelsol.example.com", "+54 351 222-1100"),
 ]
 
-# (property idx, tenant idxs, start, months, rent, index, frequency, terminate)
-LEASES = [
-    (0, [0], date(2025, 3, 1), 36, 450000, "ICL", 12, False),
-    (1, [1, 6], date(2024, 11, 1), 36, 480000, "ICL", 12, False),
-    (2, [2], date(2025, 7, 1), 24, 380000, "IPC", 3, False),
-    (3, [3], date(2025, 1, 15), 36, 600000, "ICL", 12, False),
-    (5, [7], date(2024, 6, 1), 36, 650000, "IPC", 6, False),
-    (4, [4], date(2024, 9, 1), 24, 300000, "ICL", 12, True),
-]
+def lease_specs(today):
+    """Leases with dates relative to today, so the demo always shows the same cases.
+
+    Each spec: property idx, tenant idxs, start, months, rent, index, frequency, terminate,
+    months since the last full rent payment (0 = paid this month), partial payment this month.
+    No lease past its end date while still ACTIVE: the dashboard counts it as active but /leases/active does not,
+    which breaks the smoke test (add that case in the branch that handles it).
+    """
+    soon = today + timedelta(days=45)
+    next_adjust = today + timedelta(days=12)
+    return [
+        # up to date, ICL yearly adjustment (the e2e specs look for this lease)
+        (0, [0], date(2025, 3, 1), 36, 450000, "ICL", 12, False, 0, False),
+        # paid this month only half
+        (1, [1, 6], date(2024, 11, 1), 36, 480000, "ICL", 12, False, 1, True),
+        # IPC every 3 months, next adjustment in 12 days, owes this month
+        (2, [2], add_months(next_adjust, -15), 24, 380000, "IPC", 3, False, 1, False),
+        # owes the last two months
+        (3, [3], date(2025, 1, 15), 36, 600000, "ICL", 12, False, 2, False),
+        # up to date, ends in 45 days
+        (5, [7], add_months(soon, -36), 36, 650000, "IPC", 6, False, 0, False),
+        # terminated lease, no alerts
+        (4, [4], date(2024, 9, 1), 24, 300000, "ICL", 12, True, 0, False),
+    ]
+
 
 TABLES = "payments, lease_tenants, leases, tenants, property_units, index_values"
 
@@ -83,7 +99,7 @@ def index_values_sql(today):
     rows = []
     for index_type, base, monthly in (("ICL", 10.0, 0.025), ("IPC", 5000.0, 0.022)):
         value = base
-        for d in month_iter(date(2024, 1, 1), today):
+        for d in month_iter(date(2023, 1, 1), today):
             rows.append(f"('AR', '{index_type}', {value:.6f}, '{d}', 'seed-synthetic', now())")
             value *= 1 + monthly
     return ("INSERT INTO index_values (country_code, index_type, value, value_date, source, created_at) VALUES\n"
@@ -112,7 +128,8 @@ def main():
                    {"fullName": n, "nationalId": i, "email": e, "phone": p}) for n, i, e, p in TENANTS]
 
     payments = 0
-    for unit_idx, tenant_idxs, start, months, rent, index, freq, terminate in LEASES:
+    specs = lease_specs(today)
+    for unit_idx, tenant_idxs, start, months, rent, index, freq, terminate, behind, partial in specs:
         lease = api(args.api, "POST", "/leases", {
             "propertyUnitId": units[unit_idx]["id"],
             "tenantIds": [tenants[i]["id"] for i in tenant_idxs],
@@ -123,22 +140,27 @@ def main():
             "adjustmentFrequencyMonths": freq,
             "countryCode": "AR",
         })
-        last_paid = add_months(today, -1) if not terminate else add_months(start, 10)
+        last_paid = add_months(today, -behind) if not terminate else add_months(start, 10)
         api(args.api, "POST", "/payments", {"leaseId": lease["id"], "amount": rent, "paymentDate": str(start),
                                             "paymentType": "DEPOSIT", "description": "Depósito de garantía"})
         payments += 1
         for d in month_iter(start, last_paid):
             pay_date = date(d.year, d.month, min(start.day, 10))
-            if pay_date < start:
+            if pay_date < start or pay_date > today:
                 continue
             api(args.api, "POST", "/payments", {"leaseId": lease["id"], "amount": rent,
                                                 "paymentDate": str(pay_date), "paymentType": "RENT",
                                                 "description": f"Alquiler {d:%m/%Y}"})
             payments += 1
+        if partial:
+            api(args.api, "POST", "/payments", {"leaseId": lease["id"], "amount": rent // 2,
+                                                "paymentDate": str(today), "paymentType": "RENT",
+                                                "description": f"Alquiler {today:%m/%Y} (parcial)"})
+            payments += 1
         if terminate:
             api(args.api, "POST", f"/leases/{lease['id']}/terminate")
 
-    print(f"Seeded {len(units)} properties, {len(tenants)} tenants, {len(LEASES)} leases, "
+    print(f"Seeded {len(units)} properties, {len(tenants)} tenants, {len(specs)} leases, "
           f"{payments} payments and ICL/IPC index values up to {today:%Y-%m}.")
 
 

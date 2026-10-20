@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # One command to check the project. Runs every stage, prints a summary, exits non-zero if any stage failed.
 #   scripts/verify.sh            backend tests + frontend lint + frontend build
-#   scripts/verify.sh --e2e      also runs the Playwright smoke test (needs this slot's backend running and seeded; scripts/wt.sh verify does that for a worktree)
+#   scripts/verify.sh --e2e      also runs the Playwright specs (e2e/smoke.spec.js and e2e/req-*.spec.js) (needs this slot's backend running and seeded; scripts/wt.sh verify does that for a worktree)
 #   scripts/verify.sh --only backend|frontend|e2e
 # Lint has a baseline of pre-existing errors (LINT_ERROR_BASELINE); it fails only if the count goes up.
 set -uo pipefail
@@ -65,14 +65,18 @@ if wants frontend; then
 fi
 
 if [[ "$RUN_E2E" == true || "$ONLY" == "e2e" ]]; then
-  stage "e2e: smoke"
+  stage "e2e: smoke + req-*"
+  # smoke.spec.js plus every feature spec; helpers.js is shared code, not a spec.
+  shopt -s nullglob
+  e2e_specs=(e2e/smoke.spec.js e2e/req-*.spec.js)
+  shopt -u nullglob
   if ! curl -sf -o /dev/null "http://localhost:$BACKEND_PORT/api/countries"; then
     echo "Backend is not running on :$BACKEND_PORT. Start it with scripts/dev-backend.sh, then scripts/seed.py." >&2
-    record "e2e smoke" "FAIL (backend not running)"
-  elif (cd "$ROOT/proppilot-frontend" && npx playwright test e2e/smoke.spec.js --reporter=line); then
-    record "e2e smoke" "PASS"
+    record "e2e" "FAIL (backend not running)"
+  elif (cd "$ROOT/proppilot-frontend" && npx playwright test "${e2e_specs[@]}" --reporter=line); then
+    record "e2e" "PASS (${#e2e_specs[@]} spec files)"
   else
-    record "e2e smoke" "FAIL"
+    record "e2e" "FAIL"
   fi
 fi
 

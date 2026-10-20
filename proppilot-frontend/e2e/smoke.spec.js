@@ -1,36 +1,8 @@
 import { test, expect } from '@playwright/test'
+import { login, apiGet, formatArs } from './helpers'
 
 // Smoke test for the local stack (backend on :8080, or BACKEND_PORT in a parallel worktree, with profile `local`, data from scripts/seed.py).
 // Logs in as the local-dev user that owns the seeded data and checks the UI against the API.
-const API_BASE = `http://localhost:${process.env.BACKEND_PORT || 8080}/api`
-// Must match app.local-dev.email in proppilot-backend/src/main/resources/application-local.yml
-const LOCAL_DEV_EMAIL = 'juanmgracia@gmail.com'
-
-const formatArs = (n) =>
-  new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)
-
-async function login(page) {
-  const res = await page.request.post(`${API_BASE}/auth/local`, {
-    data: { email: LOCAL_DEV_EMAIL, name: 'Local Developer' }
-  })
-  expect(res.ok()).toBeTruthy()
-  const { token } = await res.json()
-  await page.goto('/')
-  await page.evaluate((t) => {
-    localStorage.setItem('token', t)
-    localStorage.setItem('proppilot_tour_completed', 'true')
-  }, token)
-  await page.reload()
-  return token
-}
-
-async function apiGet(page, token, path) {
-  const res = await page.request.get(`${API_BASE}${path}`, {
-    headers: { Authorization: `Bearer ${token}` }
-  })
-  expect(res.ok()).toBeTruthy()
-  return res.json()
-}
 
 test('dashboard counts match the API', async ({ page }) => {
   const token = await login(page)

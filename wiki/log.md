@@ -80,3 +80,9 @@ Append only. Format: `## [YYYY-MM-DD] ingest|query|lint | <title>`. Last five: `
 - Upgraded Railway CLI 4.11.2 to 5.71.0 (`brew upgrade railway`). Rewrote the CLI path in `.claude/skills/railway-deploy/SKILL.md` from `--help` output (add, up, variable set, domain, redeploy, service delete); `docs/deploy-railway.md` points to it.
 - Found Railway's official skill `use-railway` (`railwayapp/railway-skills`, installed by `railway setup agent`). Not installed; ours keeps the PropPilot specifics.
 - UNVERIFIED until first deploy: `railway domain` before the first deployment, and Docker ARG pass-through of VITE_* via `up`.
+
+## [2026-10-20] ingest | Paso 0 for REQ-001/REQ-002 (shared prep)
+- `scripts/seed.py`: leases now relative to today. Demo has 3 leases paid this month (one only half), 2 overdue (one month and two months behind), 1 lease ending in 45 days, 1 index adjustment in 12 days (IPC every 3 months). Index values start 2023-01 so older starts work.
+- Left out on purpose: an ACTIVE lease past its end date. `DashboardView` counts it as active, `GET /api/leases/active` does not, so `smoke.spec.js` fails. REQ-002 can add that case with its own fix.
+- Reserved `// REQ-001` and `// REQ-002` blocks at the end of `es` and `en` in `LanguageContext.jsx`, and two slot comments above the alerts section in `DashboardView.jsx`.
+- `proppilot-frontend/e2e/helpers.js` holds `login`, `apiGet`, `formatArs`; `scripts/verify.sh` runs `smoke.spec.js` plus `e2e/req-*.spec.js`.
