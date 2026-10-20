@@ -24,18 +24,18 @@ const DelinquencyCard = () => {
   if (!data || data.tenantCount === 0) return null
 
   return (
-    <Grid size={{ xs: 6, sm: 4, md: 2.4 }}>
+    <Grid size={{ xs: 6, sm: 4, md: 2 }}>
       <Card data-testid="delinquency-card" sx={{ height: '100%', border: 1, borderColor: 'error.main' }}>
         <CardActionArea onClick={() => setOpen(true)} sx={{ height: '100%' }}>
-          <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+          <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
               <ErrorOutline sx={{ fontSize: 24, color: 'error.main' }} />
-              <Typography variant="subtitle2" color="error">{t('delinquencyTitle')}</Typography>
+              <Typography variant="caption" color="error" sx={{ fontWeight: 700 }}>{t('delinquencyTitle')}</Typography>
             </Box>
             <Typography
               variant="h5"
               data-testid="delinquency-total"
-              sx={{ fontWeight: 700, color: 'error.main', fontSize: { xs: '1.1rem', sm: '1.4rem' } }}
+              sx={{ fontWeight: 700, color: 'error.main', fontSize: { xs: '1rem', sm: '1rem', md: '0.8rem', lg: '1rem' }, whiteSpace: 'nowrap' }}
             >
               {formatCurrency(data.totalOwed)}
             </Typography>

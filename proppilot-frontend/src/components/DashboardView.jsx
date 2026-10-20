@@ -441,7 +441,7 @@ const DashboardView = memo(({ onNavigate, onNavigateToPayment }) => {
         {/* 3. Compact Stats Cards */}
         <Grid container spacing={2} sx={{ mb: 3 }} data-tour="dashboard-stats">
           {stats.map((stat, index) => (
-            <Grid size={{ xs: 6, sm: 4, md: 2.4 }} key={index}>
+            <Grid size={{ xs: 6, sm: 4, md: 2 }} key={index}>
               <Card
                 onClick={() => handleStatClick(stat)}
                 sx={{

@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import {
   Dialog, DialogTitle, DialogContent, DialogActions, Button, Chip, Typography, Box,
-  TextField, Snackbar
+  TextField, Snackbar, Table, TableHead, TableRow, TableCell, TableBody, useMediaQuery
 } from '@mui/material'
 import { useLanguage } from '../contexts/LanguageContext'
 
@@ -9,6 +9,7 @@ const DelinquencyDialog = ({ open, onClose, items }) => {
   const { t, formatCurrency } = useLanguage()
   const [reminderItem, setReminderItem] = useState(null)
   const [notice, setNotice] = useState('')
+  const isMobile = useMediaQuery((theme) => theme.breakpoints.down('sm'))
 
   // a partly paid month still counts as a month behind
   const monthsBehind = (item) => item.monthsOwed + (Number(item.partialAmount) > 0 ? 1 : 0)
@@ -45,6 +46,7 @@ const DelinquencyDialog = ({ open, onClose, items }) => {
       <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
         <DialogTitle>{t('delinquencyTitle')} ({t('delinquencyBaseRentNote')})</DialogTitle>
         <DialogContent>
+          {isMobile ? (
           <Box data-testid="delinquency-table" sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 1 }}>
             {items.map(item => (
               <Box
@@ -78,6 +80,44 @@ const DelinquencyDialog = ({ open, onClose, items }) => {
               </Box>
             ))}
           </Box>
+          ) : (
+            <Table size="small" data-testid="delinquency-table">
+              <TableHead>
+                <TableRow>
+                  <TableCell>{t('delinquencyColTenant')}</TableCell>
+                  <TableCell>{t('delinquencyColProperty')}</TableCell>
+                  <TableCell>{t('delinquencyColLate')}</TableCell>
+                  <TableCell align="right">{t('delinquencyColAmount')}</TableCell>
+                  <TableCell />
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {items.map(item => (
+                  <TableRow key={item.leaseId} data-testid="delinquency-row">
+                    <TableCell>{item.tenantName}</TableCell>
+                    <TableCell>{item.propertyAddress}</TableCell>
+                    <TableCell>
+                      <Typography variant="body2">
+                        {t('delinquencyLate', { months: monthsLabel(item), days: item.daysLate })}
+                      </Typography>
+                      <Chip
+                        size="small"
+                        variant="outlined"
+                        label={t('delinquencyOverdueDays', { days: item.daysLate })}
+                        sx={{ color: '#d32f2f', bgcolor: '#fdecea', borderColor: '#d32f2f' }}
+                      />
+                    </TableCell>
+                    <TableCell align="right">{formatCurrency(item.amountOwed)}</TableCell>
+                    <TableCell>
+                      <Button variant="outlined" sx={{ minHeight: 44 }} onClick={() => setReminderItem(item)}>
+                        {t('delinquencyRemind')}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </DialogContent>
         <DialogActions>
           <Button sx={{ minHeight: 44 }} onClick={onClose}>{t('delinquencyClose')}</Button>
