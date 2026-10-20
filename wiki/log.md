@@ -75,3 +75,8 @@ Append only. Format: `## [YYYY-MM-DD] ingest|query|lint | <title>`. Last five: `
 ## [2026-10-20] ingest | parallel worktrees: container per slot
 - Design change from Juan: each slot gets its own Postgres container `proppilot-pg-wtN` (:5440+N, own volume, 256 MB cap, small buffers) instead of a database in the shared container. `rm` deletes container and volume; `down` stops it. `seed.py --container`, `PG_CONTAINER` in env.sh.
 - Re-proved with two worktrees verified at once: lowest free memory 29%, about 33 MB per slot Postgres, 212 MB per backend. parallel-worktrees page, skill and CLAUDE.md updated.
+
+## [2026-10-20] ingest | Railway skill is CLI-first
+- Upgraded Railway CLI 4.11.2 to 5.71.0 (`brew upgrade railway`). Rewrote the CLI path in `.claude/skills/railway-deploy/SKILL.md` from `--help` output (add, up, variable set, domain, redeploy, service delete); `docs/deploy-railway.md` points to it.
+- Found Railway's official skill `use-railway` (`railwayapp/railway-skills`, installed by `railway setup agent`). Not installed; ours keeps the PropPilot specifics.
+- UNVERIFIED until first deploy: `railway domain` before the first deployment, and Docker ARG pass-through of VITE_* via `up`.

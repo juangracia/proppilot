@@ -5,6 +5,10 @@ Both images were built and the backend image was booted against Postgres locally
 
 Note: `backend-production-1752.up.railway.app` (still hardcoded for native builds in `proppilot-frontend/src/config/api.js:6`) may be a previous deployment. UNVERIFIED.
 
+## 0. CLI path (preferred)
+
+The commands for env `meetup` live in `.claude/skills/railway-deploy/SKILL.md`. Summary: `railway add --service <name>`, `railway domain -s <name> -e meetup`, `railway variable set ... --skip-deploys`, then `railway up . -s <name> -e meetup --ci` from each service folder. CLI tested on 5.71.0. Only the Google OAuth origin needs a browser. Sections 1 to 4 below are the dashboard equivalent.
+
 ## 1. Project and database
 
 1. Railway dashboard: New Project, Empty Project.

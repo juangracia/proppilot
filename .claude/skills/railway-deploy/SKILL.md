@@ -6,28 +6,67 @@ description: Deploy PropPilot to Railway (backend, frontend, Postgres). Use when
 # Railway deploy
 
 Detailed runbook: `docs/deploy-railway.md`. This skill is the procedure and the traps.
-Railway project: `proppilot`. Services: `backend`, `frontend`, `Postgres`.
+Railway project: `proppilot`. Env `meetup` services: `backend-meetup`, `frontend-meetup`, `Postgres-M9I-`.
 
 ## Hard rules
 
 - Never touch the `production` environment without an explicit OK from the user.
-- Prefer a separate environment (for example `meetup`).
-- Do not push or deploy on your own. Ask first.
+- `railway up` only to env `meetup`. Always pass `-e meetup`.
+- CLI first. Use the dashboard only for what the CLI cannot do (Google Cloud Console for OAuth origins).
+- Do not push or deploy on your own. Ask first. A verifier checks the result after deploy.
+- Keep the CLI current: `brew upgrade railway`, then `railway --version`. Tested on 5.71.0.
+- Never print variable values (`variable list --json` and `--kv` show raw secrets).
+- Official skill from Railway: `railway setup agent` (skill `use-railway`, repo `railwayapp/railway-skills`). Not installed here. Ours stays: it holds PropPilot specifics.
+
+## CLI path for env `meetup`
+
+Run from the repo root. Postgres service in `meetup` is `Postgres-M9I-`. Check first: `railway status` must show `Environment: meetup`.
+Flags below come from `--help` on 5.71.0.
+
+```bash
+E="-e meetup"
+# 1. empty services (add: "--service ... The name of the service to create"; no --environment flag, uses linked env)
+railway add --service backend-meetup --json
+railway add --service frontend-meetup --json
+railway service list                                   # confirm both exist
+# 2. domains first, so URLs are known before any build ("railway domain ... generates a Railway-provided service domain")
+railway domain -s backend-meetup $E --json
+railway domain -s frontend-meetup $E --json
+# 3. variables (--skip-deploys: "Skip triggering deploys when setting the variable")
+railway variable set -s backend-meetup $E --skip-deploys \
+  'PGHOST=${{Postgres-M9I-.PGHOST}}' 'PGPORT=${{Postgres-M9I-.PGPORT}}' 'PGDATABASE=${{Postgres-M9I-.PGDATABASE}}' \
+  'PGUSER=${{Postgres-M9I-.PGUSER}}' 'PGPASSWORD=${{Postgres-M9I-.PGPASSWORD}}' \
+  "GOOGLE_CLIENT_ID=<id>.apps.googleusercontent.com" "CORS_ORIGINS=https://<frontend-domain>" SHOW_SQL=false
+openssl rand -base64 48 | railway variable set JWT_SECRET --stdin -s backend-meetup $E --skip-deploys   # "--stdin Read the value from stdin"
+railway variable set -s frontend-meetup $E --skip-deploys \
+  "VITE_API_URL=https://<backend-domain>/api" "VITE_GOOGLE_CLIENT_ID=<same id>"
+# 4. deploy ("-s Service to deploy to", "-e Environment to deploy to", "-c Stream build logs only, then exit")
+(cd proppilot-backend  && railway up . -s backend-meetup  -e meetup --ci -m "meetup backend")
+(cd proppilot-frontend && railway up . -s frontend-meetup -e meetup --ci -m "meetup frontend")
+# 5. watch
+railway service status; railway logs -s backend-meetup -e meetup --lines 100
+```
+
+- Use single quotes around `${{...}}` so zsh does not expand it.
+- `up` help: "`railway up --detach --json` starts an upload and deployment, but it does not wait for the deployment to become healthy." `--ci` streams the build then exits. Poll with `railway deployment list --json`.
+- `up` uploads the current directory. Run it inside `proppilot-backend` and `proppilot-frontend`, never the repo root.
+- Build args: Dockerfile builds do not get service variables by themselves. The frontend Dockerfile declares `ARG VITE_API_URL` and `ARG VITE_GOOGLE_CLIENT_ID` (`proppilot-frontend/Dockerfile:8-9`), and Railway docs say it passes the matching service variables to declared ARGs. So set the VITE_* variables before `up`. UNVERIFIED until the first build.
+- Redeploy order: if `VITE_*` changes, run `up` on the frontend again. `redeploy` help says "By default the existing build or image is redeployed as-is", so it may not rebuild with new build args. UNVERIFIED.
+- After changing `CORS_ORIGINS` alone: `railway redeploy -s backend-meetup -e meetup -y`.
+- Delete a service (CLI can: `service delete  Delete a service from an environment`): `railway service delete --service <name> --environment meetup --yes`. Ask first.
+- The CLI cannot do: Google OAuth Authorized JavaScript origins (Google Cloud Console).
+- `railway domain` on a service with no deployment yet is UNVERIFIED. If it fails, run `up` first, then `domain`, then set vars and `up` again.
 
 ## Procedure
 
-1. Create or pick the environment. Keep the Postgres service named `Postgres`.
-2. `backend`: Root Directory `proppilot-backend` (uses `railway.json`, healthcheck `/api/countries`).
-3. `frontend`: Root Directory `proppilot-frontend` (Dockerfile).
-4. Generate a domain for both services.
-5. Cross-fill the two URLs:
-   - backend `CORS_ORIGINS=https://<frontend-domain>`
-   - frontend `VITE_API_URL=https://<backend-domain>/api`
-6. Redeploy the frontend after any `VITE_*` change.
-7. Add `https://<frontend-domain>` to Google OAuth "Authorized JavaScript origins".
-8. Run the smoke checks.
+1. Run the CLI path above.
+2. Add `https://<frontend-domain>` to Google OAuth "Authorized JavaScript origins" (dashboard).
+3. Run the smoke checks.
+4. Ask the verifier to validate.
 
 ## Backend variables
+
+In env `meetup` replace `Postgres` with `Postgres-M9I-`.
 
 ```
 PGHOST=${{Postgres.PGHOST}}

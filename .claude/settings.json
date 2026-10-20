@@ -21,8 +21,8 @@
       "Bash(curl -s localhost:8080/:*)"
     ],
     "deny": [
-      "Bash(railway up:*)",
-      "Bash(railway deploy:*)",
+      "Bash(railway down:*)",
+      "Bash(railway delete:*)",
       "Bash(git push origin main:*)",
       "Bash(git push origin master:*)"
     ]
