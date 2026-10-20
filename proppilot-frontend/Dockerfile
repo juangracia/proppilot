@@ -3,8 +3,10 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --legacy-peer-deps
 COPY . .
-ENV VITE_API_URL=https://backend-production-1752.up.railway.app/api
-ENV VITE_GOOGLE_CLIENT_ID=686454629506-d068i9m0tm2nvue7rdbjfgpm3ivvmggb.apps.googleusercontent.com
+# Vite bakes these in at build time. Railway passes service variables as build args.
+# VITE_API_URL must be the backend public URL + /api (serve has no proxy).
+ARG VITE_API_URL
+ARG VITE_GOOGLE_CLIENT_ID
 RUN npm run build
 
 FROM node:20-alpine
