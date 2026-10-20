@@ -455,7 +455,7 @@ const DashboardView = memo(({ onNavigate, onNavigateToPayment }) => {
                     {React.cloneElement(stat.icon, { sx: { fontSize: 24, color: stat.color } })}
                     <Typography
                       variant="h5"
-                      sx={{ fontWeight: 700, ...(String(stat.value).length > 9 && { fontSize: { md: '0.72rem', xl: '1.5rem' }, whiteSpace: 'nowrap' }) }}
+                      sx={{ fontWeight: 700, ...(String(stat.value).length > 9 && { fontSize: { xs: '0.8rem', md: '0.72rem', xl: '1.5rem' }, whiteSpace: 'nowrap' }) }}
                     >
                       {stat.value}
                     </Typography>
