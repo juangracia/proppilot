@@ -35,6 +35,10 @@ test('dashboard summary matches the API and the old purple card is gone', async 
   expect(agenda.events.length).toBeGreaterThan(0)
   const { expiringWithin90, adjustmentsThisMonth, expiredNotRenewed } = agenda.summary
 
+  // Seed-known values (scripts/seed.py: one expired-not-renewed lease, one ending within 90 days), so a wrong summary cannot pass.
+  expect(expiredNotRenewed).toBe(1)
+  expect(expiringWithin90).toBeGreaterThanOrEqual(1)
+
   const card = page.getByTestId('agenda-summary-card')
   await expect(card).toContainText(
     `${expiringWithin90} contratos vencen en menos de 90 días, ${adjustmentsThisMonth} ajustes este mes, ${expiredNotRenewed} vencidos sin renovar`

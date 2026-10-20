@@ -241,6 +241,27 @@ class LeaseAgendaServiceImplTest {
     }
 
     @Test
+    void summaryIgnoresShortHorizon() {
+        givenNoIndexData();
+        given(
+            lease(1, TODAY.minusYears(1), TODAY.plusDays(75), AdjustmentIndex.NONE, 12),
+            lease(2, LocalDate.of(2025, 10, 28), LocalDate.of(2028, 10, 27), AdjustmentIndex.ICL, 12)); // adj 2026-10-28
+        AgendaResponse r = service.compute(OWNER_ID, TODAY, 5);
+        assertThat(r.summary().expiringWithin90()).isEqualTo(1);
+        assertThat(r.summary().adjustmentsThisMonth()).isEqualTo(1);
+        assertThat(r.events()).isEmpty(); // nothing inside the 5 day horizon
+    }
+
+    @Test
+    void adjustmentExactlyOnAsOfIsExcluded() {
+        givenNoIndexData();
+        given(lease(1, LocalDate.of(2025, 10, 20), LocalDate.of(2028, 10, 19), AdjustmentIndex.ICL, 12));
+        AgendaResponse r = service.compute(OWNER_ID, TODAY, 365);
+        assertThat(events(r, "ADJUSTMENT")).extracting(AgendaEvent::date)
+            .containsExactly(LocalDate.of(2027, 10, 20));
+    }
+
+    @Test
     void eventsAreSortedByDateWithExpiredFirst() {
         given(
             lease(1, TODAY.minusYears(1), TODAY.plusDays(45), AdjustmentIndex.NONE, 12),

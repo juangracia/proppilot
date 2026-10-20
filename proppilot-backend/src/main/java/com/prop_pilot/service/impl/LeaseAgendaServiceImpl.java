@@ -27,6 +27,7 @@ public class LeaseAgendaServiceImpl implements LeaseAgendaService {
 
     static final int MIN_HORIZON_DAYS = 1;
     static final int MAX_HORIZON_DAYS = 730;
+    static final int SUMMARY_WINDOW_DAYS = 90;
 
     private static final String TYPE_END = "END";
     private static final String TYPE_ADJUSTMENT = "ADJUSTMENT";
@@ -49,22 +50,27 @@ public class LeaseAgendaServiceImpl implements LeaseAgendaService {
                 + MIN_HORIZON_DAYS + " y " + MAX_HORIZON_DAYS + " días");
         }
         LocalDate horizonEnd = asOf.plusDays(horizonDays);
+        // The summary must not depend on the requested horizon, so events are built for at least 90 days
+        // and only the returned list is cut back to the horizon.
+        LocalDate buildEnd = asOf.plusDays(Math.max(horizonDays, SUMMARY_WINDOW_DAYS));
 
         List<AgendaEvent> events = new ArrayList<>();
         for (Lease lease : leaseRepository.findByStatusAndOwnerIdAndDeletedFalse(LeaseStatus.ACTIVE, ownerId)) {
             if (lease.getStatus() != LeaseStatus.ACTIVE) {
                 continue;
             }
-            if (!lease.getEndDate().isAfter(horizonEnd)) {
+            if (!lease.getEndDate().isAfter(buildEnd)) {
                 events.add(endEvent(lease, asOf));
             }
-            events.addAll(adjustmentEvents(lease, ownerId, asOf, horizonEnd));
+            events.addAll(adjustmentEvents(lease, ownerId, asOf, buildEnd));
         }
         events.sort(Comparator
             .comparing((AgendaEvent e) -> !"EXPIRED".equals(e.alertLevel()))
             .thenComparing(AgendaEvent::date));
 
-        return new AgendaResponse(asOf, horizonDays, summarize(events, asOf), events);
+        AgendaSummary summary = summarize(events, asOf);
+        List<AgendaEvent> inHorizon = events.stream().filter(e -> !e.date().isAfter(horizonEnd)).toList();
+        return new AgendaResponse(asOf, horizonDays, summary, inHorizon);
     }
 
     private AgendaEvent endEvent(Lease lease, LocalDate asOf) {
