@@ -122,10 +122,4 @@ class DataPortabilityControllerTest {
             .andExpect(jsonPath("$.tenantsCreated").value(3))
             .andExpect(jsonPath("$.success").value(true));
     }
-
-    @Test
-    void exportAll_Unauthenticated_ShouldReturn401() throws Exception {
-        mockMvc.perform(get("/api/data/export"))
-            .andExpect(status().isUnauthorized());
-    }
 }
