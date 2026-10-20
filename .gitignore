@@ -88,3 +88,10 @@ proppilot-backend/.claude_mcp_config.json
 
 # Legacy Python backend experiment (not deployed, Java is the official backend)
 proppilot-backend-python/
+
+# Local dev overrides (see .dev.env.example)
+.dev.env
+
+# Playwright outputs
+proppilot-frontend/playwright-report/
+proppilot-frontend/test-results/
