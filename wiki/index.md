@@ -25,13 +25,13 @@ Pattern: Karpathy's LLM Wiki, https://gist.github.com/karpathy/442a6bf555914893e
 ## Architecture
 - [[backend]]: Spring Boot 3.2 on Java 17, Postgres, endpoints, config, how to run.
 - [[frontend]]: React 19 + Vite + MUI, no router, axios inline, Capacitor.
-- [[deploy-railway]]: Dockerfiles, railway.json, env vars, DATABASE_URL format mismatch.
+- [[deploy-railway]]: Dockerfiles, PG* vars (never set DATABASE_URL to Railway's value), build ARGs, `meetup` env plan, blocked on `railway link`.
 - [[testing]]: `scripts/verify.sh`, current results (backend 37/37, lint at baseline, e2e smoke 2/2), gaps.
 - [[harness]]: Claude Code setup. Memory split (CLAUDE.md, wiki, local, auto memory), skills, subagents, SessionStart hook.
 
 ## Reference
 - [[glossary]]: Spanish UI terms to English code names.
-- [[decisions]]: ADR log (JDK 17, Postgres port, new seeder, synthetic index data, 401 for unauthenticated).
+- [[decisions]]: ADR log (JDK 17, Postgres port, new seeder, synthetic index data, 401 for unauthenticated, Railway `meetup` env, model on every Agent call).
 - [[open-questions]]: domain gaps, UI bugs, engineering debt.
 
 ## Raw sources (`raw/`, immutable)
@@ -39,3 +39,4 @@ Pattern: Karpathy's LLM Wiki, https://gist.github.com/karpathy/442a6bf555914893e
 - `raw/2026-10-20-explore-frontend.md`: frontend exploration report.
 - `raw/2026-10-20-explore-domain.md`: domain exploration report.
 - `raw/2026-10-20-explore-tests.md`: tests, CI and Railway readiness report.
+- `raw/2026-10-20-railway-prep.md`: Railway prep (9f6de6b), Railway state, seed.py reason, model policy, skills.

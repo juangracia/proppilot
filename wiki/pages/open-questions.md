@@ -25,5 +25,10 @@ Candidates for issues. Each item says what is known and how it was checked.
 10. Prod backend URL hardcoded in `proppilot-frontend/src/config/api.js:6` and `proppilot-frontend/Dockerfile`.
 11. Thin tests and no CI. `scripts/verify.sh` passes (37/37 backend, lint at baseline), but there are no tests for the core services or owner isolation, controller tests need a local DB, and the frontend has no unit tests. See [[testing]].
 12. Old seed scripts in `proppilot-backend/` are stale (ADR-003). Delete or fix.
-13. Railway gives `DATABASE_URL` as `postgresql://...` but the backend expects JDBC form (tests report). `JWT_SECRET` has an insecure default. UNVERIFIED: Dockerfile `CMD` port expansion. See [[deploy-railway]].
+13. Railway's `DATABASE_URL` is `postgresql://...`, not JDBC. Handled: `application.yml:3-6` composes the URL from PG* vars, so do not set `DATABASE_URL` (see [[deploy-railway]]). `JWT_SECRET` still has an insecure default, prod must set it.
+15. Railway account: CLI is logged in as the Santex account. UNVERIFIED that it is the intended one. Blocks the deploy.
+16. Railway `meetup` env does not exist yet. Needs `railway link` by the user, then the deploy (ADR-006).
+17. Meetup frontend domain is not in Google OAuth origins yet. Prod login is Google only, so meetup login fails until it is added.
+18. Prod seed needs a token-based `seed.py --token` mode. Not built.
+19. Frontend has no `/api` proxy, so `VITE_API_URL` must be the full backend URL. Changing it means a rebuild.
 14. `SecurityConfig` permits `/api/indices/**` with no controller behind it. See [[index-value]].

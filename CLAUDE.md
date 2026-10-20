@@ -5,7 +5,7 @@ Rental management for small landlords in Argentina: properties, tenants, leases 
 ## Where knowledge lives
 
 - `CLAUDE.md` (this file, committed): shared rules every session needs. Keep it short; procedures go in skills.
-- `wiki/` (committed): the second brain. Domain, architecture, decisions, open gaps. Read `wiki/index.md` before exploring code. Schema: `wiki/AGENTS.md`. File durable learnings there (`wiki-ingest` skill), never only in chat.
+- `wiki/` (committed): the second brain. Domain, architecture, decisions, open gaps. Read `wiki/index.md` before exploring code. Schema: `wiki/AGENTS.md`. File durable learnings there (`wiki-ingest` skill), never only in chat. A `Stop` hook (`.claude/hooks/wiki-ingest-check.sh`) asks once per change set whether the work needs a wiki entry.
 - `CLAUDE.local.md` (gitignored, optional): your personal overrides for this repo.
 - Auto memory (`~/.claude/projects/...`, per user, outside the repo): personal preferences only, never project facts.
 

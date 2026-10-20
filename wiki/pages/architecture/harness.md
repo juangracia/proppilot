@@ -26,6 +26,7 @@ Procedures, loaded only when relevant, so `CLAUDE.md` stays short.
 - `dev-stack`: start DB, backend, frontend, seed, URLs, log in as the local-dev user, troubleshooting (port 5433, JDK 25 Lombok, empty account). See [[local-dev-auth]].
 - `wiki-ingest`, `wiki-query`, `wiki-lint`: the three workflows from [[AGENTS]] as checklists. `wiki-lint/check-links.sh` lists broken wikilinks and orphan pages.
 - `railway-deploy`: deploy to Railway, variable cross-fill, traps, smoke checks. Runbook: [[deploy-railway]].
+- Global skills, outside this repo: `cold-repo-harness` (set up a harness on a cold repo), `obsidian-open-vault` (open a folder as an Obsidian vault on macOS).
 - `/verify` is still a command file (`.claude/commands/verify.md`). Commands and skills work the same way.
 
 ## Subagents (`.claude/agents/*.md`)
@@ -37,11 +38,14 @@ Procedures, loaded only when relevant, so `CLAUDE.md` stays short.
 | `verifier` | haiku | nothing | `scripts/verify.sh --e2e` plus UI check. Reports PASS/FAIL with evidence. See [[testing]]. |
 | `wiki-curator` | haiku | `wiki/` only | Ingest, query, lint. Preloads the three wiki skills. |
 
-Model policy: cheapest model that is good enough. Short bounded tasks go to a subagent; long independent work (a real deploy) gets its own session. Subagents load `CLAUDE.md` by default. Playwright access uses the server wildcard `mcp__playwright__*`.
+Model policy (ADR-007 in [[decisions]]): every Agent call sets `model`. haiku for mechanical work, sonnet for bounded code, tests and docs, opus only for hard judgment. Long independent work (a real deploy) gets its own session (`claude --bg`). Subagents load `CLAUDE.md` by default. Playwright access uses the server wildcard `mcp__playwright__*`.
 
 ## Hooks
 
-One `SessionStart` hook (`startup|clear|compact`) runs `.claude/hooks/session-start.sh`. It prints a reminder to read [[index]] and the last five `log.md` headings. Plain stdout from SessionStart becomes context (hooks docs). It is read-only and always exits 0.
+- `SessionStart` (`startup|clear|compact`) runs `.claude/hooks/session-start.sh`. It prints a reminder to read [[index]] and the last five `log.md` headings. Plain stdout from SessionStart becomes context (hooks docs). It is read-only and always exits 0.
+- `PreToolUse` (matcher `Agent`) runs `.claude/hooks/require-agent-model.sh`. It denies Agent calls that do not set `model`. Forks and agents with `model:` in frontmatter pass. Needs `jq`; without it the hook allows the call.
+- `Stop` runs `.claude/hooks/wiki-ingest-check.sh`. If work outside `wiki/` is newer than `wiki/log.md`, it returns `decision: "block"` with a reason that asks for a wiki-ingest. It nudges once per change set per session (marker in `${TMPDIR:-/tmp}`), exits 0 when `stop_hook_active` is true, and fails open.
+- `.claude/settings.json` env sets `CLAUDE_CODE_SUBAGENT_MODEL=sonnet` as the fallback.
 
 ## Permissions
 

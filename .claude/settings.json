@@ -52,6 +52,17 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/wiki-ingest-check.sh",
+            "timeout": 10
+          }
+        ]
+      }
     ]
   },
   "env": {

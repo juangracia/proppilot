@@ -30,7 +30,7 @@ sources: [raw/2026-10-20-explore-backend.md, proppilot-backend/pom.xml, proppilo
 - Local Postgres: `proppilot-backend/docker-compose.yml`, container `proppilot-postgres`, host port from `POSTGRES_PORT` (default 5433).
 
 ## Config (env vars, defaults in `application.yml`)
-`DATABASE_URL`, `DATABASE_USERNAME`, `DATABASE_PASSWORD`, `PORT` (8080), `SHOW_SQL`, `CORS_ORIGINS` (default `http://localhost:3000`), `GOOGLE_CLIENT_ID`, `JWT_SECRET`, `JWT_EXPIRATION`, `SPRING_PROFILES_ACTIVE`.
+`DATABASE_URL` (overrides the URL below, never set it to Railway's `postgresql://` value), `PGHOST`/`PGPORT`/`PGDATABASE`/`PGUSER`/`PGPASSWORD` (Railway Postgres vars, local fallbacks; `application.yml:3-6`), `DATABASE_USERNAME`, `DATABASE_PASSWORD`, `PORT` (8080), `SHOW_SQL`, `CORS_ORIGINS` (default `http://localhost:3000`), `GOOGLE_CLIENT_ID`, `JWT_SECRET`, `JWT_EXPIRATION`, `SPRING_PROFILES_ACTIVE`. Railway setup: [[deploy-railway]].
 
 ## Run locally
 `scripts/dev-backend.sh` (starts Postgres, picks a JDK 17/21, runs with the `local` profile). Settings in `.dev.env` (copy from `.dev.env.example`). Then `scripts/seed.py --reset`. Check the repo root `CLAUDE.md` for the current commands.

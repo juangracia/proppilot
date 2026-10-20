@@ -51,3 +51,13 @@ Append only. Format: `## [YYYY-MM-DD] ingest|query|lint | <title>`. Last five: `
 ## [2026-10-20] ingest | railway-deploy skill
 - Created `.claude/skills/railway-deploy/SKILL.md` from `docs/deploy-railway.md` (procedure and traps; the doc stays the runbook).
 - harness: added the skill to the Skills list.
+
+## [2026-10-20] ingest | Railway prep, model policy, skills
+- Source: `raw/2026-10-20-railway-prep.md` (commit 9f6de6b, Railway state, seed.py reason, model policy, skills).
+- deploy-railway: rewritten. Backend CMD and port verified (`Dockerfile:12`, `application.yml:24`), PG* URL composition (`application.yml:3-6`), frontend build ARGs. Added Railway state, `meetup` env plan, OAuth and seed notes. Dropped the resolved CMD and DATABASE_URL UNVERIFIED items.
+- decisions: ADR-006 (new Railway env `meetup`, never touch production), ADR-007 (model on every Agent call, hook, `CLAUDE_CODE_SUBAGENT_MODEL=sonnet`). ADR-003 gained the populate-script evidence.
+- harness: PreToolUse hook and model policy added; global skills listed. backend: config env vars updated. open-questions 13 resolved, 15-19 added. index updated, new raw source listed.
+
+## [2026-10-20] ingest | Stop hook for wiki ingest
+- Added `.claude/hooks/wiki-ingest-check.sh` (Stop): blocks once per change set when work outside wiki/ is newer than log.md. Fields checked against code.claude.com/docs/en/hooks (stop_hook_active, decision block + reason).
+- harness: Hooks list updated. CLAUDE.md: one line under Where knowledge lives.
