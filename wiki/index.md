@@ -27,6 +27,7 @@ Pattern: Karpathy's LLM Wiki, https://gist.github.com/karpathy/442a6bf555914893e
 - [[frontend]]: React 19 + Vite + MUI, no router, axios inline, Capacitor.
 - [[deploy-railway]]: Dockerfiles, railway.json, env vars, DATABASE_URL format mismatch.
 - [[testing]]: `scripts/verify.sh`, current results (backend 37/37, lint at baseline, e2e smoke 2/2), gaps.
+- [[harness]]: Claude Code setup. Memory split (CLAUDE.md, wiki, local, auto memory), skills, subagents, SessionStart hook.
 
 ## Reference
 - [[glossary]]: Spanish UI terms to English code names.

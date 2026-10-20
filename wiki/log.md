@@ -41,3 +41,9 @@ Append only. Format: `## [YYYY-MM-DD] ingest|query|lint | <title>`. Last five: `
 ## [2026-10-20] lint | Whole wiki after verify state
 - Fixed stale claims: "28/37", "9 errors", "36 lint problems" in testing, open-questions, index.
 - Checked: SecurityConfig.java:42 entry point and the new test file exist. All wikilinks resolve.
+
+## [2026-10-20] ingest | Claude Code harness setup
+- Created architecture/harness: memory split, 4 skills, 4 subagents, SessionStart hook, permissions. Formats checked against code.claude.com/docs (memory, sub-agents, skills, hooks).
+- CLAUDE.md trimmed to 59 lines; setup and troubleshooting moved to the `dev-stack` skill. `/verify` now compares against testing instead of CLAUDE.md.
+- index: added harness.
+- Model policy: workers on sonnet, verifier and wiki-curator on haiku. CLAUDE.md gained a Workers section.

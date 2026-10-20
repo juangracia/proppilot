@@ -85,6 +85,7 @@ proppilot-backend/.claude_mcp_config.json
 
 # Claude Code local settings (personal, per-user)
 .claude/settings.local.json
+CLAUDE.local.md
 
 # Legacy Python backend experiment (not deployed, Java is the official backend)
 proppilot-backend-python/
