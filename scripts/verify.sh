@@ -68,7 +68,7 @@ if [[ "$RUN_E2E" == true || "$ONLY" == "e2e" ]]; then
   stage "e2e: smoke + req-*"
   # smoke.spec.js plus every feature spec; helpers.js is shared code, not a spec.
   shopt -s nullglob
-  e2e_specs=(e2e/smoke.spec.js e2e/req-*.spec.js)
+  e2e_specs=("$ROOT"/proppilot-frontend/e2e/smoke.spec.js "$ROOT"/proppilot-frontend/e2e/req-*.spec.js)
   shopt -u nullglob
   if ! curl -sf -o /dev/null "http://localhost:$BACKEND_PORT/api/countries"; then
     echo "Backend is not running on :$BACKEND_PORT. Start it with scripts/dev-backend.sh, then scripts/seed.py." >&2
