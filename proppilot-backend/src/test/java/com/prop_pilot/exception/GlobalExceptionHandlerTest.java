@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.Collections;
 
@@ -43,6 +44,18 @@ class GlobalExceptionHandlerTest {
         assertEquals(400, response.getBody().getStatus());
         assertEquals("Validation Error", response.getBody().getError());
         assertEquals("Test validation", response.getBody().getMessage());
+    }
+
+    @Test
+    void testTypeMismatchReturns400WithSpanishMessage() {
+        MethodArgumentTypeMismatchException ex =
+            new MethodArgumentTypeMismatchException("abc", Integer.class, "days", null, null);
+
+        ResponseEntity<ErrorResponse> response = handler.handleTypeMismatch(ex);
+
+        assertEquals(400, response.getStatusCode().value());
+        assertNotNull(response.getBody());
+        assertEquals("El parámetro 'days' tiene un valor inválido: abc", response.getBody().getMessage());
     }
 
     @Test

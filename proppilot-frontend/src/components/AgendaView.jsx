@@ -4,12 +4,14 @@ import axios from 'axios'
 import { useLanguage } from '../contexts/LanguageContext'
 import { API_BASE_URL } from '../config/api'
 
-const LEVEL_CHIPS = {
-  EXPIRED: { key: 'agendaExpiredNotRenewed', color: 'error' },
-  D30: { key: 'agendaWindow30', color: 'warning' },
-  D60: { key: 'agendaWindow60', color: 'warning', variant: 'outlined' },
-  D90: { key: 'agendaWindow90', color: 'default' }
+// Same filled style for every chip: light background, no border.
+const CHIP_STYLES = {
+  EXPIRED: { bgcolor: 'error.main', color: 'error.contrastText' },
+  D30: { bgcolor: '#ffe0b2', color: '#a04a00' },
+  D60: { bgcolor: '#fff3cd', color: '#8a6100' },
+  D90: { bgcolor: '#eceff1', color: '#455a64' }
 }
+const ADJUSTMENT_CHIP_STYLE = { bgcolor: '#e1f0fb', color: 'primary.dark' }
 
 // 'YYYY-MM-DD' to a local Date (new Date(string) would parse it as UTC and can show the previous day)
 const parseDate = (iso) => {
@@ -36,7 +38,18 @@ const AgendaView = ({ onNavigateToLease }) => {
   }, [])
 
   const locale = language === 'es' ? 'es-AR' : 'en-US'
-  const formatDate = (iso) => parseDate(iso).toLocaleDateString(locale, { day: '2-digit', month: 'short', year: 'numeric' })
+  const formatDate = (iso) => parseDate(iso).toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric' })
+
+  const chipFor = (e) => {
+    if (e.type === 'ADJUSTMENT') {
+      return { label: t('agendaNextAdjustment').replace('{date}', formatDate(e.date)), sx: ADJUSTMENT_CHIP_STYLE }
+    }
+    const sx = CHIP_STYLES[e.alertLevel]
+    if (!sx) return null
+    if (e.alertLevel === 'EXPIRED') return { label: t('agendaExpiredNotRenewed'), sx }
+    const label = e.daysUntil === 0 ? t('agendaEndsToday') : t('agendaEndsIn').replace('{days}', e.daysUntil)
+    return { label, sx }
+  }
 
   // The API already sorts expired first, then by date. Expired rows sit in their own group on top.
   const groups = useMemo(() => {
@@ -69,7 +82,7 @@ const AgendaView = ({ onNavigateToLease }) => {
             {groupTitle(key)}
           </Typography>
           {rows.map((e) => {
-            const chip = LEVEL_CHIPS[e.alertLevel]
+            const chip = chipFor(e)
             const isExpired = e.alertLevel === 'EXPIRED'
             return (
               <Paper
@@ -88,23 +101,25 @@ const AgendaView = ({ onNavigateToLease }) => {
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1, flexWrap: 'wrap' }}>
                   <Box>
                     <Typography sx={{ fontWeight: 600 }}>{e.propertyAddress}</Typography>
+                    {e.type === 'ADJUSTMENT' && (
+                      <Typography variant="body2" color="text.secondary" data-testid="agenda-base">
+                        {t('agendaBaseShort').replace('{amount}', formatCurrency(e.baseRent))}
+                      </Typography>
+                    )}
                     <Typography variant="body2" color="text.secondary">{e.tenantName}</Typography>
                     <Typography variant="body2">
                       {e.type === 'END' ? t('agendaEventEnd') : t('agendaEventAdjustment')}
                       {' - '}
                       <span data-testid="agenda-date">{formatDate(e.date)}</span>
                     </Typography>
-                    {e.type === 'ADJUSTMENT' && (
+                    {e.type === 'ADJUSTMENT' && e.estimatedRent != null && (
                       <Typography variant="body2" color="text.secondary">
-                        {t('agendaBaseRent')}: {formatCurrency(e.baseRent)}
-                        {e.estimatedRent != null && (
-                          <> | {t('agendaEstimatedRent')}: {formatCurrency(e.estimatedRent)} ({t('agendaEstimatedNote')})</>
-                        )}
+                        {t('agendaEstimatedRent')}: {formatCurrency(e.estimatedRent)} ({t('agendaEstimatedNote')})
                       </Typography>
                     )}
                   </Box>
                   {chip && (
-                    <Chip size="small" label={t(chip.key)} color={chip.color} variant={chip.variant || 'filled'} />
+                    <Chip size="small" label={chip.label} sx={{ ...chip.sx, fontWeight: 600 }} />
                   )}
                 </Box>
               </Paper>

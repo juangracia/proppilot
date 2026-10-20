@@ -21,10 +21,12 @@ const AgendaSummaryCard = memo(({ onNavigate }) => {
 
   if (!summary) return null
 
-  const text = t('agendaSummaryText')
-    .replace('{expiring}', summary.expiringWithin90)
-    .replace('{adjustments}', summary.adjustmentsThisMonth)
-    .replace('{expired}', summary.expiredNotRenewed)
+  const plural = (n, one, many) => t(n === 1 ? one : many).replace('{n}', n)
+  const text = [
+    plural(summary.expiringWithin90, 'agendaSummaryExpiringOne', 'agendaSummaryExpiringMany'),
+    plural(summary.adjustmentsThisMonth, 'agendaSummaryAdjustOne', 'agendaSummaryAdjustMany'),
+    plural(summary.expiredNotRenewed, 'agendaSummaryExpiredOne', 'agendaSummaryExpiredMany')
+  ].join(', ')
 
   return (
     <Paper

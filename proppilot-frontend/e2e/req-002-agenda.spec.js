@@ -5,7 +5,7 @@ import { login, apiGet } from './helpers'
 
 const ISO_TO_ES = (iso) => {
   const [y, m, d] = iso.split('-').map(Number)
-  return new Date(y, m - 1, d).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' })
+  return new Date(y, m - 1, d).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
 test('agenda view shows the next adjustment and the expired-not-renewed lease', async ({ page }) => {
@@ -21,7 +21,8 @@ test('agenda view shows the next adjustment and the expired-not-renewed lease', 
   await expect(page.getByTestId('agenda-view')).toBeVisible()
 
   const adjRow = page.locator(`[data-testid="agenda-row"][data-type="ADJUSTMENT"][data-lease-id="${adjustment.leaseId}"]`).first()
-  await expect(adjRow).toContainText(ISO_TO_ES(adjustment.date))
+  await expect(adjRow).toContainText(`Próximo ajuste: ${ISO_TO_ES(adjustment.date)}`)
+  await expect(adjRow.getByTestId('agenda-base')).toContainText('base')
 
   const expired = agenda.events.find((e) => e.alertLevel === 'EXPIRED')
   const expiredRow = page.locator(`[data-testid="agenda-row-expired"][data-lease-id="${expired.leaseId}"]`)
@@ -40,8 +41,21 @@ test('dashboard summary matches the API and the old purple card is gone', async 
   expect(expiringWithin90).toBeGreaterThanOrEqual(1)
 
   const card = page.getByTestId('agenda-summary-card')
+  const plural = (n, one, many) => (n === 1 ? one : many.replace('{n}', n))
   await expect(card).toContainText(
-    `${expiringWithin90} contratos vencen en menos de 90 días, ${adjustmentsThisMonth} ajustes este mes, ${expiredNotRenewed} vencidos sin renovar`
+    [
+      plural(expiringWithin90, '1 contrato vence en menos de 90 días', '{n} contratos vencen en menos de 90 días'),
+      plural(adjustmentsThisMonth, '1 ajuste este mes', '{n} ajustes este mes'),
+      plural(expiredNotRenewed, '1 vencido sin renovar', '{n} vencidos sin renovar')
+    ].join(', ')
   )
   await expect(page.getByText('Contratos por Vencer', { exact: true })).toHaveCount(0)
+})
+
+test('selected menu item is highlighted', async ({ page }) => {
+  await login(page)
+  await page.getByRole('button', { name: 'Agenda' }).first().click()
+  const item = page.locator('[data-tour="nav-agenda"]:visible')
+  await expect(item).toHaveClass(/Mui-selected/)
+  await expect(item).toHaveCSS('border-left-width', '3px')
 })

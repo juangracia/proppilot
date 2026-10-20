@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
 import {
+  alpha,
   Typography,
   Box,
   ThemeProvider,
@@ -398,7 +399,7 @@ function AppContent() {
             component="button"
             key={item.text}
             onClick={() => handleMenuClick(item.value)}
-            selected={selectedView === item.value}
+            className={selectedView === item.value ? 'Mui-selected' : undefined}
             data-tour={item.tourId}
             sx={{
               border: 'none',
@@ -407,16 +408,18 @@ function AppContent() {
               cursor: 'pointer',
               bgcolor: 'transparent',
               '&.Mui-selected': {
-                backgroundColor: 'primary.main',
-                color: 'white',
+                backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.12),
+                borderLeft: '3px solid',
+                borderLeftColor: 'primary.main',
+                color: 'primary.main',
                 '& .MuiListItemIcon-root': {
-                  color: 'white',
+                  color: 'primary.main',
                 },
                 '& .MuiListItemText-primary': {
-                  color: 'white',
+                  color: 'primary.main',
                 },
                 '&:hover': {
-                  backgroundColor: 'primary.dark',
+                  backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.2),
                 },
               },
               '&:not(.Mui-selected)': {
@@ -442,7 +445,7 @@ function AppContent() {
           >
             <ListItemIcon
               sx={{
-                color: selectedView === item.value ? 'white' : 'text.secondary',
+                color: selectedView === item.value ? 'primary.main' : 'text.secondary',
                 minWidth: 40,
               }}
             >
