@@ -27,10 +27,12 @@ test('reminder message names the tenant and WhatsApp link is wa.me', async ({ pa
   const token = await login(page)
   const data = await apiGet(page, token, '/delinquency')
   expect(data.tenantCount).toBeGreaterThanOrEqual(1)
-  const first = data.items[0]
+  // first tenant with a usable phone: rows without digits get a disabled WhatsApp button by design
+  const first = data.items.find((i) => (i.tenantPhone || '').replace(/\D/g, ''))
+  expect(first).toBeTruthy()
 
   await page.getByTestId('delinquency-card').click()
-  await page.getByTestId('delinquency-row').first().getByRole('button', { name: 'Recordar' }).click()
+  await page.getByTestId('delinquency-row').filter({ hasText: first.tenantName }).getByRole('button', { name: 'Recordar' }).click()
 
   await expect(page.getByTestId('delinquency-message')).toHaveValue(new RegExp(first.tenantName))
   const wa = page.getByRole('link', { name: 'Abrir en WhatsApp' })
