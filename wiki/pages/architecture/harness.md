@@ -25,6 +25,7 @@ Procedures, loaded only when relevant, so `CLAUDE.md` stays short.
 
 - `dev-stack`: start DB, backend, frontend, seed, URLs, log in as the local-dev user, troubleshooting (port 5433, JDK 25 Lombok, empty account). See [[local-dev-auth]].
 - `wiki-ingest`, `wiki-query`, `wiki-lint`: the three workflows from [[AGENTS]] as checklists. `wiki-lint/check-links.sh` lists broken wikilinks and orphan pages.
+- `railway-deploy`: deploy to Railway, variable cross-fill, traps, smoke checks. Runbook: [[deploy-railway]].
 - `/verify` is still a command file (`.claude/commands/verify.md`). Commands and skills work the same way.
 
 ## Subagents (`.claude/agents/*.md`)

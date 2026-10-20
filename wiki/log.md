@@ -47,3 +47,7 @@ Append only. Format: `## [YYYY-MM-DD] ingest|query|lint | <title>`. Last five: `
 - CLAUDE.md trimmed to 59 lines; setup and troubleshooting moved to the `dev-stack` skill. `/verify` now compares against testing instead of CLAUDE.md.
 - index: added harness.
 - Model policy: workers on sonnet, verifier and wiki-curator on haiku. CLAUDE.md gained a Workers section.
+
+## [2026-10-20] ingest | railway-deploy skill
+- Created `.claude/skills/railway-deploy/SKILL.md` from `docs/deploy-railway.md` (procedure and traps; the doc stays the runbook).
+- harness: added the skill to the Skills list.
