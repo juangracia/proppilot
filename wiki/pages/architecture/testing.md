@@ -12,7 +12,7 @@ sources: [raw/2026-10-20-explore-tests.md, scripts/verify.sh, proppilot-backend/
 ## Current state (2026-10-20, after the harness setup)
 `scripts/verify.sh --e2e`:
 - Backend: 37 of 37 tests pass.
-- Lint: 32 errors, equal to the baseline, so it passes. New errors above the baseline fail.
+- Lint: 28 errors, equal to the baseline, so it passes. New errors above the baseline fail.
 - Build: pass.
 - E2E smoke: 2 of 2 pass.
 
@@ -28,7 +28,7 @@ sources: [raw/2026-10-20-explore-tests.md, scripts/verify.sh, proppilot-backend/
 ## Frontend (`proppilot-frontend`)
 - `npm ci --legacy-peer-deps` (Capacitor peer deps).
 - Build OK, with a warning about a chunk over 500 kB.
-- Lint: 32 errors in the baseline (for example `src/contexts/LanguageContext.jsx:5` `react-refresh/only-export-components`).
+- Lint: 28 errors in the baseline (for example `src/contexts/LanguageContext.jsx:5` `react-refresh/only-export-components`).
 - No unit tests, no typecheck (plain JS).
 - Playwright: `e2e/smoke.spec.js` (2 tests, negative control checked) and the older `e2e/visual-match.spec.js`.
 

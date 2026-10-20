@@ -11,13 +11,17 @@ Rental management for small landlords in Argentina: properties, tenants, leases 
 
 ## Harness
 
-- Skills (`.claude/skills/`): `dev-stack` (start, seed, log in, troubleshoot), `wiki-ingest`, `wiki-query`, `wiki-lint`.
+- Skills (`.claude/skills/`): `dev-stack` (start, seed, log in, troubleshoot), `parallel-worktrees` (extra stacks per worktree), `wiki-ingest`, `wiki-query`, `wiki-lint`.
 - Subagents (`.claude/agents/`): `backend-worker`, `frontend-worker`, `verifier` (never edits), `wiki-curator` (edits only `wiki/`).
 - `/verify` runs the full check. Map: `wiki/pages/architecture/harness.md`.
 
 ## Workers
 
 Use a subagent for a short, bounded task that reports back. Spawn a separate session for long, independent work (for example a real deploy). Pick the cheapest model that is good enough.
+
+## Parallel worktrees
+
+Up to 4 extra stacks next to the main one, for parallel sessions. Each slot N has backend `:808N`, frontend `:300N` and its own Postgres container `proppilot-pg-wtN` on `:544N` (own volume, so databases never mix). Slot 0 is the main stack. Drive it with `scripts/wt.sh new|up|seed|verify|ls|down|rm <name>`. `up` refuses below 15% free memory. Procedure and limits: `parallel-worktrees` skill.
 
 ## Layout
 
@@ -32,6 +36,7 @@ scripts/dev-backend.sh                # Postgres + backend :8080 (setup and trou
 scripts/seed.py --reset               # demo data, owned by juanmgracia@gmail.com
 cd proppilot-frontend && npm run dev  # :3000; log in as "Custom User" juanmgracia@gmail.com
 scripts/verify.sh [--only backend|frontend|e2e] [--e2e]
+scripts/resource-watch.sh [--once]    # RAM/swap/load/stack watcher for parallel stacks; run under Monitor, one line per OK/WARN/CRIT change
 ```
 
 ## Rules

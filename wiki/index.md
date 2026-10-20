@@ -29,6 +29,8 @@ Pattern: Karpathy's LLM Wiki, https://gist.github.com/karpathy/442a6bf555914893e
 - [[testing]]: `scripts/verify.sh`, current results (backend 37/37, lint at baseline, e2e smoke 2/2), gaps.
 - [[harness]]: Claude Code setup. Memory split (CLAUDE.md, wiki, local, auto memory), skills, subagents, SessionStart hook.
 
+- [[parallel-worktrees]]: up to 4 extra stacks in worktrees (ports 808N/300N, one database per slot in the shared Postgres), `scripts/wt.sh`, memory limits.
+
 ## Reference
 - [[glossary]]: Spanish UI terms to English code names.
 - [[decisions]]: ADR log (JDK 17, Postgres port, new seeder, synthetic index data, 401 for unauthenticated, Railway `meetup` env, model on every Agent call).

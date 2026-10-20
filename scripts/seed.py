@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Seeds a local PropPilot backend (profile `local`) with Argentine demo data.
 
-Usage: scripts/seed.py [--reset] [--api http://localhost:8080/api]
+Usage: scripts/seed.py [--reset] [--api http://localhost:8080/api] [--db proppilot] [--container proppilot-postgres]
 
---reset truncates all domain tables through `docker exec proppilot-postgres psql` first.
+--reset truncates all domain tables through `docker exec <container> psql` first.
+--container picks the Postgres container (a parallel worktree uses proppilot-pg-wt<N>).
 Index values (ICL/IPC) are synthetic, tagged source='seed-synthetic'; they are not BCRA/INDEC data.
 """
 import argparse
@@ -61,9 +62,9 @@ def api(base, method, path, body=None):
         sys.exit(f"{method} {path} failed: {e.code} {e.read().decode()[:300]}")
 
 
-def psql(sql):
-    subprocess.run(["docker", "exec", "-i", "proppilot-postgres", "psql", "-q", "-v", "ON_ERROR_STOP=1",
-                    "-U", "proppilot", "-d", "proppilot"], input=sql.encode(), check=True)
+def psql(sql, db="proppilot", container="proppilot-postgres"):
+    subprocess.run(["docker", "exec", "-i", container, "psql", "-q", "-v", "ON_ERROR_STOP=1",
+                    "-U", "proppilot", "-d", db], input=sql.encode(), check=True)
 
 
 def month_iter(start, end):
@@ -93,15 +94,17 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--reset", action="store_true")
     parser.add_argument("--api", default="http://localhost:8080/api")
+    parser.add_argument("--db", default="proppilot")
+    parser.add_argument("--container", default="proppilot-postgres")
     args = parser.parse_args()
     today = date.today()
 
     if args.reset:
-        psql(f"TRUNCATE {TABLES} RESTART IDENTITY CASCADE;")
+        psql(f"TRUNCATE {TABLES} RESTART IDENTITY CASCADE;", args.db, args.container)
     elif api(args.api, "GET", "/property-units"):
         sys.exit("Database already has data. Run with --reset to start over.")
 
-    psql(index_values_sql(today))
+    psql(index_values_sql(today), args.db, args.container)
 
     units = [api(args.api, "POST", "/property-units",
                  {"address": a, "type": t, "baseRentAmount": r}) for a, t, r in PROPERTIES]

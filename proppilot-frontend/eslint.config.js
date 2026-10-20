@@ -26,4 +26,9 @@ export default defineConfig([
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
     },
   },
+  {
+    // Run by Node (Vite, Playwright), so `process.env` is available.
+    files: ['vite.config.js', 'playwright.config.js', 'e2e/**/*.js'],
+    languageOptions: { globals: globals.node },
+  },
 ])

@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test'
 
-// Smoke test for the local stack (backend on :8080 with profile `local`, data from scripts/seed.py).
+// Smoke test for the local stack (backend on :8080, or BACKEND_PORT in a parallel worktree, with profile `local`, data from scripts/seed.py).
 // Logs in as the local-dev user that owns the seeded data and checks the UI against the API.
-const API_BASE = 'http://localhost:8080/api'
+const API_BASE = `http://localhost:${process.env.BACKEND_PORT || 8080}/api`
 // Must match app.local-dev.email in proppilot-backend/src/main/resources/application-local.yml
 const LOCAL_DEV_EMAIL = 'juanmgracia@gmail.com'
 

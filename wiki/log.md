@@ -61,3 +61,17 @@ Append only. Format: `## [YYYY-MM-DD] ingest|query|lint | <title>`. Last five: `
 ## [2026-10-20] ingest | Stop hook for wiki ingest
 - Added `.claude/hooks/wiki-ingest-check.sh` (Stop): blocks once per change set when work outside wiki/ is newer than log.md. Fields checked against code.claude.com/docs/en/hooks (stop_hook_active, decision block + reason).
 - harness: Hooks list updated. CLAUDE.md: one line under Where knowledge lives.
+
+## [2026-10-20] ingest | parallel worktrees
+- Added `scripts/wt.sh` (new, up, down, seed, verify, ls, rm): slot ports and one database per slot in the shared Postgres. Vite, Playwright, smoke spec, `seed.py --db`, `verify.sh`, `dev-backend.sh` read `BACKEND_PORT`, `FRONTEND_PORT`, `DB_NAME` (slot 0 defaults unchanged).
+- New page `pages/architecture/parallel-worktrees.md`, skill `.claude/skills/parallel-worktrees/`, CLAUDE.md section.
+- Proved with two worktrees verified at once (lowest free memory 28%). ESLint Node globals added, lint baseline 32 to 28; testing page updated.
+
+## [2026-10-20] ingest | Plan REQ-001 + REQ-002 (pending Juan's validation)
+- Wrote `docs/plans/2026-10-20-req-001-002-plan.md`: computed delinquency (no OVERDUE state), new Agenda view, decisions D1-D10 with recommendations, step 0 shared scaffolding, two lanes on slots 1 and 2, merge REQ-002 first.
+- Findings: payments cannot be future-dated (`proppilot-backend/src/main/java/com/prop_pilot/entity/Payment.java:42`), so overdue must come from the lease schedule; Lease has no due day; the dashboard already computes 60-day expiry and PENDING alerts client-side (`proppilot-frontend/src/components/DashboardView.jsx:79-146`); verify runs only `smoke.spec.js` (`scripts/verify.sh:72`); the seed leaves every active lease unpaid for the current month and none ending within 90 days.
+- Decision status: pending. No wiki pages changed until Juan validates.
+
+## [2026-10-20] ingest | parallel worktrees: container per slot
+- Design change from Juan: each slot gets its own Postgres container `proppilot-pg-wtN` (:5440+N, own volume, 256 MB cap, small buffers) instead of a database in the shared container. `rm` deletes container and volume; `down` stops it. `seed.py --container`, `PG_CONTAINER` in env.sh.
+- Re-proved with two worktrees verified at once: lowest free memory 29%, about 33 MB per slot Postgres, 212 MB per backend. parallel-worktrees page, skill and CLAUDE.md updated.

@@ -96,3 +96,6 @@ proppilot-backend-python/
 # Playwright outputs
 proppilot-frontend/playwright-report/
 proppilot-frontend/test-results/
+
+# Parallel worktree stacks: pid files and logs (scripts/wt.sh)
+.stack/
