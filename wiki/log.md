@@ -86,3 +86,8 @@ Append only. Format: `## [YYYY-MM-DD] ingest|query|lint | <title>`. Last five: `
 - Left out on purpose: an ACTIVE lease past its end date. `DashboardView` counts it as active, `GET /api/leases/active` does not, so `smoke.spec.js` fails. REQ-002 can add that case with its own fix.
 - Reserved `// REQ-001` and `// REQ-002` blocks at the end of `es` and `en` in `LanguageContext.jsx`, and two slot comments above the alerts section in `DashboardView.jsx`.
 - `proppilot-frontend/e2e/helpers.js` holds `login`, `apiGet`, `formatArs`; `scripts/verify.sh` runs `smoke.spec.js` plus `e2e/req-*.spec.js`.
+
+## [2026-10-20] ingest | parallel worktrees: full page rewrite
+- Rewrote `pages/architecture/parallel-worktrees.md` from `scripts/wt.sh`, `scripts/resource-watch.sh`, `scripts/lib/env.sh`, `scripts/lib/java.sh` and the skill: why, mermaid layout, ports, every command with `path:line`, limits, resource watch, wiring, gotchas.
+- New facts: `MAX_STACKS` counts only worktree slots, not main. Default `POSTGRES_PORT` is 5433 (`scripts/lib/env.sh:11`), which is another project's container `proppilot-stacks-pg`; main uses 5434 via `.dev.env`.
+- `wt-verifier` 7/7 PASS and the 16 GB / 750 MB figures come from the coordinator brief, marked UNVERIFIED. Index line updated.
