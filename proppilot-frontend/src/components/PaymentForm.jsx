@@ -58,6 +58,7 @@ import { format } from 'date-fns'
 import axios from 'axios'
 import { useLanguage } from '../contexts/LanguageContext'
 import { API_BASE_URL } from '../config/api'
+import DelinquencyDialog from './DelinquencyDialog'
 
 const PaymentForm = memo(function PaymentForm({
   onNavigateToProperty,
@@ -126,6 +127,17 @@ const PaymentForm = memo(function PaymentForm({
     } finally {
       setInitialLoading(false)
     }
+  }, [])
+
+  const [delinquency, setDelinquency] = useState(null)
+  const [delinquencyOpen, setDelinquencyOpen] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    axios.get(`${API_BASE_URL}/delinquency`)
+      .then(res => { if (!cancelled) setDelinquency(res.data) })
+      .catch(err => console.error('Error loading delinquency:', err))
+    return () => { cancelled = true }
   }, [])
 
   useEffect(() => {
@@ -405,6 +417,24 @@ const PaymentForm = memo(function PaymentForm({
             <Tab label={t('paymentHistory')} sx={{ textTransform: 'none' }} />
             <Tab label={t('registerPaymentTitle')} sx={{ textTransform: 'none' }} />
           </Tabs>
+
+          {delinquency && delinquency.tenantCount > 0 && (
+            <Alert
+              severity="error"
+              data-testid="delinquency-payments-alert"
+              sx={{ mb: 2 }}
+              action={
+                <Button color="inherit" size="small" onClick={() => setDelinquencyOpen(true)}>
+                  {t('delinquencyPaymentsAlertAction')}
+                </Button>
+              }
+            >
+              {t('delinquencyPaymentsAlert', { count: delinquency.tenantCount })}
+            </Alert>
+          )}
+          {delinquency && (
+            <DelinquencyDialog open={delinquencyOpen} onClose={() => setDelinquencyOpen(false)} items={delinquency.items} />
+          )}
 
           {/* Tab 1: Register Payment */}
           {activeTab === 1 && (

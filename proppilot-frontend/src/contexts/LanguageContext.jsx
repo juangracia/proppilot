@@ -464,6 +464,28 @@ export const LanguageProvider = ({ children }) => {
       adjustmentIndexLabel: 'Índice de ajuste',
 
       // REQ-001 (delinquency): only the REQ-001 branch adds keys here
+      delinquencyTitle: 'Morosidad',
+      delinquencyOwedTotal: 'adeudado',
+      delinquencyTenants: '{count} inquilinos atrasados',
+      delinquencyBaseRentNote: 'sobre alquiler base',
+      delinquencyColTenant: 'Inquilino',
+      delinquencyColProperty: 'Propiedad',
+      delinquencyColLate: 'Atraso',
+      delinquencyColAmount: 'Adeudado',
+      delinquencyLate: '{months} meses, {days} días',
+      delinquencyOverdueChip: 'Vencido',
+      delinquencyRemind: 'Recordar',
+      delinquencyReminderTitle: 'Recordatorio de pago',
+      delinquencyCopy: 'Copiar',
+      delinquencyCopied: 'Copiado',
+      delinquencyCopyFailed: 'No se pudo copiar',
+      delinquencyOpenWhatsapp: 'Abrir en WhatsApp',
+      delinquencyClose: 'Cerrar',
+      delinquencyReminderTemplate: 'Hola {name}, te escribo por el alquiler de {address}. Hay {months} meses pendientes por un total de {amount}. Cuando puedas, avisame por favor. Gracias.',
+      delinquencyPaymentsAlert: '{count} contratos con pagos vencidos',
+      delinquencyPaymentsAlertAction: 'Ver',
+      leaseDueDayLabel: 'Día de vencimiento',
+      leaseDueDayHelp: 'Día del mes en que vence el alquiler (1 a 28)',
       // END REQ-001
 
       // REQ-002 (lease agenda): only the REQ-002 branch adds keys here
@@ -919,6 +941,28 @@ export const LanguageProvider = ({ children }) => {
       adjustmentIndexLabel: 'Adjustment Index',
 
       // REQ-001 (delinquency): only the REQ-001 branch adds keys here
+      delinquencyTitle: 'Overdue rent',
+      delinquencyOwedTotal: 'owed',
+      delinquencyTenants: '{count} tenants behind',
+      delinquencyBaseRentNote: 'on base rent',
+      delinquencyColTenant: 'Tenant',
+      delinquencyColProperty: 'Property',
+      delinquencyColLate: 'Late',
+      delinquencyColAmount: 'Owed',
+      delinquencyLate: '{months} months, {days} days',
+      delinquencyOverdueChip: 'Overdue',
+      delinquencyRemind: 'Remind',
+      delinquencyReminderTitle: 'Payment reminder',
+      delinquencyCopy: 'Copy',
+      delinquencyCopied: 'Copied',
+      delinquencyCopyFailed: 'Could not copy',
+      delinquencyOpenWhatsapp: 'Open in WhatsApp',
+      delinquencyClose: 'Close',
+      delinquencyReminderTemplate: 'Hi {name}, I am writing about the rent for {address}. {months} months are pending, {amount} in total. Please let me know when you can pay. Thanks.',
+      delinquencyPaymentsAlert: '{count} leases with overdue payments',
+      delinquencyPaymentsAlertAction: 'View',
+      leaseDueDayLabel: 'Due day',
+      leaseDueDayHelp: 'Day of the month rent is due (1 to 28)',
       // END REQ-001
 
       // REQ-002 (lease agenda): only the REQ-002 branch adds keys here

@@ -31,6 +31,7 @@ import { API_BASE_URL } from '../config/api'
 import axios from 'axios'
 import PullToRefresh from './PullToRefresh'
 // REQ-001 import anchor: DelinquencyCard
+import DelinquencyCard from './DelinquencyCard'
 // REQ-002 import anchor: AgendaSummaryCard
 
 const DashboardView = memo(({ onNavigate, onNavigateToPayment }) => {
@@ -338,6 +339,7 @@ const DashboardView = memo(({ onNavigate, onNavigateToPayment }) => {
         {/* DASHBOARD FOR USERS WITH DATA */}
 
         {/* REQ-001 slot: the REQ-001 branch mounts <DelinquencyCard /> here, nothing else. */}
+        <DelinquencyCard />
 
         {/* REQ-002 slot: the REQ-002 branch mounts <AgendaSummaryCard /> here and removes the purple expiring-contracts card below. */}
 

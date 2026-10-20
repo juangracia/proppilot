@@ -81,7 +81,8 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
     startDate: new Date(),
     endDate: addYears(new Date(), 2),
     monthlyRent: '',
-    countryCode: 'AR'
+    countryCode: 'AR',
+    paymentDueDay: 10
   })
 
   const [selectedPeriod, setSelectedPeriod] = useState(24)
@@ -311,6 +312,11 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
       }
     }
 
+    const dueDay = parseInt(formData.paymentDueDay)
+    if (isNaN(dueDay) || dueDay < 1 || dueDay > 28) {
+      errors.paymentDueDay = t('leaseDueDayHelp')
+    }
+
     setValidationErrors(errors)
     return Object.keys(errors).length === 0
   }, [formData, t])
@@ -335,7 +341,8 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
         startDate: format(formData.startDate, 'yyyy-MM-dd'),
         endDate: format(formData.endDate, 'yyyy-MM-dd'),
         monthlyRent: parseFloat(formData.monthlyRent),
-        countryCode: formData.countryCode
+        countryCode: formData.countryCode,
+        paymentDueDay: parseInt(formData.paymentDueDay) || 10
       }
 
       const response = await axios.post(`${API_BASE_URL}/leases`, leaseData)
@@ -350,7 +357,8 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
           startDate: new Date(),
           endDate: addYears(new Date(), 2),
           monthlyRent: '',
-          countryCode: 'AR'
+          countryCode: 'AR',
+          paymentDueDay: 10
         })
         setValidationErrors({})
       }
@@ -819,6 +827,19 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
 
                     <Grid size={{ xs: 12, md: 6 }}>
                       <TextField
+                        type="number"
+                        label={t('leaseDueDayLabel')}
+                        value={formData.paymentDueDay}
+                        onChange={(e) => setFormData(prev => ({ ...prev, paymentDueDay: e.target.value }))}
+                        error={!!validationErrors.paymentDueDay}
+                        helperText={validationErrors.paymentDueDay || t('leaseDueDayHelp')}
+                        slotProps={{ htmlInput: { min: 1, max: 28 } }}
+                        fullWidth
+                      />
+                    </Grid>
+
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <TextField
                         select
                         label={t('country') || 'País'}
                         value={formData.countryCode}
@@ -883,7 +904,8 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                               startDate: new Date(),
                               endDate: addYears(new Date(), 2),
                               monthlyRent: '',
-                              countryCode: 'AR'
+                              countryCode: 'AR',
+                              paymentDueDay: 10
                             })
                             setError('')
                             setSuccess('')
