@@ -5,7 +5,21 @@ Both images were built and the backend image was booted against Postgres locally
 
 Note: `backend-production-1752.up.railway.app` (still hardcoded for native builds in `proppilot-frontend/src/config/api.js:6`) may be a previous deployment. UNVERIFIED.
 
-## 0. CLI path (preferred)
+## Target and script (production)
+
+Juan decided on 2026-10-20: deploy to Railway env `production` (project `4bb03a0f-05c3-4f48-ba7f-6c6a7afdcd43`). Frontend `https://www.proppilot.live`, backend `https://backend-production-1752.up.railway.app`.
+The services are not linked to GitHub. Only `railway up` deploys, so a merge to `main` changes nothing in prod.
+
+```bash
+scripts/deploy-prod.sh --dry-run   # first, always
+scripts/deploy-prod.sh             # verify --e2e, backup, variables, deploy, smoke
+```
+
+Order inside the script: clean tree and green verify, `pg_dump` backup to `~/brain/10-projects/proppilot/backups/prod-<timestamp>.sql.gz`, variable fixes with `--skip-deploys`, `railway up` backend then frontend, smoke checks.
+Restore a backup: `gunzip -c <file> | psql "$DATABASE_PUBLIC_URL"` (the dump uses `--clean --if-exists`).
+Env `meetup` (`backend-meetup`, `frontend-meetup`, `Postgres-M9I-`, `Postgres-SDcD`) is unused. Delete it only with Juan's OK.
+
+## 0. CLI path for a new env (reference)
 
 The commands for env `meetup` live in `.claude/skills/railway-deploy/SKILL.md`. Summary: `railway add --service <name>`, `railway domain -s <name> -e meetup`, `railway variable set ... --skip-deploys`, then `railway up . -s <name> -e meetup --ci` from each service folder. CLI tested on 5.71.0. Only the Google OAuth origin needs a browser. Sections 1 to 4 below are the dashboard equivalent.
 

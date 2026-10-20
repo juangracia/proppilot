@@ -41,7 +41,7 @@ step "git tree must be clean"
 cd "$ROOT" || die "cannot cd to $ROOT"
 if [[ -n "$(git status --porcelain)" ]]; then
   git status --short
-  die "git tree is dirty. Commit or stash first."
+  if $DRY; then echo "WARNING: tree is dirty. A real run would abort here."; else die "git tree is dirty. Commit or stash first."; fi
 fi
 SHA="$(git rev-parse --short HEAD)"
 BRANCH="$(git branch --show-current)"
@@ -148,8 +148,8 @@ unset BVARS FVARS
 
 # --- 4. deploy ------------------------------------------------------------
 wait_success() {  # $1 = service. Polls the newest deployment until SUCCESS or a failure state.
-  local svc="$1" i line
-  for i in $(seq 1 60); do
+  local svc="$1" line
+  for _ in $(seq 1 60); do
     line="$(railway deployment list -s "$svc" "${RW[@]}" --limit 1 2>/dev/null | sed -n '2p')"
     echo "  [$svc] $line"
     case "$line" in
