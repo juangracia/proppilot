@@ -467,6 +467,21 @@ export const LanguageProvider = ({ children }) => {
       // END REQ-001
 
       // REQ-002 (lease agenda): only the REQ-002 branch adds keys here
+      agendaTitle: 'Agenda',
+      agendaSubtitle: 'Vencimientos de contratos y próximos ajustes de alquiler',
+      navAgenda: 'Agenda',
+      agendaEventEnd: 'Fin de contrato',
+      agendaEventAdjustment: 'Ajuste de alquiler',
+      agendaWindow30: 'Menos de 30 días',
+      agendaWindow60: 'Menos de 60 días',
+      agendaWindow90: 'Menos de 90 días',
+      agendaExpiredNotRenewed: 'Vencido sin renovar',
+      agendaEstimatedNote: 'Estimado con el último índice disponible',
+      agendaBaseRent: 'Alquiler base',
+      agendaEstimatedRent: 'Estimado',
+      agendaSummaryText: '{expiring} contratos vencen en menos de 90 días, {adjustments} ajustes este mes, {expired} vencidos sin renovar',
+      agendaEmpty: 'No hay vencimientos ni ajustes en los próximos 12 meses',
+      agendaLoadError: 'No se pudo cargar la agenda',
       // END REQ-002
     },
     en: {
@@ -922,6 +937,21 @@ export const LanguageProvider = ({ children }) => {
       // END REQ-001
 
       // REQ-002 (lease agenda): only the REQ-002 branch adds keys here
+      agendaTitle: 'Agenda',
+      agendaSubtitle: 'Lease end dates and upcoming rent adjustments',
+      navAgenda: 'Agenda',
+      agendaEventEnd: 'Lease end',
+      agendaEventAdjustment: 'Rent adjustment',
+      agendaWindow30: 'Under 30 days',
+      agendaWindow60: 'Under 60 days',
+      agendaWindow90: 'Under 90 days',
+      agendaExpiredNotRenewed: 'Expired, not renewed',
+      agendaEstimatedNote: 'Estimated with the latest available index',
+      agendaBaseRent: 'Base rent',
+      agendaEstimatedRent: 'Estimated',
+      agendaSummaryText: '{expiring} leases end within 90 days, {adjustments} adjustments this month, {expired} expired and not renewed',
+      agendaEmpty: 'No lease ends or adjustments in the next 12 months',
+      agendaLoadError: 'Could not load the agenda',
       // END REQ-002
     }
   }

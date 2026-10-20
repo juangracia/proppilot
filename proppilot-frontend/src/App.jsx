@@ -31,6 +31,7 @@ import {
   Logout,
   HelpOutline,
   Description,
+  EventNote,
   ImportExport
 } from '@mui/icons-material'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
@@ -40,6 +41,7 @@ import PropertyUnitsList from './components/PropertyUnitsList'
 import PaymentForm from './components/PaymentForm'
 import TenantsList from './components/TenantsList'
 import LeaseForm from './components/LeaseForm'
+import AgendaView from './components/AgendaView'
 import LoginPage from './components/LoginPage'
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
@@ -102,7 +104,8 @@ function AppContent() {
     { text: t('propertiesMenu'), icon: <Home />, value: 1, tourId: 'nav-properties' },
     { text: t('tenantsMenu'), icon: <People />, value: 2, tourId: 'nav-tenants' },
     { text: t('leasesMenu') || 'Contratos', icon: <Description />, value: 3, tourId: 'nav-leases' },
-    { text: t('paymentsMenu'), icon: <Payment />, value: 4, tourId: 'nav-payments' }
+    { text: t('paymentsMenu'), icon: <Payment />, value: 4, tourId: 'nav-payments' },
+    { text: t('navAgenda'), icon: <EventNote />, value: 5, tourId: 'nav-agenda' }
   ], [t])
 
   const handleDrawerToggle = useCallback(() => {
@@ -507,6 +510,8 @@ function AppContent() {
         return t('leasesTitle') || 'Contratos'
       case 4:
         return t('registerPaymentTitle')
+      case 5:
+        return t('agendaTitle')
       default:
         return t('dashboardTitle')
     }
@@ -524,6 +529,8 @@ function AppContent() {
         return ''
       case 4:
         return ''
+      case 5:
+        return t('agendaSubtitle')
       default:
         return t('dashboardSubtitle')
     }
@@ -589,6 +596,8 @@ function AppContent() {
             onAddFormOpened={() => setOpenAddForm(false)}
           />
         )
+      case 5:
+        return <AgendaView onNavigateToLease={handleNavigateToLease} />
       default:
         return <DashboardView onNavigate={handleNavigate} onNavigateToPayment={handleNavigateToPayment} />
     }

@@ -23,7 +23,6 @@ import {
   ChevronRight,
   Schedule,
   Description,
-  EventNote,
   Apartment
 } from '@mui/icons-material'
 import { useLanguage } from '../contexts/LanguageContext'
@@ -32,6 +31,7 @@ import axios from 'axios'
 import PullToRefresh from './PullToRefresh'
 // REQ-001 import anchor: DelinquencyCard
 // REQ-002 import anchor: AgendaSummaryCard
+import AgendaSummaryCard from './AgendaSummaryCard'
 
 const DashboardView = memo(({ onNavigate, onNavigateToPayment }) => {
   const { t, formatCurrency, formatNumber } = useLanguage()
@@ -108,21 +108,6 @@ const DashboardView = memo(({ onNavigate, onNavigateToPayment }) => {
         }
       })
   }, [payments])
-
-  // Get upcoming expiring contracts (within 60 days)
-  const upcomingExpiringContracts = useMemo(() => {
-    return leases
-      .filter(l => l.status === 'ACTIVE')
-      .map(l => {
-        const endDate = new Date(l.endDate)
-        const today = new Date()
-        const daysUntilExpiry = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24))
-        return { ...l, daysUntilExpiry }
-      })
-      .filter(l => l.daysUntilExpiry <= 60 && l.daysUntilExpiry >= 0)
-      .sort((a, b) => a.daysUntilExpiry - b.daysUntilExpiry)
-      .slice(0, 3)
-  }, [leases])
 
   // Get next pending payment
   const nextPaymentDue = useMemo(() => {
@@ -223,10 +208,6 @@ const DashboardView = memo(({ onNavigate, onNavigateToPayment }) => {
       onNavigate && onNavigate(4)
     }
   }, [onNavigate, onNavigateToPayment])
-
-  const handleContractClick = useCallback(() => {
-    onNavigate && onNavigate(3)
-  }, [onNavigate])
 
   if (loading) {
     return (
@@ -339,13 +320,14 @@ const DashboardView = memo(({ onNavigate, onNavigateToPayment }) => {
 
         {/* REQ-001 slot: the REQ-001 branch mounts <DelinquencyCard /> here, nothing else. */}
 
-        {/* REQ-002 slot: the REQ-002 branch mounts <AgendaSummaryCard /> here and removes the purple expiring-contracts card below. */}
+        {/* REQ-002 slot */}
+        <AgendaSummaryCard onNavigate={onNavigate} />
 
         {/* 1. Alerts Section - Pending Payments & Expiring Contracts */}
-        {(nextPaymentDue || upcomingExpiringContracts.length > 0) && (
+        {nextPaymentDue && (
           <Grid container spacing={2} sx={{ mb: 3 }}>
             {nextPaymentDue && (
-              <Grid size={{ xs: 12, md: upcomingExpiringContracts.length > 0 ? 6 : 12 }}>
+              <Grid size={{ xs: 12, md: 12 }}>
                 <Paper
                   sx={{
                     p: 2,
@@ -368,37 +350,6 @@ const DashboardView = memo(({ onNavigate, onNavigateToPayment }) => {
                       </Typography>
                       <Typography variant="caption" sx={{ opacity: 0.9 }}>
                         {nextPaymentDue.tenant} • {nextPaymentDue.daysUntil} {t('daysLeft')}
-                      </Typography>
-                    </Box>
-                    <ChevronRight />
-                  </Box>
-                </Paper>
-              </Grid>
-            )}
-            {upcomingExpiringContracts.length > 0 && (
-              <Grid size={{ xs: 12, md: nextPaymentDue ? 6 : 12 }}>
-                <Paper
-                  sx={{
-                    p: 2,
-                    background: 'linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%)',
-                    color: 'white',
-                    cursor: 'pointer',
-                    transition: 'transform 0.2s',
-                    '&:hover': { transform: { xs: 'none', sm: 'translateY(-2px)' } }
-                  }}
-                  onClick={handleContractClick}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <EventNote sx={{ fontSize: 28 }} />
-                    <Box sx={{ flex: 1 }}>
-                      <Typography variant="caption" sx={{ opacity: 0.9 }}>
-                        {t('expiringContracts')}
-                      </Typography>
-                      <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                        {upcomingExpiringContracts.length} {t('expiringSoon')}
-                      </Typography>
-                      <Typography variant="caption" sx={{ opacity: 0.9 }}>
-                        {upcomingExpiringContracts[0]?.tenantName} - {upcomingExpiringContracts[0]?.daysUntilExpiry} {t('daysLabel')}
                       </Typography>
                     </Box>
                     <ChevronRight />
