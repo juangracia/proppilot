@@ -30,7 +30,7 @@ const DelinquencyCard = () => {
           <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
               <ErrorOutline sx={{ fontSize: 24, color: 'error.main' }} />
-              <Typography variant="caption" color="error" sx={{ fontWeight: 700 }}>{t('delinquencyTitle')}</Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>{t('delinquencyTitle')}</Typography>
             </Box>
             <Typography
               variant="h5"
