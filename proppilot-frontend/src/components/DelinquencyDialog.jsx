@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import {
   Dialog, DialogTitle, DialogContent, DialogActions, Button, Chip, Typography, Box,
-  Table, TableHead, TableRow, TableCell, TableBody, TextField, Snackbar
+  TextField, Snackbar
 } from '@mui/material'
 import { useLanguage } from '../contexts/LanguageContext'
 
@@ -13,10 +13,15 @@ const DelinquencyDialog = ({ open, onClose, items }) => {
   // a partly paid month still counts as a month behind
   const monthsBehind = (item) => item.monthsOwed + (Number(item.partialAmount) > 0 ? 1 : 0)
 
+  const monthsLabel = (item) => {
+    const n = monthsBehind(item)
+    return n === 1 ? t('delinquencyMonthsOne') : t('delinquencyMonthsMany', { count: n })
+  }
+
   const buildMessage = (item) => t('delinquencyReminderTemplate', {
     name: item.tenantName,
     address: item.propertyAddress,
-    months: monthsBehind(item),
+    months: monthsLabel(item),
     amount: formatCurrency(item.amountOwed)
   })
 
@@ -40,42 +45,42 @@ const DelinquencyDialog = ({ open, onClose, items }) => {
       <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
         <DialogTitle>{t('delinquencyTitle')} ({t('delinquencyBaseRentNote')})</DialogTitle>
         <DialogContent>
-          <Box sx={{ overflowX: 'auto' }}>
-            <Table size="small" data-testid="delinquency-table">
-              <TableHead>
-                <TableRow>
-                  <TableCell>{t('delinquencyColTenant')}</TableCell>
-                  <TableCell>{t('delinquencyColProperty')}</TableCell>
-                  <TableCell>{t('delinquencyColLate')}</TableCell>
-                  <TableCell align="right">{t('delinquencyColAmount')}</TableCell>
-                  <TableCell />
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {items.map(item => (
-                  <TableRow key={item.leaseId} data-testid="delinquency-row">
-                    <TableCell>{item.tenantName}</TableCell>
-                    <TableCell>{item.propertyAddress}</TableCell>
-                    <TableCell>
-                      <Typography variant="body2">
-                        {t('delinquencyLate', { months: monthsBehind(item), days: item.daysLate })}
-                      </Typography>
-                      <Chip size="small" color="error" label={t('delinquencyOverdueChip')} />
-                    </TableCell>
-                    <TableCell align="right">{formatCurrency(item.amountOwed)}</TableCell>
-                    <TableCell>
-                      <Button size="small" variant="outlined" onClick={() => setReminderItem(item)}>
-                        {t('delinquencyRemind')}
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+          <Box data-testid="delinquency-table" sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 1 }}>
+            {items.map(item => (
+              <Box
+                key={item.leaseId}
+                data-testid="delinquency-row"
+                sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 1.5, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1.5 }}
+              >
+                <Box sx={{ flex: '1 1 200px', minWidth: 0 }}>
+                  <Typography sx={{ fontWeight: 600 }}>{item.tenantName}</Typography>
+                  <Typography variant="body2" color="text.secondary">{item.propertyAddress}</Typography>
+                  <Typography variant="body2">
+                    {t('delinquencyLate', { months: monthsLabel(item), days: item.daysLate })}
+                  </Typography>
+                </Box>
+                <Box sx={{ flex: '0 0 auto', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5 }}>
+                  <Typography sx={{ fontWeight: 700 }}>{formatCurrency(item.amountOwed)}</Typography>
+                  <Chip
+                    size="small"
+                    variant="outlined"
+                    label={t('delinquencyOverdueDays', { days: item.daysLate })}
+                    sx={{ color: '#d32f2f', bgcolor: '#fdecea', borderColor: '#d32f2f' }}
+                  />
+                </Box>
+                <Button
+                  variant="outlined"
+                  onClick={() => setReminderItem(item)}
+                  sx={{ minHeight: 44, flex: { xs: '1 1 100%', sm: '0 0 auto' } }}
+                >
+                  {t('delinquencyRemind')}
+                </Button>
+              </Box>
+            ))}
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose}>{t('delinquencyClose')}</Button>
+          <Button sx={{ minHeight: 44 }} onClick={onClose}>{t('delinquencyClose')}</Button>
         </DialogActions>
       </Dialog>
 
@@ -91,10 +96,11 @@ const DelinquencyDialog = ({ open, onClose, items }) => {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => handleCopy(message)}>{t('delinquencyCopy')}</Button>
+          <Button sx={{ minHeight: 44 }} onClick={() => handleCopy(message)}>{t('delinquencyCopy')}</Button>
           <Button
             component="a"
             variant="contained"
+            sx={{ minHeight: 44 }}
             disabled={!digits}
             href={digits ? `https://wa.me/${digits}?text=${encodeURIComponent(message)}` : undefined}
             target="_blank"
@@ -102,7 +108,7 @@ const DelinquencyDialog = ({ open, onClose, items }) => {
           >
             {t('delinquencyOpenWhatsapp')}
           </Button>
-          <Button onClick={() => setReminderItem(null)}>{t('delinquencyClose')}</Button>
+          <Button sx={{ minHeight: 44 }} onClick={() => setReminderItem(null)}>{t('delinquencyClose')}</Button>
         </DialogActions>
       </Dialog>
       <Snackbar open={!!notice} autoHideDuration={2500} onClose={() => setNotice('')} message={notice} />

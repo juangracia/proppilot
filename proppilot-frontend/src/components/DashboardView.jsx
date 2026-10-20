@@ -339,7 +339,6 @@ const DashboardView = memo(({ onNavigate, onNavigateToPayment }) => {
         {/* DASHBOARD FOR USERS WITH DATA */}
 
         {/* REQ-001 slot: the REQ-001 branch mounts <DelinquencyCard /> here, nothing else. */}
-        <DelinquencyCard />
 
         {/* REQ-002 slot: the REQ-002 branch mounts <AgendaSummaryCard /> here and removes the purple expiring-contracts card below. */}
 
@@ -465,6 +464,8 @@ const DashboardView = memo(({ onNavigate, onNavigateToPayment }) => {
               </Card>
             </Grid>
           ))}
+          {/* REQ-001: overdue rent KPI, renders its own Grid item */}
+          <DelinquencyCard />
         </Grid>
 
         {/* 4. Recent Payments - Full Width */}
