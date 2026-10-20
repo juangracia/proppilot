@@ -19,6 +19,7 @@ test('agenda view shows the next adjustment and the expired-not-renewed lease', 
 
   await page.getByRole('button', { name: 'Agenda' }).first().click()
   await expect(page.getByTestId('agenda-view')).toBeVisible()
+  await expect(page.getByRole('banner')).toContainText('Agenda de contratos')
 
   const adjRow = page.locator(`[data-testid="agenda-row"][data-type="ADJUSTMENT"][data-lease-id="${adjustment.leaseId}"]`).first()
   await expect(adjRow).toContainText(`Próximo ajuste: ${ISO_TO_ES(adjustment.date)}`)

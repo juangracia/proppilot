@@ -467,7 +467,7 @@ export const LanguageProvider = ({ children }) => {
       // END REQ-001
 
       // REQ-002 (lease agenda): only the REQ-002 branch adds keys here
-      agendaTitle: 'Agenda',
+      agendaTitle: 'Agenda de contratos',
       agendaSubtitle: 'Vencimientos de contratos y próximos ajustes de alquiler',
       navAgenda: 'Agenda',
       agendaEventEnd: 'Fin de contrato',
@@ -942,7 +942,7 @@ export const LanguageProvider = ({ children }) => {
       // END REQ-001
 
       // REQ-002 (lease agenda): only the REQ-002 branch adds keys here
-      agendaTitle: 'Agenda',
+      agendaTitle: 'Lease calendar',
       agendaSubtitle: 'Lease end dates and upcoming rent adjustments',
       navAgenda: 'Agenda',
       agendaEventEnd: 'Lease end',
