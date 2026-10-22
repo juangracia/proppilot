@@ -3,6 +3,8 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 STATE_DIR="$ROOT/.dev"
 mkdir -p "$STATE_DIR"
 set -a
+# Per-lane overrides (written by scripts/wt.sh, gitignored) win over the .dev.env defaults.
+[ -f "$ROOT/.dev.env.local" ] && . "$ROOT/.dev.env.local"
 . "$ROOT/.dev.env"
 set +a
 export JAVA_HOME PATH="$JAVA_HOME/bin:$PATH"

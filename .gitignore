@@ -91,6 +91,7 @@ proppilot-backend-python/
 
 # Local dev stack state (pids, logs, lint baseline excluded)
 .dev/
+.dev.env.local
 
 # Obsidian per-user state
 wiki/.obsidian/workspace*.json

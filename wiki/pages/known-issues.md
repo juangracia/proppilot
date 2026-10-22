@@ -46,7 +46,7 @@ Sources: [[2026-10-22-explorer-findings|explorer findings]], files cited inline.
 
 Found in review round 2 of the stack scripts. Not fixed (review limit of 2 rounds reached).
 
-1. `scripts/dev-up.sh` starts `dev-db.sh` (line 5) before `dev-backend.sh` and `dev-frontend.sh` check their ports (lines 6-7). If a port is taken, the script fails but leaves a new DB container running. Fix: check all ports first.
+1. FIXED (`scripts/dev-up.sh` now checks the db, backend and frontend ports before it starts anything). Was: `dev-up.sh` started the DB before the port checks and could leave a new DB container behind.
 2. `proppilot-frontend/e2e/visual-match.spec.js:3` hardcodes `http://localhost:8080/api`. Fix: read `BACKEND_PORT`.
 
 Related: [[architecture]], [[testing]], [[decisions]]
