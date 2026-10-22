@@ -3,13 +3,12 @@
 set -euo pipefail
 . "$(dirname "$0")/_lib.sh"
 
-if curl -fsS -o /dev/null "http://localhost:$FRONTEND_PORT/" 2>/dev/null; then
-  echo "frontend: already answering on :$FRONTEND_PORT"
-  exit 0
+if owned frontend "$FRONTEND_PORT"; then
+  echo "frontend: ours, already up on :$FRONTEND_PORT"; exit 0
 fi
 other="$(port_pid "$FRONTEND_PORT" || true)"
 if [ -n "$other" ]; then
-  echo "frontend: port $FRONTEND_PORT is used by pid $other but does not answer" >&2
+  echo "frontend: port $FRONTEND_PORT is taken by pid $other, not started by this checkout. Stop it or set FRONTEND_PORT." >&2
   exit 1
 fi
 cd "$ROOT/proppilot-frontend"

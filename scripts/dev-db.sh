@@ -3,6 +3,11 @@
 set -euo pipefail
 . "$(dirname "$0")/_lib.sh"
 
+proj="$(docker inspect -f '{{index .Config.Labels "com.docker.compose.project"}}' "$PG_CONTAINER" 2>/dev/null || true)"
+if [ -n "$proj" ] && [ "$proj" != "$COMPOSE_PROJECT" ]; then
+  echo "db: container $PG_CONTAINER belongs to compose project '$proj', not '$COMPOSE_PROJECT'. Set PG_CONTAINER/COMPOSE_PROJECT." >&2
+  exit 1
+fi
 if [ "$(docker inspect -f '{{.State.Running}}' "$PG_CONTAINER" 2>/dev/null || true)" = "true" ]; then
   echo "db: $PG_CONTAINER already running"
 else

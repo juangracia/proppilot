@@ -3,13 +3,12 @@
 set -euo pipefail
 . "$(dirname "$0")/_lib.sh"
 
-if curl -fsS -o /dev/null "$API/countries" 2>/dev/null; then
-  echo "backend: already answering on :$BACKEND_PORT"
-  exit 0
+if owned backend "$BACKEND_PORT"; then
+  curl -fsS -o /dev/null "$API/countries" && { echo "backend: ours, already up on :$BACKEND_PORT"; exit 0; }
 fi
 other="$(port_pid "$BACKEND_PORT" || true)"
 if [ -n "$other" ]; then
-  echo "backend: port $BACKEND_PORT is used by pid $other but /api/countries does not answer" >&2
+  echo "backend: port $BACKEND_PORT is taken by pid $other, not started by this checkout. Stop it or set BACKEND_PORT." >&2
   exit 1
 fi
 "$ROOT/scripts/dev-db.sh"

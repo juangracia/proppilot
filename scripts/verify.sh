@@ -21,7 +21,7 @@ record "stack up + seed" "$([ $STACK = ok ] && echo PASS || echo FAIL)" "db/back
 # --- 1. backend tests ------------------------------------------------------------------
 echo "== backend tests (JDK $(java -version 2>&1 | sed -n 's/.*version "\([0-9]*\).*/\1/p')) =="
 rm -rf "$ROOT/proppilot-backend/target/surefire-reports"
-(cd "$ROOT/proppilot-backend" && mvn -B test) >"$STATE_DIR/backend-test.log" 2>&1
+(cd "$ROOT/proppilot-backend" && DATABASE_URL="jdbc:postgresql://localhost:$DB_PORT/proppilot" mvn -B test) >"$STATE_DIR/backend-test.log" 2>&1
 python3 -I - "$ROOT/proppilot-backend/target/surefire-reports" "$BASE/backend-known-failures.txt" >"$STATE_DIR/backend-summary.txt" <<'PY'
 import glob, sys, xml.etree.ElementTree as ET
 reports, known_file = sys.argv[1], sys.argv[2]

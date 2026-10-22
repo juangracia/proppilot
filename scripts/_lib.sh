@@ -7,7 +7,10 @@ set -a
 set +a
 export JAVA_HOME PATH="$JAVA_HOME/bin:$PATH"
 API="http://localhost:$BACKEND_PORT/api"
-PG_CONTAINER=proppilot-postgres
+
+# owned NAME: true if .dev/NAME.pid holds a live pid that is listening on port PORT
+owned() { local f="$STATE_DIR/$1.pid" pid; [ -f "$f" ] || return 1; pid="$(cat "$f")"
+  kill -0 "$pid" 2>/dev/null && [ "$(port_pid "$2")" = "$pid" ]; }
 
 port_pid() { lsof -tiTCP:"$1" -sTCP:LISTEN 2>/dev/null | head -1; }
 
