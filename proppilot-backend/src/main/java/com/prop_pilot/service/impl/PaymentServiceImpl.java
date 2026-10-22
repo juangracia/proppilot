@@ -7,6 +7,7 @@ import com.prop_pilot.exception.ResourceNotFoundException;
 import com.prop_pilot.repository.LeaseRepository;
 import com.prop_pilot.repository.PaymentRepository;
 import com.prop_pilot.service.PaymentService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,13 +17,15 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
+@Slf4j
 @Service
 public class PaymentServiceImpl implements PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final LeaseRepository leaseRepository;
 
-    public PaymentServiceImpl(PaymentRepository paymentRepository, LeaseRepository leaseRepository) {
+    public PaymentServiceImpl(PaymentRepository paymentRepository,
+                              LeaseRepository leaseRepository) {
         this.paymentRepository = paymentRepository;
         this.leaseRepository = leaseRepository;
     }
@@ -63,6 +66,7 @@ public class PaymentServiceImpl implements PaymentService {
 
         payment.setLease(lease);
         payment.setOwner(lease.getOwner());
+
         return paymentRepository.save(payment);
     }
 

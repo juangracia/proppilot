@@ -34,7 +34,9 @@ import {
   ListItemText,
   Divider,
   Checkbox,
-  OutlinedInput
+  OutlinedInput,
+  ToggleButtonGroup,
+  ToggleButton
 } from '@mui/material'
 import Grid from '@mui/material/Grid'
 import {
@@ -44,7 +46,6 @@ import {
   Person,
   CalendarToday,
   AttachMoney,
-  TrendingUp,
   CheckCircle,
   Cancel,
   OpenInNew,
@@ -55,30 +56,35 @@ import {
   Search,
   Clear,
   Payment as PaymentIcon,
-  Schedule
+  Schedule,
+  TrendingUp,
+  DateRange
 } from '@mui/icons-material'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
-import { format, addYears, differenceInMonths, parseISO } from 'date-fns'
+import { format, addYears, addMonths } from 'date-fns'
 import axios from 'axios'
 import { useLanguage } from '../contexts/LanguageContext'
 import { API_BASE_URL } from '../config/api'
 import MoneyInput from './MoneyInput'
+import { useCountries } from '../hooks/useCountries'
 
-const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTenant, initialLeaseId, onLeaseViewed }) {
+const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTenant, onNavigateToPayment, initialLeaseId, onLeaseViewed, openAddForm, onAddFormOpened }) {
   const { t, formatCurrency, currency, formatNumber } = useLanguage()
+  const { countries } = useCountries()
   const [activeTab, setActiveTab] = useState(0)
 
   const [formData, setFormData] = useState({
     propertyUnitId: '',
     tenantIds: [],
     startDate: new Date(),
-    endDate: null,
+    endDate: addYears(new Date(), 2),
     monthlyRent: '',
-    adjustmentIndex: 'ICL',
-    adjustmentFrequencyMonths: 12
+    countryCode: 'AR'
   })
+
+  const [selectedPeriod, setSelectedPeriod] = useState(24)
 
   const [validationErrors, setValidationErrors] = useState({})
   const [propertyUnits, setPropertyUnits] = useState([])
@@ -105,6 +111,18 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
   const [leaseToReactivate, setLeaseToReactivate] = useState(null)
   const [leasePayments, setLeasePayments] = useState([])
   const [loadingPayments, setLoadingPayments] = useState(false)
+  const [adjustedRent, setAdjustedRent] = useState(null)
+
+  const frequencyLabel = (months) => {
+    switch (months) {
+      case 1: return 'Mensual'
+      case 2: return 'Bimestral'
+      case 3: return 'Trimestral'
+      case 6: return 'Semestral'
+      case 12: return 'Anual'
+      default: return `${months} meses`
+    }
+  }
 
   // Inline creation dialogs
   const [newTenantDialogOpen, setNewTenantDialogOpen] = useState(false)
@@ -120,10 +138,12 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('ACTIVE') // 'all', 'ACTIVE', 'EXPIRED', 'TERMINATED'
 
-  const adjustmentIndices = useMemo(() => [
-    { value: 'ICL', label: t('indexICL') },
-    { value: 'IPC', label: t('indexIPC') },
-    { value: 'NONE', label: t('indexFixed') }
+  const periodOptions = useMemo(() => [
+    { value: 6, label: t('sixMonths') },
+    { value: 12, label: t('oneYear') },
+    { value: 24, label: t('twoYears') },
+    { value: 36, label: t('threeYears') },
+    { value: 'custom', label: t('customPeriod') }
   ], [t])
 
   const fetchData = useCallback(async () => {
@@ -164,6 +184,14 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
     }
   }, [initialLeaseId, leases, onLeaseViewed])
 
+  // Auto-switch to new contract tab when openAddForm is true
+  useEffect(() => {
+    if (openAddForm) {
+      setActiveTab(1) // Tab 1 is "New Contract"
+      onAddFormOpened?.()
+    }
+  }, [openAddForm, onAddFormOpened])
+
   // Fetch payments when a lease is selected for detail view
   useEffect(() => {
     if (selectedLease && detailDialogOpen) {
@@ -185,6 +213,25 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
     }
   }, [selectedLease, detailDialogOpen])
 
+  // Fetch adjusted rent when a lease is selected for detail view
+  useEffect(() => {
+    if (!selectedLease || !detailDialogOpen) {
+      setAdjustedRent(null)
+      return
+    }
+    let cancelled = false
+    const fetchAdjustedRent = async () => {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/leases/${selectedLease.id}/adjusted-rent`)
+        if (!cancelled) setAdjustedRent(response.data)
+      } catch (err) {
+        if (!cancelled) setAdjustedRent(null)
+      }
+    }
+    fetchAdjustedRent()
+    return () => { cancelled = true }
+  }, [selectedLease, detailDialogOpen])
+
   // Auto-fill rent and set default end date when property or start date changes
   const handlePropertyChange = useCallback((propertyId) => {
     const selectedUnit = propertyUnits.find(u => u.id === parseInt(propertyId))
@@ -196,11 +243,33 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
   }, [propertyUnits])
 
   const handleStartDateChange = useCallback((date) => {
-    setFormData(prev => ({
-      ...prev,
-      startDate: date,
-      endDate: date ? addYears(date, 1) : prev.endDate
-    }))
+    setFormData(prev => {
+      let newEndDate = prev.endDate
+      if (date && selectedPeriod !== 'custom') {
+        newEndDate = addMonths(date, selectedPeriod)
+      }
+      return {
+        ...prev,
+        startDate: date,
+        endDate: newEndDate
+      }
+    })
+  }, [selectedPeriod])
+
+  const handlePeriodChange = useCallback((event, newPeriod) => {
+    if (newPeriod === null) return
+    setSelectedPeriod(newPeriod)
+    if (newPeriod !== 'custom' && formData.startDate) {
+      setFormData(prev => ({
+        ...prev,
+        endDate: addMonths(prev.startDate, newPeriod)
+      }))
+    }
+  }, [formData.startDate])
+
+  const handleEndDateChange = useCallback((date) => {
+    setSelectedPeriod('custom')
+    setFormData(prev => ({ ...prev, endDate: date }))
   }, [])
 
   const validateForm = useCallback(() => {
@@ -266,8 +335,7 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
         startDate: format(formData.startDate, 'yyyy-MM-dd'),
         endDate: format(formData.endDate, 'yyyy-MM-dd'),
         monthlyRent: parseFloat(formData.monthlyRent),
-        adjustmentIndex: formData.adjustmentIndex,
-        adjustmentFrequencyMonths: parseInt(formData.adjustmentFrequencyMonths)
+        countryCode: formData.countryCode
       }
 
       const response = await axios.post(`${API_BASE_URL}/leases`, leaseData)
@@ -275,14 +343,14 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
       if (response.status === 201) {
         setSuccess(t('leaseCreatedSuccess') || 'Contrato creado exitosamente')
         setLeases(prev => [response.data, ...prev])
+        setSelectedPeriod(24)
         setFormData({
           propertyUnitId: '',
           tenantIds: [],
           startDate: new Date(),
-          endDate: null,
+          endDate: addYears(new Date(), 2),
           monthlyRent: '',
-          adjustmentIndex: 'ICL',
-          adjustmentFrequencyMonths: 12
+          countryCode: 'AR'
         })
         setValidationErrors({})
       }
@@ -496,21 +564,34 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
     setActiveTab(newValue)
   }, [])
 
-  // Filter counts
+  // Filter counts (include deleted leases count)
   const filterCounts = useMemo(() => {
     const active = leases.filter(l => l.status === 'ACTIVE').length
     const expired = leases.filter(l => l.status === 'EXPIRED').length
     const terminated = leases.filter(l => l.status === 'TERMINATED').length
-    return { all: leases.length, active, expired, terminated, deleted: deletedLeases.length }
+    const deleted = deletedLeases.length
+    return { all: leases.length, active, expired, terminated, deleted }
   }, [leases, deletedLeases])
 
-  // Filtered leases
+  // Filtered leases (includes deleted leases when that filter is selected)
   const filteredLeases = useMemo(() => {
-    // Use deleted leases when DELETED filter is selected
-    let filtered = statusFilter === 'DELETED' ? deletedLeases : leases
+    // For DELETED filter, use deletedLeases array
+    if (statusFilter === 'DELETED') {
+      let filtered = deletedLeases
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase()
+        filtered = filtered.filter(l =>
+          l.propertyAddress?.toLowerCase().includes(query) ||
+          (l.tenantNames || [l.tenantName]).some(name => name?.toLowerCase().includes(query))
+        )
+      }
+      return filtered
+    }
 
-    // Apply status filter (skip for DELETED since we already filtered)
-    if (statusFilter !== 'all' && statusFilter !== 'DELETED') {
+    let filtered = leases
+
+    // Apply status filter
+    if (statusFilter !== 'all') {
       filtered = filtered.filter(l => l.status === statusFilter)
     }
 
@@ -526,8 +607,7 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
     return filtered
   }, [leases, deletedLeases, statusFilter, searchQuery])
 
-  const hasActiveFilters = statusFilter !== 'all' || searchQuery.trim() !== ''
-  const isShowingDeleted = statusFilter === 'DELETED'
+  const hasActiveFilters = (statusFilter !== 'all' && statusFilter !== 'DELETED') || searchQuery.trim() !== ''
 
   const clearFilters = useCallback(() => {
     setStatusFilter('all')
@@ -549,17 +629,6 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
       case 'EXPIRED': return t('leaseExpired')
       case 'TERMINATED': return t('leaseTerminated')
       default: return status
-    }
-  }
-
-  const getLeaseDurationMonths = (startDate, endDate) => {
-    if (!startDate || !endDate) return null
-    try {
-      const start = typeof startDate === 'string' ? parseISO(startDate) : startDate
-      const end = typeof endDate === 'string' ? parseISO(endDate) : endDate
-      return differenceInMonths(end, start)
-    } catch {
-      return null
     }
   }
 
@@ -676,6 +745,34 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                       </Box>
                     </Grid>
 
+                    <Grid size={{ xs: 12 }}>
+                      <Box sx={{ mb: 1 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                          {t('leaseDuration')}
+                        </Typography>
+                        <ToggleButtonGroup
+                          value={selectedPeriod}
+                          exclusive
+                          onChange={handlePeriodChange}
+                          size="small"
+                          sx={{
+                            flexWrap: 'wrap',
+                            '& .MuiToggleButton-root': {
+                              px: { xs: 1.5, sm: 2 },
+                              py: 0.75,
+                              textTransform: 'none'
+                            }
+                          }}
+                        >
+                          {periodOptions.map((option) => (
+                            <ToggleButton key={option.value} value={option.value}>
+                              {option.label}
+                            </ToggleButton>
+                          ))}
+                        </ToggleButtonGroup>
+                      </Box>
+                    </Grid>
+
                     <Grid size={{ xs: 12, md: 6 }}>
                       <DatePicker
                         label={t('startDate') || 'Fecha de Inicio'}
@@ -696,7 +793,7 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                       <DatePicker
                         label={t('endDate') || 'Fecha de Fin'}
                         value={formData.endDate}
-                        onChange={(date) => setFormData(prev => ({ ...prev, endDate: date }))}
+                        onChange={handleEndDateChange}
                         minDate={formData.startDate}
                         slotProps={{
                           textField: {
@@ -723,37 +820,19 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                     <Grid size={{ xs: 12, md: 6 }}>
                       <TextField
                         select
-                        label={t('adjustmentIndex') || 'Índice de Ajuste'}
-                        value={formData.adjustmentIndex}
-                        onChange={(e) => setFormData(prev => ({ ...prev, adjustmentIndex: e.target.value }))}
+                        label={t('country') || 'País'}
+                        value={formData.countryCode}
+                        onChange={(e) => setFormData(prev => ({ ...prev, countryCode: e.target.value }))}
                         fullWidth
                         required
                       >
-                        {adjustmentIndices.map((option) => (
-                          <MenuItem key={option.value} value={option.value}>
-                            {option.label}
+                        {countries.map((country) => (
+                          <MenuItem key={country.code} value={country.code}>
+                            {country.name}
                           </MenuItem>
                         ))}
                       </TextField>
                     </Grid>
-
-                    {formData.adjustmentIndex !== 'NONE' && (
-                      <Grid size={{ xs: 12, md: 6 }}>
-                        <TextField
-                          select
-                          label={t('adjustmentFrequency')}
-                          value={formData.adjustmentFrequencyMonths}
-                          onChange={(e) => setFormData(prev => ({ ...prev, adjustmentFrequencyMonths: e.target.value }))}
-                          fullWidth
-                        >
-                          <MenuItem value={1}>{t('monthly')}</MenuItem>
-                          <MenuItem value={2}>{t('bimonthly')}</MenuItem>
-                          <MenuItem value={3}>{t('quarterly')}</MenuItem>
-                          <MenuItem value={6}>{t('semiannual')}</MenuItem>
-                          <MenuItem value={12}>{t('annual')}</MenuItem>
-                        </TextField>
-                      </Grid>
-                    )}
 
                     {(selectedPropertyUnit || selectedTenants.length > 0) && (
                       <Grid size={{ xs: 12 }}>
@@ -797,14 +876,14 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                           type="button"
                           variant="outlined"
                           onClick={() => {
+                            setSelectedPeriod(24)
                             setFormData({
                               propertyUnitId: '',
                               tenantIds: [],
                               startDate: new Date(),
-                              endDate: null,
+                              endDate: addYears(new Date(), 2),
                               monthlyRent: '',
-                              adjustmentIndex: 'ICL',
-                              adjustmentFrequencyMonths: 12
+                              countryCode: 'AR'
                             })
                             setError('')
                             setSuccess('')
@@ -867,6 +946,8 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                           minHeight: 36,
                           '& .MuiTab-root': { minHeight: 36, py: 0.5, textTransform: 'none', fontSize: '0.875rem' }
                         }}
+                        variant="scrollable"
+                        scrollButtons="auto"
                       >
                         <Tab value="all" label={`${t('all')} (${filterCounts.all})`} />
                         <Tab
@@ -932,20 +1013,41 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
 
                   {/* Empty state for filtered results */}
                   {filteredLeases.length === 0 && (
-                    <Paper sx={{ p: 4, textAlign: 'center' }}>
-                      <Description sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
-                      <Typography variant="h6" color="text.secondary" gutterBottom>
-                        {t('noLeasesMatchFilter') || 'No hay contratos que coincidan con los filtros'}
-                      </Typography>
-                      <Button
-                        size="small"
-                        startIcon={<Clear sx={{ fontSize: 16 }} />}
-                        onClick={clearFilters}
-                        sx={{ textTransform: 'none', mt: 1 }}
-                      >
-                        {t('clearFilters') || 'Limpiar filtros'}
-                      </Button>
+                    <Paper sx={{ p: 4, textAlign: 'center', bgcolor: 'background.default', border: '2px dashed', borderColor: 'divider' }}>
+                      {statusFilter === 'DELETED' ? (
+                        <>
+                          <Delete sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
+                          <Typography variant="h6" color="text.secondary" gutterBottom>
+                            {t('noDeletedContracts') || 'No hay contratos eliminados'}
+                          </Typography>
+                          <Typography variant="body2" color="text.disabled">
+                            {t('noDeletedContractsDesc') || 'Los contratos eliminados aparecerán aquí'}
+                          </Typography>
+                        </>
+                      ) : (
+                        <>
+                          <Description sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
+                          <Typography variant="h6" color="text.secondary" gutterBottom>
+                            {t('noLeasesMatchFilter') || 'No hay contratos que coincidan con los filtros'}
+                          </Typography>
+                          <Button
+                            size="small"
+                            startIcon={<Clear sx={{ fontSize: 16 }} />}
+                            onClick={clearFilters}
+                            sx={{ textTransform: 'none', mt: 1 }}
+                          >
+                            {t('clearFilters') || 'Limpiar filtros'}
+                          </Button>
+                        </>
+                      )}
                     </Paper>
+                  )}
+
+                  {/* Show info alert for deleted contracts */}
+                  {statusFilter === 'DELETED' && filteredLeases.length > 0 && (
+                    <Alert severity="info" sx={{ mb: 2 }}>
+                      {t('deletedContractsInfo') || 'Estos contratos han sido eliminados pero pueden ser restaurados o eliminados permanentemente.'}
+                    </Alert>
                   )}
 
                   {filteredLeases.length > 0 && (
@@ -958,17 +1060,8 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                             <TableCell>{t('propertyInfo') || 'Propiedad'}</TableCell>
                             <TableCell>{t('tenant')}</TableCell>
                             <TableCell>{t('leasePeriod') || 'Período'}</TableCell>
-                            {isShowingDeleted ? (
-                              <>
-                                <TableCell>{t('deletedAt') || 'Eliminado'}</TableCell>
-                                <TableCell align="center">{t('actions')}</TableCell>
-                              </>
-                            ) : (
-                              <>
-                                <TableCell>{t('monthlyRent') || 'Alquiler'}</TableCell>
-                                <TableCell>{t('status')}</TableCell>
-                              </>
-                            )}
+                            <TableCell>{statusFilter === 'DELETED' ? (t('deletedAt') || 'Eliminado') : (t('monthlyRent') || 'Alquiler')}</TableCell>
+                            <TableCell>{statusFilter === 'DELETED' ? (t('actions')) : (t('status'))}</TableCell>
                           </TableRow>
                         </TableHead>
                         <TableBody>
@@ -976,8 +1069,8 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                             <TableRow
                               key={lease.id}
                               hover
-                              onClick={() => !isShowingDeleted && setSelectedLease(lease) && setDetailDialogOpen(true)}
-                              sx={{ cursor: isShowingDeleted ? 'default' : 'pointer', opacity: isShowingDeleted ? 0.8 : 1 }}
+                              onClick={statusFilter !== 'DELETED' ? () => { setSelectedLease(lease); setDetailDialogOpen(true) } : undefined}
+                              sx={{ cursor: statusFilter !== 'DELETED' ? 'pointer' : 'default', opacity: statusFilter === 'DELETED' ? 0.8 : 1 }}
                             >
                               <TableCell>{lease.propertyAddress}</TableCell>
                               <TableCell>
@@ -986,22 +1079,27 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                                 ))}
                               </TableCell>
                               <TableCell>
-                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                                   <Typography variant="body2">{lease.startDate}</Typography>
                                   <Typography variant="body2">{lease.endDate}</Typography>
-                                  {getLeaseDurationMonths(lease.startDate, lease.endDate) !== null && (
-                                    <Typography variant="caption" color="text.secondary">
-                                      {getLeaseDurationMonths(lease.startDate, lease.endDate)} {t('months') || 'meses'}
-                                    </Typography>
-                                  )}
+                                  {(() => {
+                                    const start = new Date(lease.startDate)
+                                    const end = new Date(lease.endDate)
+                                    const months = Math.round((end - start) / (1000 * 60 * 60 * 24 * 30))
+                                    return (
+                                      <Typography variant="caption" color="text.secondary">
+                                        {months} {t('months') || 'meses'}
+                                      </Typography>
+                                    )
+                                  })()}
                                 </Box>
                               </TableCell>
-                              {isShowingDeleted ? (
+                              {statusFilter === 'DELETED' ? (
                                 <>
                                   <TableCell>
                                     {lease.deletedAt ? new Date(lease.deletedAt).toLocaleDateString() : '-'}
                                   </TableCell>
-                                  <TableCell align="center">
+                                  <TableCell>
                                     <Tooltip title={t('restoreLease') || 'Restaurar'}>
                                       <IconButton
                                         color="primary"
@@ -1046,21 +1144,21 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                       <Paper
                         key={lease.id}
                         variant="outlined"
-                        onClick={() => !isShowingDeleted && setSelectedLease(lease) && setDetailDialogOpen(true)}
+                        onClick={statusFilter !== 'DELETED' ? () => { setSelectedLease(lease); setDetailDialogOpen(true) } : undefined}
                         sx={{
                           p: 2,
                           mb: 2,
-                          cursor: isShowingDeleted ? 'default' : 'pointer',
-                          opacity: isShowingDeleted ? 0.9 : 1,
-                          bgcolor: isShowingDeleted ? 'action.hover' : 'background.paper',
-                          '&:hover': { boxShadow: isShowingDeleted ? 0 : 2 }
+                          cursor: statusFilter !== 'DELETED' ? 'pointer' : 'default',
+                          opacity: statusFilter === 'DELETED' ? 0.9 : 1,
+                          bgcolor: statusFilter === 'DELETED' ? 'action.hover' : 'background.paper',
+                          '&:hover': statusFilter !== 'DELETED' ? { boxShadow: 2 } : {}
                         }}
                       >
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
                           <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
                             {lease.propertyAddress}
                           </Typography>
-                          {isShowingDeleted ? (
+                          {statusFilter === 'DELETED' ? (
                             <Box sx={{ display: 'flex', gap: 0.5 }}>
                               <IconButton
                                 color="primary"
@@ -1091,28 +1189,40 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                           ))}
                         </Box>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          {isShowingDeleted ? (
-                            <Typography variant="caption" color="text.disabled">
-                              {t('deletedAt')}: {lease.deletedAt ? new Date(lease.deletedAt).toLocaleDateString() : '-'}
-                            </Typography>
-                          ) : (
-                            <Typography variant="body1" sx={{ fontWeight: 600, color: 'primary.main' }}>
-                              {formatCurrency(lease.monthlyRent)}
-                            </Typography>
-                          )}
-                          <Box sx={{ textAlign: 'right' }}>
-                            <Typography variant="body2" color="text.secondary">
-                              {lease.startDate}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              {lease.endDate}
-                            </Typography>
-                            {getLeaseDurationMonths(lease.startDate, lease.endDate) !== null && (
-                              <Typography variant="caption" color="text.disabled">
-                                {getLeaseDurationMonths(lease.startDate, lease.endDate)} {t('months') || 'meses'}
+                          {statusFilter === 'DELETED' ? (
+                            <>
+                              <Typography variant="body2" color="text.secondary">
+                                {lease.startDate} - {lease.endDate}
                               </Typography>
-                            )}
-                          </Box>
+                              <Typography variant="caption" color="text.disabled">
+                                {t('deletedAt')}: {lease.deletedAt ? new Date(lease.deletedAt).toLocaleDateString() : '-'}
+                              </Typography>
+                            </>
+                          ) : (
+                            <>
+                              <Typography variant="body1" sx={{ fontWeight: 600, color: 'primary.main' }}>
+                                {formatCurrency(lease.monthlyRent)}
+                              </Typography>
+                              <Box sx={{ textAlign: 'right' }}>
+                                <Typography variant="body2" color="text.secondary">
+                                  {lease.startDate}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                  {lease.endDate}
+                                </Typography>
+                                {(() => {
+                                  const start = new Date(lease.startDate)
+                                  const end = new Date(lease.endDate)
+                                  const months = Math.round((end - start) / (1000 * 60 * 60 * 24 * 30))
+                                  return (
+                                    <Typography variant="caption" color="text.secondary">
+                                      {months} {t('months') || 'meses'}
+                                    </Typography>
+                                  )
+                                })()}
+                              </Box>
+                            </>
+                          )}
                         </Box>
                       </Paper>
                     ))}
@@ -1135,7 +1245,7 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
         >
           {selectedLease && (
             <>
-              <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <DialogTitle sx={{ pb: 1 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                   <Avatar sx={{ bgcolor: 'primary.main', width: 48, height: 48 }}>
                     <Description />
@@ -1144,69 +1254,195 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                     <Typography variant="h6" sx={{ fontWeight: 600 }}>
                       {t('leaseDetails') || 'Detalles del Contrato'}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="caption" color="text.secondary">
                       #{selectedLease.id}
                     </Typography>
                   </Box>
                 </Box>
-                <IconButton onClick={() => setDetailDialogOpen(false)} sx={{ display: { xs: 'flex', sm: 'none' } }}>
-                  <Close />
-                </IconButton>
               </DialogTitle>
+
               <DialogContent dividers>
-                <Box sx={{ mb: 3 }}>
+                {/* Status chip */}
+                <Box sx={{ mb: 2 }}>
                   <Chip
                     label={getStatusLabel(selectedLease.status)}
                     color={getStatusColor(selectedLease.status)}
+                    size="small"
                     sx={{ fontWeight: 500 }}
                   />
                 </Box>
 
-                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, textTransform: 'uppercase', fontSize: '0.75rem' }}>
-                  {t('leasePeriod') || 'Período'}
+                {/* PERIODO section */}
+                <Typography
+                  variant="overline"
+                  color="text.secondary"
+                  sx={{ display: 'block', letterSpacing: 1.5, fontSize: '0.7rem', mb: 0.75 }}
+                >
+                  {t('period') || 'PERÍODO'}
                 </Typography>
-                <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+                <Paper variant="outlined" sx={{ p: 2, mb: 2.5 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
                     <CalendarToday sx={{ fontSize: 20, color: 'text.secondary' }} />
-                    <Box>
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                        {selectedLease.startDate} - {selectedLease.endDate}
-                      </Typography>
-                    </Box>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      {selectedLease.startDate
+                        ? (() => { try { return format(new Date(selectedLease.startDate + 'T00:00:00'), 'dd/MM/yyyy') } catch { return selectedLease.startDate } })()
+                        : ''
+                      }
+                      {' — '}
+                      {selectedLease.endDate
+                        ? (() => { try { return format(new Date(selectedLease.endDate + 'T00:00:00'), 'dd/MM/yyyy') } catch { return selectedLease.endDate } })()
+                        : ''
+                      }
+                    </Typography>
                   </Box>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                     <AttachMoney sx={{ fontSize: 20, color: 'text.secondary' }} />
                     <Box>
-                      <Typography variant="caption" color="text.secondary">{t('monthlyRent') || 'Alquiler Mensual'}</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        {t('monthlyRent') || 'Alquiler Mensual'}
+                      </Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>
                         {formatCurrency(selectedLease.monthlyRent)}
                       </Typography>
                     </Box>
                   </Box>
                 </Paper>
 
-                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, textTransform: 'uppercase', fontSize: '0.75rem' }}>
-                  {t('adjustmentInfo') || 'Ajuste'}
-                </Typography>
-                <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <TrendingUp sx={{ fontSize: 20, color: 'text.secondary' }} />
-                    <Box>
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                        {selectedLease.adjustmentIndex} - cada {selectedLease.adjustmentFrequencyMonths} meses
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Paper>
+                {/* ALQUILER AJUSTADO section - only if hasAdjustment */}
+                {adjustedRent && adjustedRent.hasAdjustment && (
+                  <>
+                    <Typography
+                      variant="overline"
+                      color="text.secondary"
+                      sx={{ display: 'block', letterSpacing: 1.5, fontSize: '0.7rem', mb: 0.75 }}
+                    >
+                      {t('adjustedRent') || 'ALQUILER AJUSTADO'}
+                    </Typography>
+                    <Paper
+                      variant="outlined"
+                      sx={{ mb: 2.5, overflow: 'hidden', borderColor: 'primary.light' }}
+                    >
+                      {/* Card header */}
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2, py: 1.5 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <TrendingUp sx={{ fontSize: 20, color: 'primary.main' }} />
+                          <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                            {t('adjustedAsOfToday') || 'Alquiler ajustado a hoy'}
+                          </Typography>
+                        </Box>
+                        <Chip
+                          label={`${adjustedRent.indexType} · ${frequencyLabel(selectedLease.adjustmentFrequencyMonths)}`}
+                          size="small"
+                          color="primary"
+                          sx={{ fontWeight: 600, fontSize: '0.7rem' }}
+                        />
+                      </Box>
 
-                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, textTransform: 'uppercase', fontSize: '0.75rem' }}>
-                  {t('propertyInfo')}
+                      {/* 2x2 grid of fields */}
+                      <Grid container sx={{ px: 2, pb: 1.5 }} spacing={0}>
+                        <Grid size={{ xs: 6 }} sx={{ pr: 1, pb: 1.5 }}>
+                          <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem', letterSpacing: 1, display: 'block' }}>
+                            {t('baseRent') || 'ALQUILER BASE'}
+                          </Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                            {formatCurrency(adjustedRent.baseAmount)}
+                          </Typography>
+                        </Grid>
+                        <Grid size={{ xs: 6 }} sx={{ pl: 1, pb: 1.5 }}>
+                          <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem', letterSpacing: 1, display: 'block' }}>
+                            {t('leaseStart') || 'INICIO DEL CONTRATO'}
+                          </Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                            {selectedLease.startDate
+                              ? (() => { try { return format(new Date(selectedLease.startDate + 'T00:00:00'), 'dd/MM/yyyy') } catch { return selectedLease.startDate } })()
+                              : ''
+                            }
+                          </Typography>
+                        </Grid>
+                        <Grid size={{ xs: 6 }} sx={{ pr: 1 }}>
+                          <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem', letterSpacing: 1, display: 'block' }}>
+                            {t('lastUpdate') || 'ULTIMA ACTUALIZACION'}
+                          </Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                            {adjustedRent.indexDate
+                              ? (() => { try { return format(new Date(adjustedRent.indexDate + 'T00:00:00'), 'dd/MM/yyyy') } catch { return adjustedRent.indexDate } })()
+                              : ''
+                            }
+                          </Typography>
+                        </Grid>
+                        <Grid size={{ xs: 6 }} sx={{ pl: 1 }}>
+                          <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem', letterSpacing: 1, display: 'block' }}>
+                            {t('calculationDate') || 'FECHA DE CALCULO'}
+                          </Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                            {format(new Date(), 'dd/MM/yyyy')}
+                          </Typography>
+                        </Grid>
+                      </Grid>
+
+                      {/* Factor strip */}
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          px: 2,
+                          py: 1,
+                          bgcolor: 'primary.50',
+                          backgroundColor: 'rgba(25, 118, 210, 0.08)'
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <DateRange sx={{ fontSize: 18, color: 'primary.main' }} />
+                          <Typography variant="body2" color="primary.main">
+                            {t('accumulatedAdjustmentFactor') || 'Factor de ajuste acumulado'}
+                          </Typography>
+                        </Box>
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: 'primary.main' }}>
+                          x{adjustedRent.factor}
+                        </Typography>
+                      </Box>
+
+                      {/* Adjusted amount block */}
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          px: 2,
+                          py: 1.5,
+                          bgcolor: 'primary.main'
+                        }}
+                      >
+                        <Box>
+                          <Typography variant="caption" sx={{ color: 'primary.contrastText', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', display: 'block' }}>
+                            {t('adjustedAmount') || 'MONTO AJUSTADO'}
+                          </Typography>
+                          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.75)', display: 'block' }}>
+                            {t('effectiveAs') || 'Vigente al'} {format(new Date(), 'dd/MM/yyyy')}
+                          </Typography>
+                        </Box>
+                        <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.contrastText' }}>
+                          {formatCurrency(adjustedRent.adjustedAmount)}
+                        </Typography>
+                      </Box>
+                    </Paper>
+                  </>
+                )}
+
+                {/* PROPIEDAD section */}
+                <Typography
+                  variant="overline"
+                  color="text.secondary"
+                  sx={{ display: 'block', letterSpacing: 1.5, fontSize: '0.7rem', mb: 0.75 }}
+                >
+                  {t('property') || 'PROPIEDAD'}
                 </Typography>
                 <Paper
                   variant="outlined"
                   sx={{
                     p: 2,
-                    mb: 2,
+                    mb: 2.5,
                     cursor: onNavigateToProperty && selectedLease.propertyUnitIdRef ? 'pointer' : 'default',
                     '&:hover': onNavigateToProperty && selectedLease.propertyUnitIdRef ? { borderColor: 'primary.main', bgcolor: 'action.hover' } : {}
                   }}
@@ -1218,16 +1454,25 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                   }}
                 >
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <Home sx={{ fontSize: 20, color: 'primary.main' }} />
+                    <Home sx={{ fontSize: 20, color: 'text.secondary' }} />
                     <Typography variant="body2" sx={{ fontWeight: 500, flex: 1 }}>
                       {selectedLease.propertyAddress}
                     </Typography>
-                    {onNavigateToProperty && selectedLease.propertyUnitIdRef && <OpenInNew sx={{ fontSize: 16, color: 'text.secondary' }} />}
+                    {onNavigateToProperty && selectedLease.propertyUnitIdRef && (
+                      <IconButton size="small" sx={{ color: 'text.secondary' }}>
+                        <OpenInNew sx={{ fontSize: 16 }} />
+                      </IconButton>
+                    )}
                   </Box>
                 </Paper>
 
-                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, textTransform: 'uppercase', fontSize: '0.75rem' }}>
-                  {t('tenants') || 'Inquilino(s)'}
+                {/* INQUILINO section */}
+                <Typography
+                  variant="overline"
+                  color="text.secondary"
+                  sx={{ display: 'block', letterSpacing: 1.5, fontSize: '0.7rem', mb: 0.75 }}
+                >
+                  {t('tenant') || 'INQUILINO'}
                 </Typography>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                   {(selectedLease.tenantNames || [selectedLease.tenantName]).map((tenantName, index) => {
@@ -1250,105 +1495,36 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                         }}
                       >
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                          <Person sx={{ fontSize: 20, color: 'primary.main' }} />
+                          <Person sx={{ fontSize: 20, color: 'text.secondary' }} />
                           <Box sx={{ flex: 1 }}>
                             <Typography variant="body2" sx={{ fontWeight: 500 }}>
                               {tenantName}
                             </Typography>
                             {tenantEmail && (
-                              <Typography variant="caption" color="text.secondary">
+                              <Typography variant="caption" color="text.secondary" display="block">
                                 {tenantEmail}
                               </Typography>
                             )}
                           </Box>
-                          {onNavigateToTenant && tenantId && <OpenInNew sx={{ fontSize: 16, color: 'text.secondary' }} />}
+                          {onNavigateToTenant && tenantId && (
+                            <IconButton size="small" sx={{ color: 'text.secondary' }}>
+                              <OpenInNew sx={{ fontSize: 16 }} />
+                            </IconButton>
+                          )}
                         </Box>
                       </Paper>
                     )
                   })}
                 </Box>
-
-                {/* Latest Payments Section */}
-                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, mt: 3, textTransform: 'uppercase', fontSize: '0.75rem' }}>
-                  {t('latestPayments')}
-                </Typography>
-                <Paper variant="outlined" sx={{ p: 2 }}>
-                  {loadingPayments ? (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
-                      <CircularProgress size={24} />
-                    </Box>
-                  ) : leasePayments.length === 0 ? (
-                    <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 1 }}>
-                      {t('noPaymentsForLease')}
-                    </Typography>
-                  ) : (
-                    <>
-                      {/* Payment Status Indicator */}
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                        {leasePayments.some(p => p.status === 'PENDING') ? (
-                          <Chip
-                            icon={<Schedule sx={{ fontSize: 16 }} />}
-                            label={t('paymentsPending')}
-                            color="warning"
-                            size="small"
-                            sx={{ fontWeight: 500 }}
-                          />
-                        ) : (
-                          <Chip
-                            icon={<CheckCircle sx={{ fontSize: 16 }} />}
-                            label={t('upToDate')}
-                            color="success"
-                            size="small"
-                            sx={{ fontWeight: 500 }}
-                          />
-                        )}
-                      </Box>
-
-                      {/* Recent Payments List (max 3) */}
-                      <List dense sx={{ py: 0 }}>
-                        {leasePayments.slice(0, 3).map((payment, index) => (
-                          <React.Fragment key={payment.id}>
-                            {index > 0 && <Divider />}
-                            <ListItem sx={{ px: 0 }}>
-                              <ListItemIcon sx={{ minWidth: 36 }}>
-                                <PaymentIcon sx={{ fontSize: 20, color: payment.status === 'PAID' ? 'success.main' : 'warning.main' }} />
-                              </ListItemIcon>
-                              <ListItemText
-                                primary={
-                                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                      {formatCurrency(payment.amount)}
-                                    </Typography>
-                                    <Chip
-                                      label={payment.status === 'PAID' ? t('paid') : t('pending')}
-                                      color={payment.status === 'PAID' ? 'success' : 'warning'}
-                                      size="small"
-                                      sx={{ height: 20, fontSize: '0.7rem' }}
-                                    />
-                                  </Box>
-                                }
-                                secondary={payment.paymentDate}
-                              />
-                            </ListItem>
-                          </React.Fragment>
-                        ))}
-                      </List>
-                      {leasePayments.length > 3 && (
-                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mt: 1 }}>
-                          +{leasePayments.length - 3} {t('paymentsMenu').toLowerCase()}
-                        </Typography>
-                      )}
-                    </>
-                  )}
-                </Paper>
               </DialogContent>
+
               <DialogActions sx={{ px: 3, py: 2, justifyContent: 'space-between' }}>
                 <Button
                   color="error"
                   startIcon={<Delete />}
                   onClick={() => openDeleteDialog(selectedLease)}
                 >
-                  {t('delete')}
+                  {t('delete') || 'Eliminar'}
                 </Button>
                 <Box sx={{ display: 'flex', gap: 1 }}>
                   {selectedLease.status === 'ACTIVE' && (
@@ -1358,7 +1534,7 @@ const LeaseForm = memo(function LeaseForm({ onNavigateToProperty, onNavigateToTe
                       startIcon={<Cancel />}
                       onClick={() => openTerminateDialog(selectedLease)}
                     >
-                      {t('terminateLease') || 'Terminar'}
+                      {t('terminate') || 'Terminar'}
                     </Button>
                   )}
                   {selectedLease.status === 'TERMINATED' && (

@@ -67,7 +67,7 @@ const isLeaseEndingSoon = (dateStr) => {
   return diffDays <= 30 && diffDays >= 0
 }
 
-const TenantsList = memo(function TenantsList({ onNavigateToProperty, onNavigateToPayment, initialTenantId, onTenantViewed }) {
+const TenantsList = memo(function TenantsList({ onNavigateToProperty, onNavigateToPayment, initialTenantId, onTenantViewed, openAddForm, onAddFormOpened }) {
   const { t, formatCurrency, formatNumber } = useLanguage()
   const isMobile = useMediaQuery('(max-width:600px)')
   const [tenants, setTenants] = useState([])
@@ -93,6 +93,7 @@ const TenantsList = memo(function TenantsList({ onNavigateToProperty, onNavigate
       }
     }
   }, [initialTenantId, tenants, onTenantViewed])
+
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success', action: null })
   const [pendingDelete, setPendingDelete] = useState(null)
   const [formData, setFormData] = useState({
@@ -143,6 +144,14 @@ const TenantsList = memo(function TenantsList({ onNavigateToProperty, onNavigate
     setFormErrors({})
     setDialogOpen(true)
   }, [])
+
+  // Auto-open add dialog when openAddForm is true
+  useEffect(() => {
+    if (openAddForm) {
+      openAddDialog()
+      onAddFormOpened?.()
+    }
+  }, [openAddForm, openAddDialog, onAddFormOpened])
 
   const openEditDialog = useCallback((tenant) => {
     setEditingTenant(tenant)
@@ -518,18 +527,18 @@ const TenantsList = memo(function TenantsList({ onNavigateToProperty, onNavigate
 
       {/* Desktop Table View */}
       {filteredTenants.length > 0 && (
-      <Box sx={{ display: { xs: 'none', xl: 'block' } }}>
-        <TableContainer component={Paper} elevation={2} sx={{ overflowX: 'auto' }}>
-          <Table sx={{ minWidth: 1000 }}>
+      <Box sx={{ display: { xs: 'none', xl: 'block' }, width: '100%' }}>
+        <TableContainer component={Paper} elevation={2}>
+          <Table sx={{ tableLayout: 'fixed', width: '100%' }}>
             <TableHead>
               <TableRow>
-                <TableCell sx={{ minWidth: 160, whiteSpace: 'nowrap' }}>{t('fullName')}</TableCell>
-                <TableCell sx={{ minWidth: 180, whiteSpace: 'nowrap' }}>{t('propertiesMenu')}</TableCell>
-                <TableCell sx={{ minWidth: 120, whiteSpace: 'nowrap' }}>{t('leaseEnds')}</TableCell>
-                <TableCell sx={{ minWidth: 100, whiteSpace: 'nowrap' }}>{t('status')}</TableCell>
-                <TableCell sx={{ minWidth: 200, whiteSpace: 'nowrap' }}>{t('email')}</TableCell>
-                <TableCell sx={{ minWidth: 140, whiteSpace: 'nowrap' }}>{t('phone')}</TableCell>
-                <TableCell align="center" sx={{ minWidth: 100, whiteSpace: 'nowrap' }}>{t('actions')}</TableCell>
+                <TableCell sx={{ width: '16%', whiteSpace: 'nowrap' }}>{t('fullName')}</TableCell>
+                <TableCell sx={{ width: '24%', whiteSpace: 'nowrap' }}>{t('propertiesMenu')}</TableCell>
+                <TableCell sx={{ width: '11%', whiteSpace: 'nowrap' }}>{t('leaseEnds')}</TableCell>
+                <TableCell sx={{ width: '9%', whiteSpace: 'nowrap' }}>{t('status')}</TableCell>
+                <TableCell sx={{ width: '20%', whiteSpace: 'nowrap' }}>{t('email')}</TableCell>
+                <TableCell sx={{ width: '13%', whiteSpace: 'nowrap' }}>{t('phone')}</TableCell>
+                <TableCell align="center" sx={{ width: '7%', whiteSpace: 'nowrap' }}>{t('actions')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -548,11 +557,11 @@ const TenantsList = memo(function TenantsList({ onNavigateToProperty, onNavigate
                       </Typography>
                     </Box>
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={{ overflow: 'hidden' }}>
                     {tenant.property ? (
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, overflow: 'hidden' }}>
                         <Home sx={{ fontSize: 16, color: 'text.secondary', flexShrink: 0 }} />
-                        <Typography sx={{ whiteSpace: 'nowrap' }}>{tenant.property}</Typography>
+                        <Typography sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{tenant.property}</Typography>
                       </Box>
                     ) : (
                       <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
@@ -596,7 +605,7 @@ const TenantsList = memo(function TenantsList({ onNavigateToProperty, onNavigate
                       </Typography>
                     )}
                   </TableCell>
-                  <TableCell sx={{ whiteSpace: 'nowrap' }}>{tenant.email}</TableCell>
+                  <TableCell sx={{ overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', maxWidth: 0 }}>{tenant.email}</TableCell>
                   <TableCell sx={{ whiteSpace: 'nowrap' }}>{tenant.phone}</TableCell>
                   <TableCell align="center" sx={{ whiteSpace: 'nowrap' }}>
                     <IconButton

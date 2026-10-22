@@ -60,3 +60,31 @@ html, body {
   overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
 }
+
+/* Native mobile app specific styles */
+body[data-platform="native"] {
+  /* Prevent text selection on mobile (feels more native) */
+  -webkit-user-select: none;
+  user-select: none;
+
+  /* Prevent overscroll bounce effect in content areas */
+  overscroll-behavior-y: contain;
+}
+
+/* Allow text selection in input fields on native */
+body[data-platform="native"] input,
+body[data-platform="native"] textarea,
+body[data-platform="native"] [contenteditable] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Native mobile touch feedback */
+body[data-platform="native"] .MuiButtonBase-root {
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Smooth scrolling for native */
+body[data-platform="native"] {
+  scroll-behavior: smooth;
+}

@@ -119,18 +119,15 @@ public class TenantController {
     @Operation(summary = "Delete a tenant", description = "Deletes a tenant by ID")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "204", description = "Tenant deleted successfully"),
-        @ApiResponse(responseCode = "404", description = "Tenant not found")
+        @ApiResponse(responseCode = "404", description = "Tenant not found"),
+        @ApiResponse(responseCode = "422", description = "Tenant has active contracts")
     })
     public ResponseEntity<Void> deleteTenant(
             @Parameter(description = "Tenant ID", required = true)
             @PathVariable @NonNull Long id) {
-        try {
-            Long ownerId = currentUserService.getCurrentUserId();
-            tenantService.deleteTenant(id, ownerId);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
+        Long ownerId = currentUserService.getCurrentUserId();
+        tenantService.deleteTenant(id, ownerId);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
     @GetMapping("/search/national-id/{nationalId}")

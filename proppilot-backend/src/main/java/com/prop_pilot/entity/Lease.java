@@ -67,6 +67,9 @@ public class Lease {
     @Column
     private Integer adjustmentFrequencyMonths = 12;
 
+    @Column(name = "country_code", length = 2)
+    private String countryCode = "AR";  // ISO 3166-1 alpha-2, default Argentina
+
     @OneToMany(mappedBy = "lease", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference("lease-payments")
     private List<Payment> payments = new ArrayList<>();
@@ -157,8 +160,11 @@ public class Lease {
     }
 
     public enum AdjustmentIndex {
-        ICL,    // Índice para Contratos de Locación (Argentina)
-        IPC,    // Índice de Precios al Consumidor
-        NONE    // Sin ajuste (monto fijo)
+        ICL,            // Índice para Contratos de Locación (Argentina)
+        IPC,            // Índice de Precios al Consumidor
+        DOLAR_BLUE,     // Dólar Blue (informal market rate)
+        DOLAR_OFICIAL,  // Dólar Oficial (official exchange rate)
+        DOLAR_MEP,      // Dólar MEP (stock market exchange rate)
+        NONE            // Sin ajuste (monto fijo)
     }
 }

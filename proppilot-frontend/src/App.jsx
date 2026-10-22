@@ -18,7 +18,9 @@ import {
   Avatar,
   Menu as MuiMenu,
   MenuItem,
-  CircularProgress
+  CircularProgress,
+  Badge,
+  Chip
 } from '@mui/material'
 import {
   Brightness4,
@@ -30,7 +32,9 @@ import {
   Menu,
   Logout,
   HelpOutline,
-  Description
+  Description,
+  ImportExport,
+  Event as EventIcon
 } from '@mui/icons-material'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
@@ -42,8 +46,13 @@ import LeaseForm from './components/LeaseForm'
 import LoginPage from './components/LoginPage'
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import ContractAgenda from './components/ContractAgenda'
+import { API_BASE_URL } from './config/api'
+import axios from 'axios'
 import LanguageCurrencySelector from './components/LanguageCurrencySelector'
 import ProductTour, { useTour } from './components/ProductTour'
+import MobileBottomNav from './components/MobileBottomNav'
+import DataPortabilityDialog from './components/DataPortabilityDialog'
 import './App.css'
 
 const drawerWidth = 240
@@ -64,8 +73,11 @@ function AppContent() {
   const [paymentStatusFilter, setPaymentStatusFilter] = useState(null)
   const [paymentPropertyFilter, setPaymentPropertyFilter] = useState(null)
   const [paymentTenantFilter, setPaymentTenantFilter] = useState(null)
+  const [paymentLeaseFilter, setPaymentLeaseFilter] = useState(null)
+  const [openAddForm, setOpenAddForm] = useState(false)
+  const [openDataPortability, setOpenDataPortability] = useState(false)
   const { t, language } = useLanguage()
-  const { user, logout, isAuthenticated, loading } = useAuth()
+  const { user, logout, isAuthenticated, loading, isNative } = useAuth()
   const { startTour } = useTour()
 
   const handleUserMenuOpen = (event) => {
@@ -86,13 +98,39 @@ function AppContent() {
     startTour()
   }
 
+  const handleOpenDataPortability = () => {
+    handleUserMenuClose()
+    setOpenDataPortability(true)
+  }
+
+  const [alertCount, setAlertCount] = useState(0)
+
+  useEffect(() => {
+    if (!isAuthenticated) return
+    let cancelled = false
+    axios.get(`${API_BASE_URL}/agenda`)
+      .then(({ data }) => {
+        const c = data.counts
+        if (!cancelled) setAlertCount(c.d90 + c.d60 + c.d30 + c.ended)
+      })
+      .catch(() => { if (!cancelled) setAlertCount(0) })
+    return () => { cancelled = true }
+  }, [isAuthenticated, selectedView])
+
   const menuItems = useMemo(() => [
     { text: t('dashboardMenu'), icon: <Dashboard />, value: 0, tourId: 'nav-dashboard' },
     { text: t('propertiesMenu'), icon: <Home />, value: 1, tourId: 'nav-properties' },
     { text: t('tenantsMenu'), icon: <People />, value: 2, tourId: 'nav-tenants' },
     { text: t('leasesMenu') || 'Contratos', icon: <Description />, value: 3, tourId: 'nav-leases' },
-    { text: t('paymentsMenu'), icon: <Payment />, value: 4, tourId: 'nav-payments' }
-  ], [t])
+    { text: t('paymentsMenu'), icon: <Payment />, value: 4, tourId: 'nav-payments' },
+    {
+      text: t('agendaMenu'),
+      icon: <Badge badgeContent={alertCount} color="error" data-testid="agenda-badge"><EventIcon /></Badge>,
+      value: 5,
+      tourId: 'nav-agenda',
+      extra: <Chip label={t('newBadge')} size="small" color="secondary" sx={{ ml: 1, height: 18, fontSize: '0.625rem' }} />
+    }
+  ], [t, alertCount])
 
   const handleDrawerToggle = useCallback(() => {
     setMobileOpen(prev => !prev)
@@ -106,6 +144,61 @@ function AppContent() {
   const toggleDarkMode = useCallback(() => {
     setDarkMode(prev => !prev)
   }, [])
+
+  // Mobile-specific component overrides (only applied when isNative)
+  const mobileComponentOverrides = isNative ? {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          minHeight: 48,
+          paddingTop: 12,
+          paddingBottom: 12,
+        },
+        sizeSmall: {
+          minHeight: 44,
+        },
+      },
+    },
+    MuiIconButton: {
+      styleOverrides: {
+        root: {
+          padding: 12,
+        },
+      },
+    },
+    MuiListItem: {
+      styleOverrides: {
+        root: {
+          minHeight: 52,
+          paddingTop: 12,
+          paddingBottom: 12,
+        },
+      },
+    },
+    MuiTextField: {
+      styleOverrides: {
+        root: {
+          '& .MuiInputBase-root': {
+            minHeight: 48,
+          },
+        },
+      },
+    },
+    MuiChip: {
+      styleOverrides: {
+        root: {
+          height: 36,
+        },
+      },
+    },
+    MuiBottomNavigation: {
+      styleOverrides: {
+        root: {
+          height: 56,
+        },
+      },
+    },
+  } : {}
 
   const theme = useMemo(
     () =>
@@ -181,17 +274,17 @@ function AppContent() {
             letterSpacing: '0.05em',
           },
           body1: {
-            fontSize: '1rem',
+            fontSize: isNative ? '1.0625rem' : '1rem',
             lineHeight: 1.6,
             '@media (max-width:600px)': {
-              fontSize: '1rem',
+              fontSize: isNative ? '1.0625rem' : '1rem',
             },
           },
           body2: {
-            fontSize: '0.9375rem',
+            fontSize: isNative ? '1rem' : '0.9375rem',
             lineHeight: 1.6,
             '@media (max-width:600px)': {
-              fontSize: '0.9375rem',
+              fontSize: isNative ? '1rem' : '0.9375rem',
             },
           },
           button: {
@@ -251,9 +344,10 @@ function AppContent() {
               },
             },
           },
+          ...mobileComponentOverrides,
         },
       }),
-    [darkMode]
+    [darkMode, isNative, mobileComponentOverrides]
   )
 
   const drawer = (
@@ -390,14 +484,17 @@ function AppContent() {
                 }
               }}
             />
+            {item.extra}
           </ListItem>
         ))}
       </List>
     </Box>
   )
 
-  const handleNavigate = useCallback((viewIndex, filter = null) => {
+  const handleNavigate = useCallback((viewIndex, options = {}) => {
+    const { filter = null, openAdd = false } = typeof options === 'object' ? options : { filter: options }
     setPropertyFilter(filter)
+    setOpenAddForm(openAdd)
     setSelectedView(viewIndex)
   }, [])
 
@@ -417,11 +514,12 @@ function AppContent() {
   }, [])
 
   const handleNavigateToPayment = useCallback((options = {}) => {
-    const { paymentId, statusFilter, propertyId, tenantId } = typeof options === 'object' ? options : { paymentId: options }
+    const { paymentId, statusFilter, propertyId, tenantId, leaseId } = typeof options === 'object' ? options : { paymentId: options }
     setSelectedPaymentId(paymentId || null)
     setPaymentStatusFilter(statusFilter || null)
     setPaymentPropertyFilter(propertyId || null)
     setPaymentTenantFilter(tenantId || null)
+    setPaymentLeaseFilter(leaseId || null)
     setSelectedView(4) // Payments view
   }, [])
 
@@ -437,6 +535,8 @@ function AppContent() {
         return t('leasesTitle') || 'Contratos'
       case 4:
         return t('registerPaymentTitle')
+      case 5:
+        return t('agendaTitle')
       default:
         return t('dashboardTitle')
     }
@@ -454,6 +554,8 @@ function AppContent() {
         return ''
       case 4:
         return ''
+      case 5:
+        return ''
       default:
         return t('dashboardSubtitle')
     }
@@ -470,6 +572,8 @@ function AppContent() {
             onNavigateToPayment={handleNavigateToPayment}
             initialPropertyId={selectedPropertyId}
             onPropertyViewed={() => setSelectedPropertyId(null)}
+            openAddForm={openAddForm}
+            onAddFormOpened={() => setOpenAddForm(false)}
           />
         )
       case 2:
@@ -479,6 +583,8 @@ function AppContent() {
             onNavigateToPayment={handleNavigateToPayment}
             initialTenantId={selectedTenantId}
             onTenantViewed={() => setSelectedTenantId(null)}
+            openAddForm={openAddForm}
+            onAddFormOpened={() => setOpenAddForm(false)}
           />
         )
       case 3:
@@ -486,8 +592,11 @@ function AppContent() {
           <LeaseForm
             onNavigateToProperty={handleNavigateToProperty}
             onNavigateToTenant={handleNavigateToTenant}
+            onNavigateToPayment={handleNavigateToPayment}
             initialLeaseId={selectedLeaseId}
             onLeaseViewed={() => setSelectedLeaseId(null)}
+            openAddForm={openAddForm}
+            onAddFormOpened={() => setOpenAddForm(false)}
           />
         )
       case 4:
@@ -501,23 +610,38 @@ function AppContent() {
             initialStatusFilter={paymentStatusFilter}
             initialPropertyFilter={paymentPropertyFilter}
             initialTenantFilter={paymentTenantFilter}
+            initialLeaseFilter={paymentLeaseFilter}
             onFiltersCleared={() => {
               setPaymentStatusFilter(null)
               setPaymentPropertyFilter(null)
               setPaymentTenantFilter(null)
+              setPaymentLeaseFilter(null)
             }}
+            openAddForm={openAddForm}
+            onAddFormOpened={() => setOpenAddForm(false)}
           />
         )
+      case 5:
+        return <ContractAgenda />
       default:
         return <DashboardView onNavigate={handleNavigate} onNavigateToPayment={handleNavigateToPayment} />
     }
-  }, [selectedView, handleNavigate, handleNavigateToTenant, handleNavigateToProperty, handleNavigateToLease, handleNavigateToPayment, selectedPropertyId, selectedTenantId, selectedLeaseId, selectedPaymentId, paymentStatusFilter, paymentPropertyFilter, paymentTenantFilter])
+  }, [selectedView, handleNavigate, handleNavigateToTenant, handleNavigateToProperty, handleNavigateToLease, handleNavigateToPayment, selectedPropertyId, selectedTenantId, selectedLeaseId, selectedPaymentId, paymentStatusFilter, paymentPropertyFilter, paymentTenantFilter, openAddForm])
 
   // Update body theme attribute for CSS-based styling and persist preference
   useEffect(() => {
     document.body.setAttribute('data-theme', darkMode ? 'dark' : 'light')
     localStorage.setItem('darkMode', JSON.stringify(darkMode))
   }, [darkMode])
+
+  // Set platform attribute for native-specific CSS
+  useEffect(() => {
+    if (isNative) {
+      document.body.setAttribute('data-platform', 'native')
+    } else {
+      document.body.removeAttribute('data-platform')
+    }
+  }, [isNative])
 
   // Early returns AFTER all hooks
   if (loading) {
@@ -540,8 +664,8 @@ function AppContent() {
           <AppBar
             position="fixed"
             sx={{
-              width: { sm: `calc(100% - ${drawerWidth}px)` },
-              ml: { sm: `${drawerWidth}px` },
+              width: isNative ? '100%' : { sm: `calc(100% - ${drawerWidth}px)` },
+              ml: isNative ? 0 : { sm: `${drawerWidth}px` },
               zIndex: (theme) => theme.zIndex.drawer + 1,
               backgroundColor: 'background.default',
               color: 'text.primary',
@@ -550,19 +674,22 @@ function AppContent() {
             }}
           >
             <Toolbar sx={{ minHeight: { xs: '56px', sm: '64px' }, px: { xs: 1, sm: 2 } }}>
-              <IconButton
-                color="inherit"
-                aria-label="open drawer"
-                edge="start"
-                onClick={handleDrawerToggle}
-                sx={{ 
-                  mr: 2, 
-                  display: { sm: 'none' },
-                  color: 'text.primary'
-                }}
-              >
-                <Menu />
-              </IconButton>
+              {/* Hide hamburger menu on native - we use bottom nav instead */}
+              {!isNative && (
+                <IconButton
+                  color="inherit"
+                  aria-label="open drawer"
+                  edge="start"
+                  onClick={handleDrawerToggle}
+                  sx={{
+                    mr: 2,
+                    display: { sm: 'none' },
+                    color: 'text.primary'
+                  }}
+                >
+                  <Menu />
+                </IconButton>
+              )}
               <Box
                 sx={{
                   flexGrow: 1,
@@ -650,6 +777,10 @@ function AppContent() {
                   <HelpOutline fontSize="small" sx={{ mr: 1 }} />
                   {t('startTour')}
                 </MenuItem>
+                <MenuItem onClick={handleOpenDataPortability}>
+                  <ImportExport fontSize="small" sx={{ mr: 1 }} />
+                  {language === 'es' ? 'Importar/Exportar' : 'Import/Export'}
+                </MenuItem>
                 <MenuItem onClick={handleLogout}>
                   <Logout fontSize="small" sx={{ mr: 1 }} />
                   {language === 'es' ? 'Cerrar Sesión' : 'Logout'}
@@ -658,66 +789,86 @@ function AppContent() {
             </Toolbar>
           </AppBar>
 
-          <Box
-            component="nav"
-            sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
-          >
-            <Drawer
-              variant="temporary"
-              open={mobileOpen}
-              onClose={handleDrawerToggle}
-              ModalProps={{
-                keepMounted: true,
-              }}
-              sx={{
-                display: { xs: 'block', sm: 'none' },
-                '& .MuiDrawer-paper': { 
-                  boxSizing: 'border-box', 
-                  width: drawerWidth,
-                  bgcolor: 'background.paper',
-                  color: 'text.primary',
-                },
-              }}
+          {/* Only show drawer navigation on web */}
+          {!isNative && (
+            <Box
+              component="nav"
+              sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
             >
-              {drawer}
-            </Drawer>
-            <Drawer
-              variant="permanent"
-              sx={{
-                display: { xs: 'none', sm: 'block' },
-                '& .MuiDrawer-paper': { 
-                  boxSizing: 'border-box', 
-                  width: drawerWidth,
-                  bgcolor: 'background.paper',
-                  color: 'text.primary',
-                  borderRight: '1px solid',
-                  borderColor: 'divider',
-                },
-              }}
-              open
-            >
-              {drawer}
-            </Drawer>
-          </Box>
+              <Drawer
+                variant="temporary"
+                open={mobileOpen}
+                onClose={handleDrawerToggle}
+                ModalProps={{
+                  keepMounted: true,
+                }}
+                sx={{
+                  display: { xs: 'block', sm: 'none' },
+                  '& .MuiDrawer-paper': {
+                    boxSizing: 'border-box',
+                    width: drawerWidth,
+                    bgcolor: 'background.paper',
+                    color: 'text.primary',
+                  },
+                }}
+              >
+                {drawer}
+              </Drawer>
+              <Drawer
+                variant="permanent"
+                sx={{
+                  display: { xs: 'none', sm: 'block' },
+                  '& .MuiDrawer-paper': {
+                    boxSizing: 'border-box',
+                    width: drawerWidth,
+                    bgcolor: 'background.paper',
+                    color: 'text.primary',
+                    borderRight: '1px solid',
+                    borderColor: 'divider',
+                  },
+                }}
+                open
+              >
+                {drawer}
+              </Drawer>
+            </Box>
+          )}
 
           <Box
             component="main"
             sx={{
               flexGrow: 1,
+              minWidth: 0,
               p: { xs: 2, sm: 3 },
-              width: { sm: `calc(100% - ${drawerWidth}px)` },
+              width: isNative ? '100%' : { sm: `calc(100% - ${drawerWidth}px)` },
               // Account for AppBar height plus iOS safe area
               mt: { xs: 'calc(56px + env(safe-area-inset-top, 0px))', sm: 'calc(64px + env(safe-area-inset-top, 0px))' },
               backgroundColor: 'background.default',
-              minHeight: '100vh',
-              pb: { xs: 3, sm: 4 },
+              minHeight: { xs: 'calc(100vh - 56px - env(safe-area-inset-top, 0px))', sm: 'calc(100vh - 64px - env(safe-area-inset-top, 0px))' },
+              // Extra bottom padding for native bottom nav
+              pb: isNative ? 'calc(72px + env(safe-area-inset-bottom, 0px))' : { xs: 3, sm: 4 },
             }}
           >
             <Container maxWidth="xl" sx={{ px: { xs: 2, sm: 3 } }}>
               {content}
             </Container>
           </Box>
+
+          {/* Bottom navigation for native mobile apps */}
+          {isNative && (
+            <MobileBottomNav
+              selectedView={selectedView}
+              onNavigate={handleMenuClick}
+              menuItems={menuItems}
+            />
+          )}
+
           <ProductTour onNavigate={handleNavigate} currentView={selectedView} />
+
+          <DataPortabilityDialog
+            open={openDataPortability}
+            onClose={() => setOpenDataPortability(false)}
+          />
         </Box>
       </LocalizationProvider>
     </ThemeProvider>

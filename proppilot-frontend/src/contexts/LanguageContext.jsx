@@ -23,7 +23,7 @@ export const LanguageProvider = ({ children }) => {
       // Tabs
       propertyUnits: 'PROPIEDADES',
       registerPayment: 'Registrar Pago',
-      tenants: 'INQUILINOS',
+      tenantsTab: 'INQUILINOS',
 
       // Property List
       propertyUnitsTitle: 'Propiedades',
@@ -177,25 +177,27 @@ export const LanguageProvider = ({ children }) => {
       selectTenants: 'Seleccionar Inquilino(s)',
       startDate: 'Fecha de Inicio',
       endDate: 'Fecha de Fin',
-      adjustmentIndex: 'Índice de Ajuste',
-      adjustmentFrequency: 'Frecuencia de Ajuste (meses)',
       leaseStatus: 'Estado del Contrato',
       leaseDetails: 'Detalles del Contrato',
       leasePeriod: 'Período del Contrato',
-      adjustmentInfo: 'Ajuste',
       leaseActive: 'Activo',
       leaseExpired: 'Vencido',
       leaseTerminated: 'Terminado',
-      indexICL: 'ICL (Índice para Contratos de Locación)',
-      indexIPC: 'IPC (Índice de Precios al Consumidor)',
-      indexFixed: 'Fijo (Sin ajuste)',
-      indexCustom: 'Personalizado',
+      country: 'País',
       monthly: 'Mensual (1 mes)',
       bimonthly: 'Bimestral (2 meses)',
       quarterly: 'Trimestral (3 meses)',
       semiannual: 'Semestral (6 meses)',
       annual: 'Anual (12 meses)',
       minLeaseDuration: 'El contrato debe durar al menos 1 mes',
+      leaseDuration: 'Duración del Contrato',
+      sixMonths: '6 meses',
+      oneYear: '1 año',
+      twoYears: '2 años',
+      threeYears: '3 años',
+      customPeriod: 'Personalizado',
+      months: 'meses',
+      years: 'años',
       rentMaxExceeded: 'El monto excede el límite permitido',
       propertyRequired: 'Propiedad requerida',
       tenantRequired: 'Inquilino requerido',
@@ -389,6 +391,28 @@ export const LanguageProvider = ({ children }) => {
       statusPending: 'Pendiente',
       statusOverdue: 'Vencido',
 
+      // Delinquency (morosidad)
+      delinquencyTitle: 'Morosidad',
+      delinquencyNew: 'NUEVO',
+      delinquentTenantsOne: '1 inquilino atrasado',
+      delinquentTenantsMany: '{count} inquilinos atrasados',
+      delinquencyNone: 'Sin inquilinos atrasados',
+      delinquencyLoadError: 'No se pudo cargar la morosidad',
+      delinquencyColTenant: 'Inquilino',
+      delinquencyColProperty: 'Propiedad',
+      delinquencyColDelay: 'Atraso',
+      delinquencyColOwed: 'Adeuda',
+      overdueDaysOne: 'Vencido · 1 día',
+      overdueDaysMany: 'Vencido · {days} días',
+      remind: 'Recordar',
+      reminderTitle: 'Recordatorio de pago',
+      reminderMessage: 'Hola {name}, te escribo por el alquiler de {address}. Hay un saldo pendiente de {amount}, vencido hace {days} días. ¿Podés regularizarlo en estos días? Gracias.',
+      reminderMessageOne: 'Hola {name}, te escribo por el alquiler de {address}. Hay un saldo pendiente de {amount}, vencido hace 1 día. ¿Podés regularizarlo en estos días? Gracias.',
+      reminderNameJoin: 'y',
+      copy: 'Copiar',
+      reminderCopied: 'Mensaje copiado',
+      reminderCopyFallback: 'Seleccioná el texto y copialo',
+
       // Payment Methods
       methodTransfer: 'Transferencia',
       methodCash: 'Efectivo',
@@ -424,6 +448,65 @@ export const LanguageProvider = ({ children }) => {
       tourNext: 'Siguiente',
       tourSkip: 'Saltar tour',
       startTour: 'Iniciar Tour',
+
+      // Onboarding / Welcome
+      welcomeTitle: '¡Bienvenido a PropPilot!',
+      welcomeSubtitle: 'Comienza agregando tu primera propiedad para gestionar tus alquileres de manera eficiente.',
+      addFirstProperty: 'Agregar Tu Primera Propiedad',
+      howItWorks: 'Cómo funciona',
+      step1Title: '1. Propiedades',
+      step1Desc: 'Registra las propiedades que deseas alquilar',
+      step2Title: '2. Inquilinos',
+      step2Desc: 'Agrega los datos de tus inquilinos',
+      step3Title: '3. Contratos',
+      step3Desc: 'Vincula propiedades con inquilinos',
+      step4Title: '4. Pagos',
+      step4Desc: 'Lleva el control de los cobros',
+      orAddTenant: 'o agregar un inquilino primero',
+
+      // Adjusted Rent
+      adjustedRent: 'Alquiler Ajustado',
+      adjustedTo: 'ajustado a',
+      preFilled: 'PRE-LLENO',
+      adjustmentExplanation: 'Monto ajustado por {index} al día de hoy (×{factor} · base {base})',
+      noAdjustmentAvailable: 'Sin datos de índice disponibles',
+      period: 'Período',
+      adjustedAsOfToday: 'Alquiler ajustado a hoy',
+      lastUpdate: 'Última Actualización',
+      calculationDate: 'Fecha de Cálculo',
+      accumulatedAdjustmentFactor: 'Factor de ajuste acumulado',
+      adjustedAmount: 'Monto Ajustado',
+      effectiveAs: 'Vigente al',
+      terminate: 'Terminar',
+      active: 'Activo',
+      expired: 'Vencido',
+      terminated: 'Terminado',
+      biannual: 'Semestral',
+      amount: 'Monto',
+      adjustmentIndexLabel: 'Índice de ajuste',
+
+      // Contract agenda
+      agendaMenu: 'Agenda',
+      newBadge: 'NUEVO',
+      agendaTitle: 'Agenda de contratos',
+      agendaContract: 'Contrato',
+      agendaBase: 'base',
+      agendaNextAdjustment: 'Próximo ajuste',
+      agendaEndsInDays: 'Vence en {n} días',
+      agendaEndsInOneDay: 'Vence en 1 día',
+      agendaEndsToday: 'Vence hoy',
+      agendaEndedDaysAgo: 'Venció hace {n} días',
+      agendaEndedOneDayAgo: 'Venció hace 1 día',
+      agendaEndMarker: 'Fin',
+      agendaNextAdjustmentOn: 'Próximo ajuste: {date}',
+      agendaEstimated: 'estimado {amount} (índice {index} al {date})',
+      agendaNoEstimate: 'sin estimación',
+      agendaFixedRent: 'Sin ajuste (monto fijo)',
+      agendaNoPendingAdjustments: 'Sin ajustes pendientes',
+      agendaFooter: 'Cada contrato muestra su fin y sus ajustes. Los avisos llegan a 90, 60 y 30 días.',
+      agendaEmpty: 'No hay contratos activos.',
+      agendaLoadError: 'No se pudo cargar la agenda.',
+      monthsShort: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
     },
     en: {
       // Header
@@ -433,7 +516,7 @@ export const LanguageProvider = ({ children }) => {
       // Tabs
       propertyUnits: 'PROPERTY UNITS',
       registerPayment: 'Register Payment',
-      tenants: 'TENANTS',
+      tenantsTab: 'TENANTS',
 
       // Property List
       propertyUnitsTitle: 'Property Units',
@@ -587,25 +670,27 @@ export const LanguageProvider = ({ children }) => {
       selectTenants: 'Select Tenant(s)',
       startDate: 'Start Date',
       endDate: 'End Date',
-      adjustmentIndex: 'Adjustment Index',
-      adjustmentFrequency: 'Adjustment Frequency (months)',
       leaseStatus: 'Lease Status',
       leaseDetails: 'Lease Details',
       leasePeriod: 'Period',
-      adjustmentInfo: 'Adjustment',
       leaseActive: 'Active',
       leaseExpired: 'Expired',
       leaseTerminated: 'Terminated',
-      indexICL: 'ICL (Rental Contract Index)',
-      indexIPC: 'IPC (Consumer Price Index)',
-      indexFixed: 'Fixed (No adjustment)',
-      indexCustom: 'Custom',
+      country: 'Country',
       monthly: 'Monthly (1 month)',
       bimonthly: 'Bimonthly (2 months)',
       quarterly: 'Quarterly (3 months)',
       semiannual: 'Semiannual (6 months)',
       annual: 'Annual (12 months)',
       minLeaseDuration: 'Lease must be at least 1 month',
+      leaseDuration: 'Lease Duration',
+      sixMonths: '6 months',
+      oneYear: '1 year',
+      twoYears: '2 years',
+      threeYears: '3 years',
+      customPeriod: 'Custom',
+      months: 'months',
+      years: 'years',
       rentMaxExceeded: 'Amount exceeds maximum allowed',
       propertyRequired: 'Property is required',
       tenantRequired: 'Tenant is required',
@@ -800,6 +885,28 @@ export const LanguageProvider = ({ children }) => {
       statusPending: 'Pending',
       statusOverdue: 'Overdue',
 
+      // Delinquency
+      delinquencyTitle: 'Delinquency',
+      delinquencyNew: 'NEW',
+      delinquentTenantsOne: '1 tenant behind',
+      delinquentTenantsMany: '{count} tenants behind',
+      delinquencyNone: 'No tenants behind',
+      delinquencyLoadError: 'Could not load delinquency',
+      delinquencyColTenant: 'Tenant',
+      delinquencyColProperty: 'Property',
+      delinquencyColDelay: 'Delay',
+      delinquencyColOwed: 'Owed',
+      overdueDaysOne: 'Overdue · 1 day',
+      overdueDaysMany: 'Overdue · {days} days',
+      remind: 'Remind',
+      reminderTitle: 'Payment reminder',
+      reminderMessage: 'Hi {name}, this is about the rent for {address}. There is an outstanding balance of {amount}, overdue for {days} days. Could you settle it in the next few days? Thanks.',
+      reminderMessageOne: 'Hi {name}, this is about the rent for {address}. There is an outstanding balance of {amount}, overdue for 1 day. Could you settle it in the next few days? Thanks.',
+      reminderNameJoin: 'and',
+      copy: 'Copy',
+      reminderCopied: 'Message copied',
+      reminderCopyFallback: 'Select the text and copy it',
+
       // Payment Methods
       methodTransfer: 'Transfer',
       methodCash: 'Cash',
@@ -835,6 +942,65 @@ export const LanguageProvider = ({ children }) => {
       tourNext: 'Next',
       tourSkip: 'Skip tour',
       startTour: 'Start Tour',
+
+      // Onboarding / Welcome
+      welcomeTitle: 'Welcome to PropPilot!',
+      welcomeSubtitle: 'Start by adding your first property to manage your rentals efficiently.',
+      addFirstProperty: 'Add Your First Property',
+      howItWorks: 'How it works',
+      step1Title: '1. Properties',
+      step1Desc: 'Register properties you want to rent',
+      step2Title: '2. Tenants',
+      step2Desc: 'Add your tenant information',
+      step3Title: '3. Leases',
+      step3Desc: 'Link properties with tenants',
+      step4Title: '4. Payments',
+      step4Desc: 'Track your rent collections',
+      orAddTenant: 'or add a tenant first',
+
+      // Adjusted Rent
+      adjustedRent: 'Adjusted Rent',
+      adjustedTo: 'adjusted to',
+      preFilled: 'PRE-FILLED',
+      adjustmentExplanation: 'Amount adjusted by {index} as of today (×{factor} · base {base})',
+      noAdjustmentAvailable: 'No index data available',
+      period: 'Period',
+      adjustedAsOfToday: 'Rent adjusted to today',
+      lastUpdate: 'Last Update',
+      calculationDate: 'Calculation Date',
+      accumulatedAdjustmentFactor: 'Accumulated adjustment factor',
+      adjustedAmount: 'Adjusted Amount',
+      effectiveAs: 'Effective as of',
+      terminate: 'Terminate',
+      active: 'Active',
+      expired: 'Expired',
+      terminated: 'Terminated',
+      biannual: 'Biannual',
+      amount: 'Amount',
+      adjustmentIndexLabel: 'Adjustment Index',
+
+      // Contract agenda
+      agendaMenu: 'Calendar',
+      newBadge: 'NEW',
+      agendaTitle: 'Contract calendar',
+      agendaContract: 'Lease',
+      agendaBase: 'base',
+      agendaNextAdjustment: 'Next adjustment',
+      agendaEndsInDays: 'Ends in {n} days',
+      agendaEndsInOneDay: 'Ends in 1 day',
+      agendaEndsToday: 'Ends today',
+      agendaEndedDaysAgo: 'Ended {n} days ago',
+      agendaEndedOneDayAgo: 'Ended 1 day ago',
+      agendaEndMarker: 'End',
+      agendaNextAdjustmentOn: 'Next adjustment: {date}',
+      agendaEstimated: 'estimated {amount} ({index} index as of {date})',
+      agendaNoEstimate: 'no estimate',
+      agendaFixedRent: 'No adjustment (fixed rent)',
+      agendaNoPendingAdjustments: 'No adjustments left',
+      agendaFooter: 'Each lease shows its end and its adjustments. Alerts arrive at 90, 60 and 30 days.',
+      agendaEmpty: 'No active leases.',
+      agendaLoadError: 'Could not load the calendar.',
+      monthsShort: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
     }
   }
 
@@ -858,14 +1024,21 @@ export const LanguageProvider = ({ children }) => {
 
   const formatCurrency = (amount, currencyCode = currency) => {
     const symbol = t(`currencySymbol.${currencyCode}`)
-    const formattedAmount = new Intl.NumberFormat(language === 'es' ? 'es-AR' : 'en-US').format(amount)
-    return `${symbol}${formattedAmount}`
+    const formattedAmount = new Intl.NumberFormat(language === 'es' ? 'es-AR' : 'en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amount)
+    return `${symbol} ${formattedAmount}`
   }
 
-  const formatNumber = (number) => {
+  const formatNumber = (number, decimals = 2) => {
     if (!number && number !== 0) return ''
-    const numStr = String(number).replace(/\D/g, '')
-    return new Intl.NumberFormat(language === 'es' ? 'es-AR' : 'en-US', { useGrouping: true }).format(numStr)
+    const num = typeof number === 'string' ? parseFloat(number) : number
+    if (isNaN(num)) return ''
+    return new Intl.NumberFormat(language === 'es' ? 'es-AR' : 'en-US', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: decimals
+    }).format(num)
   }
 
   const value = {

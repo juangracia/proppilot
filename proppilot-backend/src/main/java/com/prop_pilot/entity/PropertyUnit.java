@@ -8,7 +8,10 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 @Data
 @Entity
@@ -101,6 +104,35 @@ public class PropertyUnit {
     public Long getActiveLeaseId() {
         Lease activeLease = getActiveLease();
         return activeLease != null ? activeLease.getId() : null;
+    }
+
+    @com.fasterxml.jackson.annotation.JsonProperty("payments")
+    public List<Map<String, Object>> getPayments() {
+        if (leases == null) return List.of();
+        List<Map<String, Object>> allPayments = new ArrayList<>();
+        for (Lease lease : leases) {
+            if (lease.getPayments() != null) {
+                for (Payment payment : lease.getPayments()) {
+                    Map<String, Object> paymentMap = new HashMap<>();
+                    paymentMap.put("id", payment.getId());
+                    paymentMap.put("amount", payment.getAmount());
+                    paymentMap.put("paymentDate", payment.getPaymentDate() != null ? payment.getPaymentDate().toString() : null);
+                    paymentMap.put("paymentType", payment.getPaymentType() != null ? payment.getPaymentType().name() : null);
+                    paymentMap.put("status", payment.getStatus() != null ? payment.getStatus().name() : null);
+                    paymentMap.put("description", payment.getDescription());
+                    allPayments.add(paymentMap);
+                }
+            }
+        }
+        allPayments.sort((a, b) -> {
+            String dateA = (String) a.get("paymentDate");
+            String dateB = (String) b.get("paymentDate");
+            if (dateA == null && dateB == null) return 0;
+            if (dateA == null) return 1;
+            if (dateB == null) return -1;
+            return dateB.compareTo(dateA);
+        });
+        return allPayments;
     }
 
     /**

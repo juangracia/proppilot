@@ -32,6 +32,7 @@ import {
   Divider,
   InputAdornment
 } from '@mui/material'
+import MoneyInput from './MoneyInput'
 import Grid from '@mui/material/Grid'
 import {
   CheckCircle,
@@ -46,7 +47,9 @@ import {
   OpenInNew,
   Description,
   Search as SearchIcon,
-  Clear as ClearIcon
+  Clear as ClearIcon,
+  TrendingUp,
+  AutoAwesome
 } from '@mui/icons-material'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
@@ -55,7 +58,6 @@ import { format } from 'date-fns'
 import axios from 'axios'
 import { useLanguage } from '../contexts/LanguageContext'
 import { API_BASE_URL } from '../config/api'
-import MoneyInput from './MoneyInput'
 
 const PaymentForm = memo(function PaymentForm({
   onNavigateToProperty,
@@ -66,9 +68,24 @@ const PaymentForm = memo(function PaymentForm({
   initialStatusFilter,
   initialPropertyFilter,
   initialTenantFilter,
-  onFiltersCleared
+  initialLeaseFilter,
+  onFiltersCleared,
+  openAddForm,
+  onAddFormOpened
 }) {
-  const { t, formatCurrency, currency } = useLanguage()
+  const { t, formatCurrency, formatNumber, currency } = useLanguage()
+
+  // A PENDING payment dated before today is overdue
+  const isOverdue = (payment) =>
+    payment.status === 'PENDING' && payment.paymentDate < format(new Date(), 'yyyy-MM-dd')
+  const paymentStatusLabel = (payment) => {
+    if (payment.status === 'PAID') return t('paid')
+    return isOverdue(payment) ? t('statusOverdue') : t('pending')
+  }
+  const paymentStatusColor = (payment) => {
+    if (payment.status === 'PAID') return 'success'
+    return isOverdue(payment) ? 'error' : 'warning'
+  }
   const [activeTab, setActiveTab] = useState(0)
 
   // Filter states
@@ -86,6 +103,9 @@ const PaymentForm = memo(function PaymentForm({
     isPartialPayment: false
   })
 
+  const [adjustedRent, setAdjustedRent] = useState(null)
+  const [amountWasPrefilled, setAmountWasPrefilled] = useState(false)
+
   const [validationErrors, setValidationErrors] = useState({})
   const [leases, setLeases] = useState([])
   const [loading, setLoading] = useState(false)
@@ -97,7 +117,7 @@ const PaymentForm = memo(function PaymentForm({
   const [payments, setPayments] = useState([])
 
   const paymentTypes = useMemo(() => [
-    { value: 'RENT', label: t('rentPayment') },
+    { value: 'RENT', label: 'Alquiler' },
     { value: 'DEPOSIT', label: t('depositPayment') },
     { value: 'MAINTENANCE', label: t('maintenancePayment') },
     { value: 'UTILITY', label: t('utilityPayment') },
@@ -137,10 +157,32 @@ const PaymentForm = memo(function PaymentForm({
     if (initialTenantFilter) setTenantFilter(initialTenantFilter)
   }, [initialTenantFilter])
 
+  // Auto-switch to new payment tab when openAddForm is true
+  useEffect(() => {
+    if (openAddForm) {
+      setActiveTab(1) // Tab 1 is "Register Payment"
+      onAddFormOpened?.()
+    }
+  }, [openAddForm, onAddFormOpened])
+
+  // Transform payments with normalized field names
+  const transformedPayments = useMemo(() => {
+    return payments.map(payment => ({
+      ...payment,
+      propertyAddress: payment.propertyAddress || 'Unknown',
+      tenantNames: payment.tenantNames || [payment.tenantName].filter(Boolean),
+      tenantName: (payment.tenantNames || [payment.tenantName]).filter(Boolean).join(', ') || 'Sin inquilino',
+      propertyId: payment.propertyUnitId,
+      tenantIds: payment.tenantIds || [payment.tenantId].filter(Boolean),
+      tenantId: payment.tenantId,
+      leaseId: payment.leaseIdRef
+    }))
+  }, [payments])
+
   // Auto-open detail dialog when initialPaymentId is provided
   useEffect(() => {
-    if (initialPaymentId && payments.length > 0) {
-      const payment = payments.find(p => p.id === initialPaymentId)
+    if (initialPaymentId && transformedPayments.length > 0) {
+      const payment = transformedPayments.find(p => p.id === initialPaymentId)
       if (payment) {
         setSelectedPayment(payment)
         setDetailDialogOpen(true)
@@ -148,17 +190,53 @@ const PaymentForm = memo(function PaymentForm({
         onPaymentViewed?.()
       }
     }
-  }, [initialPaymentId, payments, onPaymentViewed])
+  }, [initialPaymentId, transformedPayments, onPaymentViewed])
+
+  // Auto-switch to register tab and pre-select lease when initialLeaseFilter is provided
+  useEffect(() => {
+    if (initialLeaseFilter && leases.length > 0) {
+      const lease = leases.find(l => l.id === initialLeaseFilter)
+      if (lease) {
+        setFormData(prev => ({ ...prev, leaseId: initialLeaseFilter }))
+        setActiveTab(1) // Tab 1 is "Register Payment"
+      }
+    }
+  }, [initialLeaseFilter, leases])
 
   // Auto-fill rent amount when lease is selected
   const handleLeaseChange = useCallback((leaseId) => {
-    const selectedLease = leases.find(l => l.id === parseInt(leaseId))
-    setFormData(prev => ({
-      ...prev,
-      leaseId: leaseId,
-      amount: selectedLease && !prev.isPartialPayment ? selectedLease.monthlyRent.toString() : prev.amount
-    }))
-  }, [leases])
+    setFormData(prev => ({ ...prev, leaseId: leaseId, amount: '' }))
+    setAmountWasPrefilled(false)
+    setAdjustedRent(null)
+  }, [])
+
+  // Fetch adjusted rent when lease changes
+  useEffect(() => {
+    if (!formData.leaseId) {
+      setAdjustedRent(null)
+      setAmountWasPrefilled(false)
+      return
+    }
+    let cancelled = false
+    axios.get(`${API_BASE_URL}/leases/${formData.leaseId}/adjusted-rent`)
+      .then(res => {
+        if (cancelled) return
+        setAdjustedRent(res.data)
+        const currentEmpty = !formData.amount || String(formData.amount).trim() === ''
+        if (currentEmpty) {
+          setFormData(prev => ({ ...prev, amount: res.data.adjustedAmount }))
+          setAmountWasPrefilled(true)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setAdjustedRent(null)
+          setAmountWasPrefilled(false)
+        }
+      })
+    return () => { cancelled = true }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.leaseId])
 
   const validateForm = useCallback(() => {
     const errors = {}
@@ -228,6 +306,8 @@ const PaymentForm = memo(function PaymentForm({
           description: '',
           isPartialPayment: false
         })
+        setAdjustedRent(null)
+        setAmountWasPrefilled(false)
         setValidationErrors({})
       }
     } catch (err) {
@@ -252,18 +332,9 @@ const PaymentForm = memo(function PaymentForm({
     setActiveTab(newValue)
   }, [])
 
-  // Transform and filter payments for display
+  // Filter transformed payments for display
   const displayPayments = useMemo(() => {
-    let filtered = payments.map(payment => ({
-      ...payment,
-      propertyAddress: payment.propertyAddress || 'Unknown',
-      tenantNames: payment.tenantNames || [payment.tenantName].filter(Boolean),
-      tenantName: (payment.tenantNames || [payment.tenantName]).filter(Boolean).join(', ') || 'Sin inquilino',
-      propertyId: payment.propertyUnitId,
-      tenantIds: payment.tenantIds || [payment.tenantId].filter(Boolean),
-      tenantId: payment.tenantId,
-      leaseId: payment.leaseIdRef
-    }))
+    let filtered = transformedPayments
 
     // Apply status filter
     if (statusFilter === 'paid') {
@@ -292,7 +363,7 @@ const PaymentForm = memo(function PaymentForm({
     }
 
     return filtered
-  }, [payments, statusFilter, propertyFilter, tenantFilter, searchTerm])
+  }, [transformedPayments, statusFilter, propertyFilter, tenantFilter, searchTerm])
 
   // Get counts for filter tabs
   const statusCounts = useMemo(() => {
@@ -414,14 +485,54 @@ const PaymentForm = memo(function PaymentForm({
                 </Grid>
 
                 <Grid size={{ xs: 12, md: 6 }}>
-                  <MoneyInput
-                    label={t('paymentAmountLabel')}
-                    value={formData.amount}
-                    onChange={(value) => setFormData(prev => ({ ...prev, amount: value }))}
-                    required
-                    error={!!validationErrors.amount}
-                    helperText={validationErrors.amount}
-                  />
+                  <Box sx={{ position: 'relative' }}>
+                    {amountWasPrefilled && adjustedRent?.hasAdjustment && (
+                      <Chip
+                        icon={<AutoAwesome sx={{ fontSize: 14 }} />}
+                        label={t('preFilled') || 'PRE-LLENO'}
+                        size="small"
+                        sx={{
+                          position: 'absolute',
+                          top: -10,
+                          right: 8,
+                          zIndex: 1,
+                          height: 20,
+                          bgcolor: 'primary.50',
+                          color: 'primary.main',
+                          fontWeight: 600,
+                          fontSize: 11,
+                          '& .MuiChip-icon': { color: 'primary.main', ml: 0.5 }
+                        }}
+                      />
+                    )}
+                    <MoneyInput
+                      label={t('amount') || 'Monto'}
+                      value={formData.amount}
+                      onChange={(numericValue) => {
+                        setFormData(prev => ({ ...prev, amount: numericValue }))
+                        setAmountWasPrefilled(false)
+                      }}
+                      required
+                      error={!!validationErrors.amount}
+                      helperText={validationErrors.amount}
+                      sx={amountWasPrefilled && adjustedRent?.hasAdjustment ? {
+                        '& fieldset': { borderColor: 'primary.main', borderWidth: 2 },
+                        '& input': { color: 'primary.main', fontWeight: 600 },
+                        '& label': { color: 'primary.main' }
+                      } : {}}
+                    />
+                  </Box>
+                  {amountWasPrefilled && adjustedRent?.hasAdjustment && (
+                    <Box sx={{ mt: 0.5, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <TrendingUp sx={{ fontSize: 16, color: 'primary.main' }} />
+                      <Typography variant="caption" sx={{ color: 'primary.main' }}>
+                        {(t('adjustmentExplanation') || 'Monto ajustado por {index} al dia de hoy (x{factor} - base {base})')
+                          .replace('{index}', adjustedRent.indexType)
+                          .replace('{factor}', formatNumber(adjustedRent.factor, 4))
+                          .replace('{base}', formatCurrency(adjustedRent.baseAmount, currency))}
+                      </Typography>
+                    </Box>
+                  )}
                   <FormControlLabel
                     control={
                       <Checkbox
@@ -432,7 +543,7 @@ const PaymentForm = memo(function PaymentForm({
                     }
                     label={
                       <Typography variant="body2" sx={{ fontSize: '0.875rem' }}>
-                        {t('partialPayment')}
+                        {(t('partialPayment') || 'Pago parcial').replace('Pago Parcial', 'Pago parcial').replace('Partial Payment', 'Partial payment')}
                       </Typography>
                     }
                     sx={{ mt: 1 }}
@@ -489,61 +600,21 @@ const PaymentForm = memo(function PaymentForm({
 
                 {selectedLease && (
                   <Grid size={{ xs: 12 }}>
-                    <Box sx={{
-                      p: { xs: 1.5, sm: 2 },
-                      border: 1,
-                      borderColor: 'divider',
-                      borderRadius: 1,
-                      bgcolor: 'background.default',
-                      overflow: 'hidden'
-                    }}>
-                      <Typography
-                        variant="subtitle2"
-                        gutterBottom
-                        color="primary"
-                        sx={{ fontSize: { xs: '0.875rem', sm: '0.875rem' } }}
-                      >
-                        {t('leaseDetails')}
+                    <Card variant="outlined" sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 2 }}>
+                      <Typography sx={{ color: 'primary.main', fontWeight: 600, mb: 1, fontSize: '0.9375rem' }}>
+                        {t('leaseDetails') || 'Detalles del Contrato'}
                       </Typography>
-                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            fontSize: { xs: '0.8125rem', sm: '0.875rem' },
-                            wordBreak: 'break-word'
-                          }}
-                        >
-                          <strong>{t('propertyInfo')}:</strong> {selectedLease.propertyAddress}
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            fontSize: { xs: '0.8125rem', sm: '0.875rem' },
-                            wordBreak: 'break-word'
-                          }}
-                        >
-                          <strong>{t('tenants') || 'Inquilino(s)'}:</strong> {(selectedLease.tenantNames || [selectedLease.tenantName]).filter(Boolean).join(', ')}
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
-                        >
-                          <strong>{t('monthlyRent')}:</strong> {formatCurrency(selectedLease.monthlyRent)}
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
-                        >
-                          <strong>{t('leasePeriod')}:</strong> {selectedLease.startDate} - {selectedLease.endDate}
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
-                        >
-                          <strong>{t('adjustmentIndex')}:</strong> {selectedLease.adjustmentIndex}
-                        </Typography>
+                      <Box sx={{ '& > div': { mb: 0.5 }, fontSize: '0.875rem' }}>
+                        <div><strong>{t('propertyInfo') || 'Propiedad'}:</strong> {selectedLease.propertyAddress}</div>
+                        <div><strong>{t('tenants') || 'Inquilino(s)'}:</strong> {(selectedLease.tenantNames || [selectedLease.tenantName]).filter(Boolean).join(', ')}</div>
+                        <div><strong>{t('monthlyRent') || 'Alquiler Mensual'}:</strong> {formatCurrency(selectedLease.monthlyRent, currency)}</div>
+                        <div>
+                          <strong>{t('period') || 'Período'}:</strong>{' '}
+                          {format(new Date(selectedLease.startDate + 'T00:00:00'), 'dd/MM/yyyy')} — {format(new Date(selectedLease.endDate + 'T00:00:00'), 'dd/MM/yyyy')}
+                        </div>
+                        <div><strong>{t('adjustmentIndexLabel') || 'Indice de ajuste'}:</strong> {selectedLease.adjustmentIndex}</div>
                       </Box>
-                    </Box>
+                    </Card>
                   </Grid>
                 )}
 
@@ -569,6 +640,8 @@ const PaymentForm = memo(function PaymentForm({
                           description: '',
                           isPartialPayment: false
                         })
+                        setAdjustedRent(null)
+                        setAmountWasPrefilled(false)
                         setError('')
                         setSuccess('')
                         setValidationErrors({})
@@ -578,18 +651,19 @@ const PaymentForm = memo(function PaymentForm({
                         fontSize: { xs: '0.875rem', sm: '1rem' }
                       }}
                     >
-                      {t('clearForm')}
+                      {t('cancel') || 'Cancelar'}
                     </Button>
                     <Button
                       type="submit"
                       variant="contained"
                       disabled={loading}
+                      startIcon={loading ? null : <CheckCircle />}
                       sx={{
                         minWidth: { xs: '100%', sm: 140 },
                         fontSize: { xs: '0.875rem', sm: '1rem' }
                       }}
                     >
-                      {loading ? <CircularProgress size={24} color="inherit" /> : t('registerPaymentAction')}
+                      {loading ? <CircularProgress size={24} color="inherit" /> : (t('registerPaymentAction') || 'REGISTRAR PAGO')}
                     </Button>
                   </Box>
                 </Grid>
@@ -781,9 +855,9 @@ const PaymentForm = memo(function PaymentForm({
                           <TableCell>
                             <Chip
                               icon={payment.status === 'PAID' ? <CheckCircle /> : <Schedule />}
-                              label={payment.status === 'PAID' ? t('paid') : t('pending')}
+                              label={paymentStatusLabel(payment)}
                               size="small"
-                              color={payment.status === 'PAID' ? 'success' : 'warning'}
+                              color={paymentStatusColor(payment)}
                               sx={{ '& .MuiChip-icon': { fontSize: 16 } }}
                             />
                           </TableCell>
@@ -816,9 +890,9 @@ const PaymentForm = memo(function PaymentForm({
                       </Typography>
                       <Chip
                         icon={payment.status === 'PAID' ? <CheckCircle /> : <Schedule />}
-                        label={payment.status === 'PAID' ? t('paid') : t('pending')}
+                        label={paymentStatusLabel(payment)}
                         size="small"
-                        color={payment.status === 'PAID' ? 'success' : 'warning'}
+                        color={paymentStatusColor(payment)}
                         sx={{ '& .MuiChip-icon': { fontSize: 14 }, ml: 1, flexShrink: 0 }}
                       />
                     </Box>
@@ -882,8 +956,8 @@ const PaymentForm = memo(function PaymentForm({
                 <Box sx={{ mb: 3 }}>
                   <Chip
                     icon={selectedPayment.status === 'PAID' ? <CheckCircle /> : <Schedule />}
-                    label={selectedPayment.status === 'PAID' ? (t('paid') || 'Pagado') : (t('pending') || 'Pendiente')}
-                    color={selectedPayment.status === 'PAID' ? 'success' : 'warning'}
+                    label={paymentStatusLabel(selectedPayment)}
+                    color={paymentStatusColor(selectedPayment)}
                     sx={{ fontWeight: 500 }}
                   />
                 </Box>
