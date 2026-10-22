@@ -45,3 +45,6 @@ Added `pages/local-login.md`: login steps, dev user key `app.local-dev.email` in
 
 ## [2026-10-22] ingest | CLAUDE.md visible in the vault
 Added `wiki/CLAUDE.md` as a relative symlink to `../CLAUDE.md` so Obsidian shows the real file. lint.py skips frontmatter and orphan checks for it.
+
+## [2026-10-22] ingest | Delinquency endpoint
+Added the Delinquency rules to `pages/business-rules.md` and `/api/delinquency` to `pages/api.md`. Source: `DelinquencyServiceImpl.java`, `DelinquencyController.java`.

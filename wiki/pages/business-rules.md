@@ -33,6 +33,16 @@ Paths: `S` = `proppilot-backend/src/main/java/com/prop_pilot/service/impl/`.
 - Amount is at most 3 times the base `monthlyRent` (`PaymentServiceImpl.java:60-63`). It uses base rent, not adjusted rent.
 - Outstanding list = payments with status PENDING (`:145-146`). Outstanding amount = base rent times months elapsed minus paid RENT payments, never below zero (`:171-181`).
 
+## Delinquency
+
+Rules of `GET /api/delinquency` (`S/DelinquencyServiceImpl.java`). One place, no schema change.
+
+- Only the owner's ACTIVE, non-deleted leases. TERMINATED and EXPIRED leases are not listed, even with debt.
+- Rent is paid in advance. Installment k is due on `startDate.plusMonths(k)`. No grace days. Only installments up to `min(asOf, endDate)` count.
+- Paid = sum of RENT payments with status PAID and `paymentDate <= asOf`. PENDING does not count. This differs from `calculateOutstandingAmount`, which counts any status.
+- Owed = `monthlyRent * dueCount - paid`. Listed only if owed > 0 and the oldest unpaid installment is at least 1 day old. Payments cover the oldest installment first: `covered = floor(paid / monthlyRent)`.
+- Base rent is used, not adjusted rent. A tenant who pays the adjusted amount (higher than base) is credited with more months than were really paid, which can hide arrears.
+
 ## Tenant and property
 
 - Delete a tenant: blocked when non-deleted leases exist (`S/TenantServiceImpl.java:96-98`). Message is in Spanish.
