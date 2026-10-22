@@ -42,7 +42,7 @@ export const DelinquencyCard = ({ state }) => {
 
   if (loading) {
     return (
-      <Grid size={{ xs: 6, sm: 4, md: 2 }}>
+      <Grid size={{ xs: 6, sm: 4, md: 4, xl: 2 }}>
         <Skeleton variant="rounded" height={96} />
       </Grid>
     )
@@ -56,7 +56,7 @@ export const DelinquencyCard = ({ state }) => {
   else subtitle = t('delinquentTenantsMany', { count })
 
   return (
-    <Grid size={{ xs: 6, sm: 4, md: 2 }}>
+    <Grid size={{ xs: 6, sm: 4, md: 4, xl: 2 }}>
       <Card
         data-testid="delinquency-card"
         sx={{
@@ -74,7 +74,7 @@ export const DelinquencyCard = ({ state }) => {
             <Chip label={t('delinquencyNew')} size="small" color="warning" sx={{ height: 18, fontSize: '0.625rem' }} />
           </Box>
           {!error && (
-            <Typography variant="h6" sx={{ fontWeight: 700, color: 'error.main', whiteSpace: 'nowrap' }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: 'error.main', overflowWrap: 'anywhere' }}>
               {money(report?.totalOwed ?? 0)}
             </Typography>
           )}
