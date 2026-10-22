@@ -66,6 +66,21 @@ Details and more rules: `wiki/pages/business-rules.md`.
 - `scripts/` dev stack and verify. `docs/` mockups. `wiki/` project knowledge.
 - `.claude/agents`, `.claude/skills`, `.claude/hooks`, `.claude/settings.json`: this harness.
 
+## Agents
+
+One file per role in `.claude/agents/`. Each pins a default `model`. The caller may override per call (a hook denies `Agent` calls with no `model`). The reviewer must run on a different model than the author.
+
+| Role | Default | Override |
+| --- | --- | --- |
+| coordinator | opus | sonnet for pure routing of a known plan |
+| planner | opus | sonnet for a one-file change |
+| builder | sonnet | opus for cross-cutting design |
+| tester | sonnet | haiku to re-run existing tests |
+| reviewer | haiku | opus for hard diffs (money, security, concurrency) |
+| deployer | sonnet | haiku to redeploy an unchanged build; only on the human's word |
+| explorer-domain, -architecture, -tests, -build | sonnet | haiku for a narrow lookup |
+| wiki-curator | haiku | sonnet for wide ingests |
+
 ## Knowledge base
 
 Read `wiki/index.md` first. The wiki rules (how to add or fix pages) are in `wiki/AGENTS.md`. That file is not auto-loaded, so read it before you edit anything under `wiki/`.
