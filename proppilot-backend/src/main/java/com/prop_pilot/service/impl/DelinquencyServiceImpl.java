@@ -93,8 +93,20 @@ public class DelinquencyServiceImpl implements DelinquencyService {
     }
 
     private String shortAddress(PropertyUnit unit) {
-        boolean hasStreet = unit.getStreet() != null && !unit.getStreet().isBlank();
-        boolean hasNumber = unit.getStreetNumber() != null && !unit.getStreetNumber().isBlank();
-        return hasStreet && hasNumber ? unit.getStreet() + " " + unit.getStreetNumber() : unit.getAddress();
+        if (isBlank(unit.getStreet()) || isBlank(unit.getStreetNumber())) {
+            return unit.getAddress();
+        }
+        StringBuilder sb = new StringBuilder(unit.getStreet()).append(' ').append(unit.getStreetNumber());
+        if (!isBlank(unit.getFloor())) {
+            sb.append(", Piso ").append(unit.getFloor());
+        }
+        if (!isBlank(unit.getApartment())) {
+            sb.append(", Depto ").append(unit.getApartment());
+        }
+        return sb.toString();
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 }

@@ -12,6 +12,7 @@ import {
   DialogContent,
   DialogActions,
   TextField,
+  Skeleton,
   Snackbar,
   Table,
   TableBody,
@@ -39,7 +40,13 @@ export const DelinquencyCard = ({ state }) => {
   const money = useMoney()
   const { loading, error, report } = state
 
-  if (loading) return null
+  if (loading) {
+    return (
+      <Grid size={{ xs: 6, sm: 4, md: 2 }}>
+        <Skeleton variant="rounded" height={96} />
+      </Grid>
+    )
+  }
 
   const count = report?.delinquentCount ?? 0
   let subtitle
@@ -80,11 +87,9 @@ export const DelinquencyCard = ({ state }) => {
   )
 }
 
-const ReminderDialog = ({ item, onClose }) => {
+const ReminderDialog = ({ item, onClose, onCopied, onFallback }) => {
   const { t } = useLanguage()
   const money = useMoney()
-  const [copied, setCopied] = useState(false)
-  const [fallback, setFallback] = useState(false)
   const fieldRef = useRef(null)
 
   if (!item) return null
@@ -92,7 +97,7 @@ const ReminderDialog = ({ item, onClose }) => {
   const name = item.tenantNames
     .map((n) => n.split(' ')[0])
     .join(` ${t('reminderNameJoin')} `)
-  const message = t('reminderMessage', {
+  const message = t(item.daysOverdue === 1 ? 'reminderMessageOne' : 'reminderMessage', {
     name,
     address: item.propertyAddress,
     amount: money(item.amountOwed),
@@ -102,47 +107,33 @@ const ReminderDialog = ({ item, onClose }) => {
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(message)
-      setCopied(true)
+      onCopied()
     } catch (error) {
       console.error('Clipboard unavailable:', error)
       fieldRef.current?.select()
-      setFallback(true)
+      onFallback()
     }
   }
 
   return (
-    <>
-      <Dialog open onClose={onClose} fullWidth maxWidth="sm">
-        <DialogTitle>{t('reminderTitle')}</DialogTitle>
-        <DialogContent>
-          <TextField
-            value={message}
-            multiline
-            fullWidth
-            minRows={4}
-            inputRef={fieldRef}
-            slotProps={{ input: { readOnly: true } }}
-            sx={{ mt: 1 }}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCopy} variant="contained">{t('copy')}</Button>
-          <Button onClick={onClose}>{t('close')}</Button>
-        </DialogActions>
-      </Dialog>
-      <Snackbar
-        open={copied}
-        autoHideDuration={3000}
-        onClose={() => setCopied(false)}
-        message={t('reminderCopied')}
-      />
-      <Snackbar
-        open={fallback}
-        autoHideDuration={4000}
-        onClose={() => setFallback(false)}
-        message={t('reminderCopyFallback')}
-      />
-    </>
+    <Dialog open onClose={onClose} fullWidth maxWidth="sm">
+      <DialogTitle>{t('reminderTitle')}</DialogTitle>
+      <DialogContent>
+        <TextField
+          value={message}
+          multiline
+          fullWidth
+          minRows={4}
+          inputRef={fieldRef}
+          slotProps={{ input: { readOnly: true } }}
+          sx={{ mt: 1 }}
+        />
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={handleCopy} variant="contained">{t('copy')}</Button>
+        <Button onClick={onClose}>{t('close')}</Button>
+      </DialogActions>
+    </Dialog>
   )
 }
 
@@ -150,6 +141,8 @@ export const DelinquencyTable = ({ state }) => {
   const { t } = useLanguage()
   const money = useMoney()
   const [selected, setSelected] = useState(null)
+  const [copied, setCopied] = useState(false)
+  const [fallback, setFallback] = useState(false)
   const items = state.report?.items ?? []
 
   if (state.loading || state.error || items.length === 0) return null
@@ -200,7 +193,24 @@ export const DelinquencyTable = ({ state }) => {
           </TableBody>
         </Table>
       </TableContainer>
-      <ReminderDialog item={selected} onClose={() => setSelected(null)} />
+      <ReminderDialog
+        item={selected}
+        onClose={() => setSelected(null)}
+        onCopied={() => setCopied(true)}
+        onFallback={() => setFallback(true)}
+      />
+      <Snackbar
+        open={copied}
+        autoHideDuration={3000}
+        onClose={() => setCopied(false)}
+        message={t('reminderCopied')}
+      />
+      <Snackbar
+        open={fallback}
+        autoHideDuration={4000}
+        onClose={() => setFallback(false)}
+        message={t('reminderCopyFallback')}
+      />
     </Paper>
   )
 }

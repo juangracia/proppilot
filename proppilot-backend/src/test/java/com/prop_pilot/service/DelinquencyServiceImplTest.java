@@ -237,9 +237,12 @@ class DelinquencyServiceImplTest {
         l.getPropertyUnit().setAddress("Obispo Trejo 245, Piso 2, Depto A, Córdoba, Córdoba (X5000)");
         l.getPropertyUnit().setStreet("Obispo Trejo");
         l.getPropertyUnit().setStreetNumber("245");
+        l.getPropertyUnit().setFloor("2");
+        l.getPropertyUnit().setApartment("A");
         givenLeases(l);
         givenPaid();
 
-        assertThat(service.getReport(OWNER_ID, AS_OF).items().get(0).propertyAddress()).isEqualTo("Obispo Trejo 245");
+        assertThat(service.getReport(OWNER_ID, AS_OF).items().get(0).propertyAddress())
+            .isEqualTo("Obispo Trejo 245, Piso 2, Depto A");
     }
 }
