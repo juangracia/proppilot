@@ -30,3 +30,6 @@ Documented the real `scripts/` behavior, verify stages, baselines, compose proje
 
 ## [2026-10-22] lint | Lint baseline 36 vs 32 explained
 The 4 missing problems are `no-undef` errors for `process` in `playwright.config.js`, removed by `/* global process */` in 01a51a0. Verified with eslint on the file before and after.
+
+## [2026-10-22] ingest | Second stack variables
+Documented DB_PORT, BACKEND_PORT, FRONTEND_PORT, COMPOSE_PROJECT, PG_CONTAINER and the guards in dev-db, dev-backend, dev-frontend (commit 56c462b). Opened the compose file, `.dev.env`, scripts and `vite.config.js` to confirm.

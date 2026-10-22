@@ -32,6 +32,8 @@ Build: `npm run build` (about 4 seconds).
 
 ## Verify
 
+To verify a second checkout at the same time, use separate ports and compose project, see [[harness]] ("Second stack").
+
 `scripts/verify.sh` stages: stack up + seed, backend tests vs the known-failures file, frontend build, lint vs baseline, Playwright smoke only. It prints a summary table and exits non-zero on any FAIL.
 
 Sources: [[2026-10-22-explorer-findings|explorer findings]], test directory listing.

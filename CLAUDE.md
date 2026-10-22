@@ -22,6 +22,28 @@ All scripts read ports from `.dev.env` (DB 5433, backend 8080, frontend 3000). T
 4. lint vs baseline (`scripts/baselines/lint-problems.txt`, currently 32; `--update-baseline` rewrites it, only on purpose)
 5. Playwright, `e2e/smoke.spec.js` only (`playwright.config.js` reads `FRONTEND_PORT`)
 
+## Run a second stack (worktree per feature)
+
+Another checkout can run next to this one. Give it its own ports, compose project and DB container. All five vars live in `.dev.env` and can be set from the shell:
+
+| Var | Default |
+| --- | --- |
+| `DB_PORT` | 5433 |
+| `BACKEND_PORT` | 8080 |
+| `FRONTEND_PORT` | 3000 |
+| `COMPOSE_PROJECT` | `proppilot-cold` |
+| `PG_CONTAINER` | `proppilot-postgres` |
+
+```
+DB_PORT=5434 BACKEND_PORT=8081 FRONTEND_PORT=3001 \
+COMPOSE_PROJECT=proppilot-fresh2 PG_CONTAINER=proppilot-postgres-fresh2 scripts/verify.sh
+scripts/dev-down.sh --db    # teardown, with the same vars set
+```
+
+- `dev-db.sh` refuses a container that belongs to another compose project.
+- `dev-backend.sh` and `dev-frontend.sh` stop with "port ... is taken ... set BACKEND_PORT / FRONTEND_PORT" if a foreign process holds the port.
+- `verify.sh` and the backend script pass `DATABASE_URL` built from `DB_PORT`. `vite.config.js` reads `FRONTEND_PORT` and `BACKEND_PORT`. Compose maps `${DB_PORT:-5433}:5432`.
+
 ## Gotchas
 
 - Java: the shell default may be 25. The project needs JDK 17. Use `JAVA_HOME=~/.sdkman/candidates/java/17.0.15-tem mvn ...` inline. The scripts already do this.
