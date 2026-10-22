@@ -47,7 +47,7 @@ Agent files are in `.claude/agents/`. Never use the same model for author and re
 
 ## Pushes
 
-The permission classifier blocks agent pushes and PR creation. Stage ONE script for the whole batch (push all branches, open all PRs, copy links). Tell the human: `! bash <script>`. Do not retry the push in a loop.
+The permission classifier blocks agent pushes and PR creation. Stage ONE script for the whole batch (push all branches, open all PRs, copy links). Tell the human: `! zsh <script>` (or bash; the script shebang decides). Do not retry the push in a loop.
 
 ## "Ship as is" mode
 
