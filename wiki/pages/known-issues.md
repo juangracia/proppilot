@@ -48,5 +48,7 @@ Found in review round 2 of the stack scripts. Not fixed (review limit of 2 round
 
 1. FIXED (`scripts/dev-up.sh` now checks the db, backend and frontend ports before it starts anything). Was: `dev-up.sh` started the DB before the port checks and could leave a new DB container behind.
 2. `proppilot-frontend/e2e/visual-match.spec.js:3` hardcodes `http://localhost:8080/api`. Fix: read `BACKEND_PORT`.
+3. `scripts/with-lock.sh:15-18`: a tiny window remains between the stale-lock pid re-read and the `mv`. Two waiters could still race on a dead lock. Found in lane-infra review round 2. Not stress-tested.
+4. `scripts/dev-down.sh --db` (now `compose down`, keeps the data volume) was not run. Checked by code reading and `docker compose down --help`.
 
 Related: [[architecture]], [[testing]], [[decisions]]
