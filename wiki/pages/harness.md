@@ -35,7 +35,7 @@ Eleven roles. See [[agents]].
 
 ## Scripts (stack worker)
 
-`scripts/dev-up.sh`, `dev-down.sh`, `dev-db.sh`, `dev-backend.sh`, `dev-frontend.sh`, `seed.sh`, `verify.sh`. Ports in `.dev.env`, toolchain in `.sdkmanrc` and `.nvmrc`. See [[testing]] for what `verify.sh` runs.
+`scripts/dev-up.sh` (`--seed` optional), `dev-down.sh` (stops only pids in `.dev/`), `dev-db.sh`, `dev-backend.sh`, `dev-frontend.sh`, `seed.sh`, `verify.sh`, shared `_lib.sh`, baselines in `scripts/baselines/`. The DB runs as compose project `proppilot-cold`. Ports in `.dev.env`, toolchain in `.sdkmanrc` and `.nvmrc`. See [[testing]] for what `verify.sh` runs.
 
 ## Self-modification limit
 

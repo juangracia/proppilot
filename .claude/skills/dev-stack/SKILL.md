@@ -9,8 +9,8 @@ Read `CLAUDE.md` for gotchas first. Ports and versions live in `.dev.env`, `.sdk
 
 | Goal | Command |
 | --- | --- |
-| Everything up | `scripts/dev-up.sh` |
-| Everything down | `scripts/dev-down.sh` |
+| Everything up | `scripts/dev-up.sh` (`--seed` loads demo data) |
+| Stop backend and frontend | `scripts/dev-down.sh` (only pids in `.dev/`; `--db` also stops a DB it started) |
 | Only DB / backend / frontend | `scripts/dev-db.sh`, `scripts/dev-backend.sh`, `scripts/dev-frontend.sh` |
 | Demo data (synthetic) | `scripts/seed.sh` |
 | Full check | `scripts/verify.sh` |
@@ -29,3 +29,7 @@ Read `CLAUDE.md` for gotchas first. Ports and versions live in `.dev.env`, `.sdk
 - Wrong Java: the shell default may be 25. The scripts set JDK 17. If you run `mvn` by hand, set `JAVA_HOME=~/.sdkman/candidates/java/17.0.15-tem`.
 - `npm ci` fails with ERESOLVE: use `npm ci --legacy-peer-deps`.
 - 9 backend tests error: the DB is down. Start it with `scripts/dev-db.sh`.
+- `DataPortabilityControllerTest#exportAll_Unauthenticated_ShouldReturn401` fails even with the DB up. It is a known failure (`scripts/baselines/backend-known-failures.txt`).
+- The DB is compose project `proppilot-cold`. Never touch the older volume `proppilot-backend_postgres_data`.
+- Playwright rewrites the tracked `proppilot-frontend/playwright-report/index.html`: `git checkout` it before committing.
+- `verify.sh` stages: stack up + seed, backend tests vs known failures, frontend build, lint vs baseline (32), Playwright smoke only (`visual-match.spec.js` fails on HEAD).

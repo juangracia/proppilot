@@ -20,7 +20,7 @@ Four read-only explorers ran in parallel: backend and architecture, frontend, do
 
 ## Workers and commits
 
-- Stack worker (sonnet): `f6a2512` dev scripts, pinned toolchain, seed data. Then `verify.sh`, Playwright smoke test and lint baseline (uncommitted when this page was written).
+- Stack worker (sonnet): `f6a2512` dev scripts, pinned toolchain, seed data. Then `e0d20ad` `verify.sh` with lint and known-failure baselines, and `01a51a0` Playwright smoke test with a configurable port.
 - Docs worker (sonnet), round 1:
   - `a437da0` `CLAUDE.md` and `wiki/`.
   - `60fcf02` agents and skills.

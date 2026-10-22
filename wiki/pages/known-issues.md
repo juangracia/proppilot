@@ -27,6 +27,12 @@ Not fixed. Do not fix them as a side effect of other work. Ask first.
 - Default secrets are committed (`application.yml:36`, DB password in `docker-compose.yml`).
 - Hardcoded Railway URL in `proppilot-frontend/src/config/api.js:6`.
 
+## Test and tooling
+
+- `DataPortabilityControllerTest#exportAll_Unauthenticated_ShouldReturn401` fails on HEAD under profile `local` (`scripts/baselines/backend-known-failures.txt`).
+- `proppilot-frontend/e2e/visual-match.spec.js` fails on HEAD: it expects `demo@proppilot.ar` data.
+- `proppilot-frontend/playwright-report/index.html` is tracked although `playwright-report/` is in the frontend `.gitignore`, so every Playwright run dirties it.
+
 ## Code health
 
 - `proppilot-frontend/src/components/PropertyUnitsListOld.jsx` is dead code.

@@ -8,14 +8,19 @@ All scripts read ports from `.dev.env` (DB 5433, backend 8080, frontend 3000). T
 
 | Task | Command |
 | --- | --- |
-| Start DB, backend, frontend | `scripts/dev-up.sh` |
-| Stop everything | `scripts/dev-down.sh` |
+| Start DB, backend, frontend | `scripts/dev-up.sh` (add `--seed` to load demo data) |
+| Stop backend and frontend | `scripts/dev-down.sh` (stops only pids in `.dev/`; add `--db` to stop the DB it started) |
 | Single parts | `scripts/dev-db.sh`, `scripts/dev-backend.sh`, `scripts/dev-frontend.sh` |
 | Load demo data (synthetic) | `scripts/seed.sh` |
 | Full check (the definition of done) | `scripts/verify.sh` |
 | Smoke test only | `cd proppilot-frontend && npx playwright test e2e/smoke.spec.js` |
 
-`scripts/verify.sh` runs: backend tests, frontend build, lint vs baseline, Playwright smoke. It prints a summary.
+`scripts/verify.sh` stages, in order, then a summary table (exit non-zero if any stage fails):
+1. stack up + seed
+2. backend tests vs `scripts/baselines/backend-known-failures.txt`
+3. frontend build
+4. lint vs baseline (`scripts/baselines/lint-problems.txt`, currently 32; `--update-baseline` rewrites it, only on purpose)
+5. Playwright, `e2e/smoke.spec.js` only (`playwright.config.js` reads `FRONTEND_PORT`)
 
 ## Gotchas
 
@@ -25,9 +30,13 @@ All scripts read ports from `.dev.env` (DB 5433, backend 8080, frontend 3000). T
 - Postgres runs on host port **5433** (not 5432). Compose file: `proppilot-backend/docker-compose.yml`. Db, user `proppilot`, password `proppilot123`.
 - Run the backend with `SPRING_PROFILES_ACTIVE=local`. That profile permits all requests and uses a dev user (`app.local-dev.email`). See `SecurityConfig.java:46`.
 - Some backend tests (`AuthControllerTest`, `DataPortabilityControllerTest`) are `@SpringBootTest` and need Postgres on 5433. Without it, 9 of 37 fail. Start the DB first.
+- One known failing test remains with the DB up: `DataPortabilityControllerTest#exportAll_Unauthenticated_ShouldReturn401` (profile local has no 401). It is listed in `scripts/baselines/backend-known-failures.txt`. Any other failure is new.
+- Compose project name is `proppilot-cold` (own volume). An older volume `proppilot-backend_postgres_data` holds other data. Do not touch it.
+- `e2e/visual-match.spec.js` fails on HEAD (it expects `demo@proppilot.ar` data), so `verify.sh` runs the smoke spec only.
+- Playwright's default html reporter rewrites the tracked `proppilot-frontend/playwright-report/index.html`. Run `git checkout proppilot-frontend/playwright-report/index.html` before you commit.
 - No Flyway. Schema comes from `ddl-auto: update` plus raw ALTERs in `config/DatabaseMigrationRunner.java`.
-- `npm run lint` has a baseline of 36 problems and exits non-zero. `verify.sh` compares against the baseline.
-- `index_values` is empty on a fresh DB, so adjusted rent shows no adjustment. `seed.sh` adds synthetic index data.
+- `npm run lint` exits non-zero on HEAD. `verify.sh` compares the problem count to the baseline file (32).
+- `index_values` is empty on a fresh DB, so adjusted rent shows no adjustment. `seed.sh` adds index rows tagged `source='SYNTHETIC'` (invented, not real INDEC data). Seeded lease 1 (ICL, 480000) shows 778992 adjusted.
 - `src/config/api.js:6` hardcodes a Railway URL for native builds. Do not "fix" it without being asked.
 
 ## Rules

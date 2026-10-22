@@ -24,7 +24,7 @@ The factor is cumulative from lease start. `adjustmentFrequencyMonths` is stored
 
 ## Fresh database
 
-Nothing in the code or the shell scripts inserts into `index_values`. So on a new DB every lease shows `hasAdjustment=false`. The harness `scripts/seed.sh` adds synthetic index rows (tagged synthetic) for demos.
+Nothing in the code or the shell scripts inserts into `index_values`. So on a new DB every lease shows `hasAdjustment=false`. `scripts/seed.sh` adds index rows with `source='SYNTHETIC'` (ICL and IPC, 2024-01 to 2026-10, invented values). With them, seeded lease 1 (ICL, base 480000) returns adjusted 778992, factor 1.6229, index date 2026-10-01, `hasAdjustment=true` (checked against the running API).
 
 ## Tests
 

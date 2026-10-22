@@ -24,3 +24,6 @@ Added YAML frontmatter to all pages, converted links to wikilinks, rebuilt the i
 
 ## [2026-10-22] lint | First lint pass
 Checked wikilinks, orphans, frontmatter. Ran `.claude/skills/wiki-lint/lint.py`: 19 files, 0 problems after adding Related links to 5 pages that were orphans. Negative control: a bad `[[nope]]` link was reported, then removed.
+
+## [2026-10-22] ingest | Stack worker outputs
+Documented the real `scripts/` behavior, verify stages, baselines, compose project name, known failing tests and the Playwright report gotcha in CLAUDE.md, testing, known-issues, rent-adjustment, harness, session-log and the dev-stack skill. Facts opened in `scripts/*.sh`, `.dev.env`, `playwright.config.js`; the 778992 figure was read from the running API.
