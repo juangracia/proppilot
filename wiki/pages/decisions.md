@@ -16,7 +16,7 @@ Every role is its own agent file with a default `model`. The caller may override
 
 ## Models: cheapest that works
 
-Haiku for mechanical work, sonnet for bounded builds, opus only for design or hard judgment. No Fable. Why: cost. The rehearsal cost about 36 USD and the coordinator was half of it ([[lessons]]).
+Haiku for mechanical work, sonnet for bounded builds, opus only for design or hard judgment. No Fable. Why: cost. The rehearsal cost about 36 USD and the coordinator was half of it ([[2026-10-20-meetup-rehearsal-lessons]] line 3: "Cost about 36 USD at API list prices", and proposal 10; see [[lessons]]).
 
 ## Author plus reviewer on every step
 

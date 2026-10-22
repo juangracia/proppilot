@@ -12,7 +12,7 @@ Not fixed. Do not fix them as a side effect of other work. Ask first.
 
 ## Behavior
 
-- No job sets a lease to EXPIRED when the end date passes. Status only becomes EXPIRED on reactivate (`service/impl/LeaseServiceImpl.java:254-255`).
+- No job sets a lease to EXPIRED when the end date passes. Status only becomes EXPIRED on reactivate (`service/impl/LeaseServiceImpl.java:254-255`). Checked with `grep -rn "@Scheduled\|EXPIRED" proppilot-backend/src/main`: `@EnableScheduling` is on (`PropPilotApplication.java:12`) but no `@Scheduled` method exists, and `EXPIRED` appears only in the enum (`Lease.java:158`), that reactivate branch, and an Excel help text (`ExcelImportExportServiceImpl.java:814`).
 - Outstanding amount is base `monthlyRent` times months elapsed minus paid RENT payments. It ignores rent adjustment (`PaymentServiceImpl.java:159-181`).
 - Payment cap uses base rent, not adjusted rent (`PaymentServiceImpl.java:61`).
 - `adjustmentFrequencyMonths` is stored but unused (`entity/Lease.java:68`).
