@@ -8,7 +8,7 @@ updated: 2026-10-22
 
 # PropPilot wiki index
 
-Read this first. How to edit: [[AGENTS]]. History: [[log]]. Open this folder as an Obsidian vault.
+Read this first. Project instructions: [[CLAUDE]] (symlink to the repo root `CLAUDE.md`). How to edit: [[AGENTS]]. History: [[log]]. Open this folder as an Obsidian vault.
 
 ## Domain
 

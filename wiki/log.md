@@ -42,3 +42,6 @@ Copied the coordinator board to `raw/2026-10-22-board-snapshot-final.md` (new fi
 
 ## [2026-10-22] ingest | Local dev login
 Added `pages/local-login.md`: login steps, dev user key `app.local-dev.email` in `application-local.yml`, quick login buttons without seed data, dashboard counts from the coordinator's Chrome check. Linked from index, harness and testing. Cites checked in `application-local.yml` and `LoginPage.jsx`.
+
+## [2026-10-22] ingest | CLAUDE.md visible in the vault
+Added `wiki/CLAUDE.md` as a relative symlink to `../CLAUDE.md` so Obsidian shows the real file. lint.py skips frontmatter and orphan checks for it.

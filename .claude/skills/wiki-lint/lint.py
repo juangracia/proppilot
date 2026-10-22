@@ -26,7 +26,7 @@ for p in files:
             problems.append(f"{p}: broken wikilink [[{target}]]")
         elif target != p.stem:
             inbound[target].add(p.stem)
-    if "raw" not in p.parts:
+    if "raw" not in p.parts and p.name != "CLAUDE.md":  # CLAUDE.md is a symlink to the repo root file
         fm = re.match(r"---\n(.*?)\n---\n", text, re.S)
         if not fm:
             problems.append(f"{p}: missing frontmatter")
@@ -41,7 +41,7 @@ for p in files:
 index_text = (root / "index.md").read_text()
 index_links = set(re.findall(r"\[\[([^\]|#]+)", index_text))
 for p in files:
-    if p.stem in ("index", "log", "AGENTS"):
+    if p.stem in ("index", "log", "AGENTS", "CLAUDE"):
         continue
     if p.stem not in index_links:
         problems.append(f"{p}: not linked from index.md")
