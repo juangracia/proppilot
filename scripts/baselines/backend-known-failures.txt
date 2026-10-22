@@ -1,0 +1,4 @@
+# Backend tests that fail on HEAD for reasons unrelated to a change (one Class#method per line).
+# DataPortabilityControllerTest runs with profile local, where an unauthenticated request falls back
+# to the local dev user (no 401), and the mocked service returns null bytes, so the endpoint returns 500.
+DataPortabilityControllerTest#exportAll_Unauthenticated_ShouldReturn401
