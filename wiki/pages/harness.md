@@ -44,3 +44,7 @@ A second checkout can run side by side with its own `DB_PORT`, `BACKEND_PORT`, `
 ## Self-modification limit
 
 Agents cannot edit their own permission or settings files without the permission classifier stepping in. When that happens, stage the file and let Juan apply it ([[lessons]]).
+
+## Local stack
+
+How to log in to the running local stack, and which user owns the seed data: [[local-login]].

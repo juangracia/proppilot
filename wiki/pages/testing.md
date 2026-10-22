@@ -20,6 +20,8 @@ Not covered: Lease, Payment, PropertyUnit and Tenant controllers and services, r
 
 ## Frontend
 
+Login for manual checks and the seeded user: [[local-login]].
+
 No unit tests and no `test` script. E2E with Playwright:
 - `proppilot-frontend/e2e/visual-match.spec.js`: compares the UI to mockups in `docs/mockups`.
 - `proppilot-frontend/e2e/smoke.spec.js`: smoke test that checks UI against API data for the seeded user. `playwright.config.js` reads `FRONTEND_PORT` (default 3000).

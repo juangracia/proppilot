@@ -39,3 +39,6 @@ Added two stack follow-ups to known-issues (dev-up port check order, visual-matc
 
 ## [2026-10-22] ingest | Board snapshot after round 2 and push
 Copied the coordinator board to `raw/2026-10-22-board-snapshot-final.md` (new file, the older snapshot stays as it was). No personal emails found. One literal `[[nope]]` (a lint negative control from the wiki review) was written as `nope` so the lint passes. Updated session-log with stack-reviewer round 2 green, push at b1e12a2, Obsidian vault open, overview artifact in progress. Added decisions for language and no PR without word.
+
+## [2026-10-22] ingest | Local dev login
+Added `pages/local-login.md`: login steps, dev user key `app.local-dev.email` in `application-local.yml`, quick login buttons without seed data, dashboard counts from the coordinator's Chrome check. Linked from index, harness and testing. Cites checked in `application-local.yml` and `LoginPage.jsx`.

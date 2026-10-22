@@ -22,6 +22,7 @@ Read this first. How to edit: [[AGENTS]]. History: [[log]]. Open this folder as 
 - [[architecture]]: backend and frontend layout, auth, profiles, config. Sources: 1
 - [[api]]: REST endpoints by controller. Sources: 1
 - [[testing]]: what is tested, baselines, how to verify. Sources: 1
+- [[local-login]]: how to log in to the local stack, dev user, seeded counts. Sources: 2
 - [[known-issues]]: smells and open bugs, not yet fixed. Sources: 1
 
 ## Harness and process
