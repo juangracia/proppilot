@@ -42,14 +42,18 @@ public class RentAdjustmentServiceImpl implements RentAdjustmentService {
     public AdjustedRentResponse computeAdjustedRent(Long leaseId, Long ownerId, LocalDate asOfDate) {
         Lease lease = leaseRepository.findByIdAndOwnerId(leaseId, ownerId)
             .orElseThrow(() -> new ResourceNotFoundException("Lease not found: " + leaseId));
+        return computeAdjustedRent(lease, asOfDate);
+    }
 
+    @Override
+    public AdjustedRentResponse computeAdjustedRent(Lease lease, LocalDate asOfDate) {
         BigDecimal base = lease.getMonthlyRent();
         AdjustmentIndex idx = lease.getAdjustmentIndex();
         String country = lease.getCountryCode() != null ? lease.getCountryCode() : DEFAULT_COUNTRY;
 
         if (!SUPPORTED.contains(idx)) {
             if (idx != AdjustmentIndex.NONE) {
-                log.warn("Adjustment index {} not yet supported; returning base rent for lease {}", idx, leaseId);
+                log.warn("Adjustment index {} not yet supported; returning base rent for lease {}", idx, lease.getId());
             }
             return noAdjustment(lease, base, idx);
         }
@@ -59,7 +63,7 @@ public class RentAdjustmentServiceImpl implements RentAdjustmentService {
 
         if (startIv.isEmpty() || currentIv.isEmpty()) {
             log.warn("Missing index data for lease {} (type={}, start={}, asOf={})",
-                leaseId, idx, lease.getStartDate(), asOfDate);
+                lease.getId(), idx, lease.getStartDate(), asOfDate);
             return noAdjustment(lease, base, idx);
         }
 
