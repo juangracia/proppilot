@@ -47,7 +47,7 @@ Agent files are in `.claude/agents/`. Never use the same model for author and re
 
 ## Pushes
 
-The permission classifier blocks agent pushes and PR creation. Stage ONE script for the whole batch (push all branches, open all PRs, copy links). Tell the human: `! zsh <script>`. Do not retry the push in a loop.
+The permission classifier blocks agent pushes and PR creation. Stage ONE script for the whole batch (push all branches, open all PRs, copy links). Tell the human: `! bash <script>`. Do not retry the push in a loop.
 
 ## "Ship as is" mode
 
@@ -55,6 +55,7 @@ If the human says to ship as is: skip the remaining rounds, do not start new fix
 
 ## Lessons baked in
 
+- One reviewer run used `PORT` instead of `FRONTEND_PORT` and hit the main stack on :3000 (login and page load only, no changes). Specs and briefs must name `FRONTEND_PORT`.
 - Planner-001 logged "approved" before the reviewer answered. Only the reviewer's message counts.
 - A layout fix can break a mockup P0 rule (an amount fit at 900px but the row split below xl). Re-test on the final SHA, not an earlier one.
 - A tester spec edited after the freeze is untracked. Commit the spec before the PR so the tree is clean.
