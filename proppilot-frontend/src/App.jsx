@@ -838,6 +838,7 @@ function AppContent() {
             component="main"
             sx={{
               flexGrow: 1,
+              minWidth: 0,
               p: { xs: 2, sm: 3 },
               width: isNative ? '100%' : { sm: `calc(100% - ${drawerWidth}px)` },
               // Account for AppBar height plus iOS safe area
