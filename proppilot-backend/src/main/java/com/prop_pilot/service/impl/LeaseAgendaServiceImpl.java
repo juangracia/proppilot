@@ -71,7 +71,7 @@ public class LeaseAgendaServiceImpl implements LeaseAgendaService {
             int freq = frequencyOf(lease);
             for (int k = 1; ; k++) {
                 LocalDate d = lease.getStartDate().plusMonths((long) k * freq);
-                if (!d.isBefore(lease.getEndDate()) || d.isAfter(windowEnd) && next != null) {
+                if (!d.isBefore(lease.getEndDate()) || (d.isAfter(windowEnd) && next != null)) {
                     break;
                 }
                 if (next == null && !d.isBefore(today)) {

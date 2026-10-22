@@ -102,7 +102,9 @@ class LeaseAgendaServiceImplTest {
     void u5_nextAdjustmentIsStartPlusOneFrequency() {
         noEstimate();
         Lease l = lease(LocalDate.of(2026, 3, 1), LocalDate.of(2028, 2, 28), AdjustmentIndex.ICL, 12);
-        assertThat(single(l).nextAdjustmentDate()).isEqualTo(LocalDate.of(2027, 3, 1));
+        LeaseAgendaItem item = single(l);
+        assertThat(item.nextAdjustmentDate()).isEqualTo(LocalDate.of(2027, 3, 1));
+        assertThat(item.adjustmentDatesInWindow()).isEmpty();
     }
 
     @Test

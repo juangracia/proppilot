@@ -34,7 +34,7 @@ import {
   HelpOutline,
   Description,
   ImportExport,
-  Event
+  Event as EventIcon
 } from '@mui/icons-material'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
@@ -125,7 +125,7 @@ function AppContent() {
     { text: t('paymentsMenu'), icon: <Payment />, value: 4, tourId: 'nav-payments' },
     {
       text: t('agendaMenu'),
-      icon: <Badge badgeContent={alertCount} color="error" data-testid="agenda-badge"><Event /></Badge>,
+      icon: <Badge badgeContent={alertCount} color="error" data-testid="agenda-badge"><EventIcon /></Badge>,
       value: 5,
       tourId: 'nav-agenda',
       extra: <Chip label={t('newBadge')} size="small" color="secondary" sx={{ ml: 1, height: 18, fontSize: '0.625rem' }} />
