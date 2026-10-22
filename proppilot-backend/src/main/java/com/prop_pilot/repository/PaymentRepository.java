@@ -108,8 +108,8 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     );
 
     @Query("SELECT p.lease.id, SUM(p.amount) FROM Payment p " +
-           "WHERE p.lease.owner.id = :ownerId AND p.paymentType = com.prop_pilot.entity.Payment.PaymentType.RENT " +
-           "AND p.status = com.prop_pilot.entity.Payment.PaymentStatus.PAID AND p.paymentDate <= :asOf " +
+           "WHERE p.lease.owner.id = :ownerId AND p.paymentType = com.prop_pilot.entity.Payment$PaymentType.RENT " +
+           "AND p.status = com.prop_pilot.entity.Payment$PaymentStatus.PAID AND p.paymentDate <= :asOf " +
            "GROUP BY p.lease.id")
     List<Object[]> sumPaidRentByLeaseForOwner(
         @Param("ownerId") Long ownerId,
