@@ -105,7 +105,7 @@ test.describe('REQ-002 agenda', () => {
     await expect(endCell).toContainText(`Fin ${fmtDate(item.endDate)}`)
     const chip = g.getByText('Vence en 20 días')
     await expect(chip.locator('xpath=ancestor-or-self::*[contains(@class,"MuiChip-root")]')).toHaveClass(/MuiChip-colorError/)
-    await shot(page, 'B4-L7-los-alamos')
+    await g.screenshot({ path: `${EVIDENCE}/B4-L7-los-alamos.png` })
   })
 
   test('B5 L8 Bv San Juan', async ({ page }) => {
@@ -116,7 +116,7 @@ test.describe('REQ-002 agenda', () => {
     await expect(g).toContainText('Sin ajuste (monto fijo)')
     const chip = g.getByText('Vence en 60 días')
     await expect(chip.locator('xpath=ancestor-or-self::*[contains(@class,"MuiChip-root")]')).toHaveClass(/MuiChip-colorWarning/)
-    await shot(page, 'B5-L8-san-juan')
+    await g.screenshot({ path: `${EVIDENCE}/B5-L8-san-juan.png` })
   })
 
   test('B6 L9 Rivadavia', async ({ page }) => {
@@ -137,7 +137,7 @@ test.describe('REQ-002 agenda', () => {
     expect(item.estimatedAmount).not.toBeNull()
     await expect(g).toContainText('Próximo ajuste: 01/11/2026')
     await expect(g).toContainText(`estimado ${money(item.estimatedAmount, 'es')}`)
-    await shot(page, 'B6-L9-rivadavia')
+    await g.screenshot({ path: `${EVIDENCE}/B6-L9-rivadavia.png` })
   })
 
   test('B7 L4 Santa Fe and L1', async ({ page }) => {
@@ -150,7 +150,8 @@ test.describe('REQ-002 agenda', () => {
     const g1 = group(page, l1)
     const nov = g1.locator('tr').nth(1).locator('td').nth(3)
     await expect(nov).toContainText('01/11/2026')
-    await shot(page, 'B7-L4-L1')
+    await g4.screenshot({ path: `${EVIDENCE}/B7-L4.png` })
+    await g1.screenshot({ path: `${EVIDENCE}/B7-L1.png` })
   })
 
   test('B8 L10 Lavalle', async ({ page }) => {
@@ -160,7 +161,7 @@ test.describe('REQ-002 agenda', () => {
     await expect(g).toContainText('Venció hace 5 días')
     const oct = g.locator('tr').first().locator('td').nth(2)
     await expect(oct).toContainText(`Fin ${fmtDate(item.endDate)}`)
-    await shot(page, 'B8-L10-lavalle')
+    await g.screenshot({ path: `${EVIDENCE}/B8-L10-lavalle.png` })
   })
 
   test('B9 English', async ({ page }) => {
