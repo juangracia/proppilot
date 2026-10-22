@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/session-start.sh"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/require-agent-model.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Read",
+      "Grep",
+      "Glob",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git show *)",
+      "Bash(git branch *)",
+      "Bash(ls *)",
+      "Bash(cat *)",
+      "Bash(curl -s localhost:*)",
+      "Bash(scripts/verify.sh*)",
+      "Bash(scripts/dev-*.sh*)",
+      "Bash(scripts/seed.sh*)",
+      "Bash(mvn -B -q test*)",
+      "Bash(mvn test*)",
+      "Bash(npm run build*)",
+      "Bash(npm run lint*)",
+      "Bash(npm ci --legacy-peer-deps*)",
+      "Bash(npx playwright test*)",
+      "Bash(docker ps*)",
+      "Bash(docker compose ps*)"
+    ],
+    "deny": [
+      "Bash(git push * main)",
+      "Bash(git push * master)",
+      "Bash(git push main*)",
+      "Bash(git push master*)",
+      "Bash(railway up*)",
+      "Bash(railway deploy*)"
+    ]
+  }
+}
