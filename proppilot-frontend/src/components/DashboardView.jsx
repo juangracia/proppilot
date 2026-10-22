@@ -30,6 +30,8 @@ import { useLanguage } from '../contexts/LanguageContext'
 import { API_BASE_URL } from '../config/api'
 import axios from 'axios'
 import PullToRefresh from './PullToRefresh'
+import { DelinquencyCard, DelinquencyTable } from './DelinquencyPanel'
+import { useDelinquency } from '../hooks/useDelinquency'
 
 const DashboardView = memo(({ onNavigate, onNavigateToPayment }) => {
   const { t, formatCurrency, formatNumber } = useLanguage()
@@ -38,6 +40,8 @@ const DashboardView = memo(({ onNavigate, onNavigateToPayment }) => {
   const [tenants, setTenants] = useState([])
   const [payments, setPayments] = useState([])
   const [leases, setLeases] = useState([])
+  const [refreshKey, setRefreshKey] = useState(0)
+  const delinquency = useDelinquency(refreshKey)
 
   const fetchData = useCallback(async () => {
     try {
@@ -238,7 +242,7 @@ const DashboardView = memo(({ onNavigate, onNavigateToPayment }) => {
   }
 
   return (
-    <PullToRefresh onRefresh={fetchData}>
+    <PullToRefresh onRefresh={() => { setRefreshKey((k) => k + 1); return fetchData() }}>
       <Box>
 
       {/* Onboarding View for New Users */}
@@ -434,7 +438,7 @@ const DashboardView = memo(({ onNavigate, onNavigateToPayment }) => {
         {/* 3. Compact Stats Cards */}
         <Grid container spacing={2} sx={{ mb: 3 }} data-tour="dashboard-stats">
           {stats.map((stat, index) => (
-            <Grid size={{ xs: 6, sm: 4, md: 2.4 }} key={index}>
+            <Grid size={{ xs: 6, sm: 4, md: 2 }} key={index}>
               <Card
                 onClick={() => handleStatClick(stat)}
                 sx={{
@@ -457,7 +461,10 @@ const DashboardView = memo(({ onNavigate, onNavigateToPayment }) => {
               </Card>
             </Grid>
           ))}
+          <DelinquencyCard state={delinquency} />
         </Grid>
+
+        <DelinquencyTable state={delinquency} />
 
         {/* 4. Recent Payments - Full Width */}
         <Paper
