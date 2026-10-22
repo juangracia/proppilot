@@ -3,6 +3,7 @@ package com.prop_pilot.service.impl;
 import com.prop_pilot.dto.DelinquencyReport;
 import com.prop_pilot.dto.DelinquentLease;
 import com.prop_pilot.entity.Lease;
+import com.prop_pilot.entity.PropertyUnit;
 import com.prop_pilot.entity.Tenant;
 import com.prop_pilot.repository.LeaseRepository;
 import com.prop_pilot.repository.PaymentRepository;
@@ -82,12 +83,18 @@ public class DelinquencyServiceImpl implements DelinquencyService {
         return Optional.of(new DelinquentLease(
             lease.getId(),
             lease.getPropertyUnit().getId(),
-            lease.getPropertyUnit().getAddress(),
+            shortAddress(lease.getPropertyUnit()),
             names,
             rent,
             dueCount - covered,
             oldestDue,
             days,
             owed));
+    }
+
+    private String shortAddress(PropertyUnit unit) {
+        boolean hasStreet = unit.getStreet() != null && !unit.getStreet().isBlank();
+        boolean hasNumber = unit.getStreetNumber() != null && !unit.getStreetNumber().isBlank();
+        return hasStreet && hasNumber ? unit.getStreet() + " " + unit.getStreetNumber() : unit.getAddress();
     }
 }
