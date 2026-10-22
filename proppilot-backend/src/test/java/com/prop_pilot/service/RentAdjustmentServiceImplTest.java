@@ -22,6 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -142,5 +143,20 @@ class RentAdjustmentServiceImplTest {
 
         assertThatThrownBy(() -> service.computeAdjustedRent(LEASE_ID, OWNER_ID, TODAY))
             .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void computeAdjustedRent_withLoadedLease_doesNotTouchLeaseRepository() {
+        Lease lease = buildLease(AdjustmentIndex.ICL, new BigDecimal("250000.00"), LocalDate.of(2025, 4, 1));
+        when(indexValueService.findLatestOnOrBefore(AdjustmentIndex.ICL, "AR", LocalDate.of(2025, 4, 1)))
+            .thenReturn(Optional.of(indexValue("ICL", LocalDate.of(2025, 4, 1), "100.000000")));
+        when(indexValueService.findLatestOnOrBefore(AdjustmentIndex.ICL, "AR", TODAY))
+            .thenReturn(Optional.of(indexValue("ICL", LocalDate.of(2026, 4, 1), "152.240000")));
+
+        AdjustedRentResponse result = service.computeAdjustedRent(lease, TODAY);
+
+        assertThat(result.hasAdjustment()).isTrue();
+        assertThat(result.adjustedAmount()).isEqualByComparingTo("380600.00");
+        verifyNoInteractions(leaseRepository);
     }
 }

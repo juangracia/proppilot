@@ -18,7 +18,9 @@ import {
   Avatar,
   Menu as MuiMenu,
   MenuItem,
-  CircularProgress
+  CircularProgress,
+  Badge,
+  Chip
 } from '@mui/material'
 import {
   Brightness4,
@@ -31,7 +33,8 @@ import {
   Logout,
   HelpOutline,
   Description,
-  ImportExport
+  ImportExport,
+  Event as EventIcon
 } from '@mui/icons-material'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
@@ -43,6 +46,9 @@ import LeaseForm from './components/LeaseForm'
 import LoginPage from './components/LoginPage'
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import ContractAgenda from './components/ContractAgenda'
+import { API_BASE_URL } from './config/api'
+import axios from 'axios'
 import LanguageCurrencySelector from './components/LanguageCurrencySelector'
 import ProductTour, { useTour } from './components/ProductTour'
 import MobileBottomNav from './components/MobileBottomNav'
@@ -97,13 +103,34 @@ function AppContent() {
     setOpenDataPortability(true)
   }
 
+  const [alertCount, setAlertCount] = useState(0)
+
+  useEffect(() => {
+    if (!isAuthenticated) return
+    let cancelled = false
+    axios.get(`${API_BASE_URL}/agenda`)
+      .then(({ data }) => {
+        const c = data.counts
+        if (!cancelled) setAlertCount(c.d90 + c.d60 + c.d30 + c.ended)
+      })
+      .catch(() => { if (!cancelled) setAlertCount(0) })
+    return () => { cancelled = true }
+  }, [isAuthenticated, selectedView])
+
   const menuItems = useMemo(() => [
     { text: t('dashboardMenu'), icon: <Dashboard />, value: 0, tourId: 'nav-dashboard' },
     { text: t('propertiesMenu'), icon: <Home />, value: 1, tourId: 'nav-properties' },
     { text: t('tenantsMenu'), icon: <People />, value: 2, tourId: 'nav-tenants' },
     { text: t('leasesMenu') || 'Contratos', icon: <Description />, value: 3, tourId: 'nav-leases' },
-    { text: t('paymentsMenu'), icon: <Payment />, value: 4, tourId: 'nav-payments' }
-  ], [t])
+    { text: t('paymentsMenu'), icon: <Payment />, value: 4, tourId: 'nav-payments' },
+    {
+      text: t('agendaMenu'),
+      icon: <Badge badgeContent={alertCount} color="error" data-testid="agenda-badge"><EventIcon /></Badge>,
+      value: 5,
+      tourId: 'nav-agenda',
+      extra: <Chip label={t('newBadge')} size="small" color="secondary" sx={{ ml: 1, height: 18, fontSize: '0.625rem' }} />
+    }
+  ], [t, alertCount])
 
   const handleDrawerToggle = useCallback(() => {
     setMobileOpen(prev => !prev)
@@ -457,6 +484,7 @@ function AppContent() {
                 }
               }}
             />
+            {item.extra}
           </ListItem>
         ))}
       </List>
@@ -507,6 +535,8 @@ function AppContent() {
         return t('leasesTitle') || 'Contratos'
       case 4:
         return t('registerPaymentTitle')
+      case 5:
+        return t('agendaTitle')
       default:
         return t('dashboardTitle')
     }
@@ -523,6 +553,8 @@ function AppContent() {
       case 3:
         return ''
       case 4:
+        return ''
+      case 5:
         return ''
       default:
         return t('dashboardSubtitle')
@@ -589,6 +621,8 @@ function AppContent() {
             onAddFormOpened={() => setOpenAddForm(false)}
           />
         )
+      case 5:
+        return <ContractAgenda />
       default:
         return <DashboardView onNavigate={handleNavigate} onNavigateToPayment={handleNavigateToPayment} />
     }
@@ -804,6 +838,7 @@ function AppContent() {
             component="main"
             sx={{
               flexGrow: 1,
+              minWidth: 0,
               p: { xs: 2, sm: 3 },
               width: isNative ? '100%' : { sm: `calc(100% - ${drawerWidth}px)` },
               // Account for AppBar height plus iOS safe area

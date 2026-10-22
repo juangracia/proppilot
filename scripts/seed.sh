@@ -61,10 +61,10 @@ tenant() { # name dni email phone
   api POST /tenants "$(jq -n --arg n "$1" --arg d "$2" --arg e "$3" --arg p "$4" \
     '{fullName:$n, nationalId:$d, email:$e, phone:$p}')" | jq -r .id
 }
-lease() { # propId "tenantIds json" start end rent index
-  api POST /leases "$(jq -n --argjson p "$1" --argjson t "$2" --arg s "$3" --arg e "$4" --argjson r "$5" --arg i "$6" \
+lease() { # propId "tenantIds json" start end rent index [frequencyMonths, default 12]
+  api POST /leases "$(jq -n --argjson p "$1" --argjson t "$2" --arg s "$3" --arg e "$4" --argjson r "$5" --arg i "$6" --argjson f "${7:-12}" \
     '{propertyUnitId:$p, tenantIds:$t, startDate:$s, endDate:$e, monthlyRent:$r, adjustmentIndex:$i,
-      adjustmentFrequencyMonths:12, countryCode:"AR", status:"ACTIVE"}')" | jq -r .id
+      adjustmentFrequencyMonths:$f, countryCode:"AR", status:"ACTIVE"}')" | jq -r .id
 }
 payment() { # leaseId amount date type status description
   api POST /payments "$(jq -n --argjson l "$1" --argjson a "$2" --arg d "$3" --arg t "$4" --arg s "$5" --arg x "$6" \
@@ -108,6 +108,32 @@ rent_payments "$L4" 650000 2026-03 2026-09
 payment "$L4" 650000 2026-10-05 RENT PENDING "Alquiler 2026-10 (transferencia en proceso)"
 rent_payments "$L5" 520000 2024-06 2026-05
 rent_payments "$L6" 590000 2026-08 2026-10
+
+# --- leases relative to today, for the contract agenda (end-of-lease alerts, next adjustment) ----
+# L7 ends in 20 days (D30), L8 in 60 (D60), L9 in 80 (D90), L10 ended 5 days ago but is still ACTIVE.
+# Paid up to the last 5th that is not after today or the lease end, so they are not debtors.
+last_rent_ym() { # cap date YYYY-MM-DD -> last YYYY-MM whose 5th is on or before it
+  if [ "${1:8:2}" -ge 5 ]; then echo "${1:0:7}"; else date -j -v-1m -f %Y-%m-%d "${1:0:7}-01" +%Y-%m; fi
+}
+TODAY="$(date +%F)"
+P7=$(prop "Bv. San Juan" 980 "" "" "Córdoba" "Córdoba" X5000 Departamento 480000)
+P8=$(prop "Av. Rivadavia" 5320 4 D "Ciudad Autónoma de Buenos Aires" "CABA" C1406 Departamento 550000)
+P9=$(prop "Lavalle" 1450 2 B "Ciudad Autónoma de Buenos Aires" "CABA" C1048 Departamento 430000)
+
+S7="$(date -j -v1d -v-18m +%F)";            E7="$(date -j -v+20d +%F)"
+S8="$(date -j -v1d -v-12m +%F)";            E8="$(date -j -v+60d +%F)"
+S9="$(date -j -v1d -v+1m -v-12m +%F)";      E9="$(date -j -v+80d +%F)"
+S10="$(date -j -v1d -v-12m +%F)";           E10="$(date -j -v-5d +%F)"
+
+L7=$(lease "$P6" "[$T2]" "$S7" "$E7" 900000 ICL)
+L8=$(lease "$P7" "[$T3]" "$S8" "$E8" 480000 NONE)
+L9=$(lease "$P8" "[$T5]" "$S9" "$E9" 550000 IPC 2)
+L10=$(lease "$P9" "[$T6]" "$S10" "$E10" 430000 ICL)
+
+rent_payments "$L7" 900000 "${S7:0:7}" "$(last_rent_ym "$TODAY")"
+rent_payments "$L8" 480000 "${S8:0:7}" "$(last_rent_ym "$TODAY")"
+rent_payments "$L9" 550000 "${S9:0:7}" "$(last_rent_ym "$TODAY")"
+rent_payments "$L10" 430000 "${S10:0:7}" "$(last_rent_ym "$E10")"
 
 echo "seed: $(api GET /property-units | jq length) properties, $(api GET /tenants | jq length) tenants," \
      "$(api GET /leases | jq length) leases, $(api GET /payments | jq length) payments (owner $SEED_EMAIL)"
