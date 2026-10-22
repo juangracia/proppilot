@@ -74,6 +74,18 @@ const PaymentForm = memo(function PaymentForm({
   onAddFormOpened
 }) {
   const { t, formatCurrency, formatNumber, currency } = useLanguage()
+
+  // A PENDING payment dated before today is overdue
+  const isOverdue = (payment) =>
+    payment.status === 'PENDING' && payment.paymentDate < format(new Date(), 'yyyy-MM-dd')
+  const paymentStatusLabel = (payment) => {
+    if (payment.status === 'PAID') return t('paid')
+    return isOverdue(payment) ? t('statusOverdue') : t('pending')
+  }
+  const paymentStatusColor = (payment) => {
+    if (payment.status === 'PAID') return 'success'
+    return isOverdue(payment) ? 'error' : 'warning'
+  }
   const [activeTab, setActiveTab] = useState(0)
 
   // Filter states
@@ -843,9 +855,9 @@ const PaymentForm = memo(function PaymentForm({
                           <TableCell>
                             <Chip
                               icon={payment.status === 'PAID' ? <CheckCircle /> : <Schedule />}
-                              label={payment.status === 'PAID' ? t('paid') : t('pending')}
+                              label={paymentStatusLabel(payment)}
                               size="small"
-                              color={payment.status === 'PAID' ? 'success' : 'warning'}
+                              color={paymentStatusColor(payment)}
                               sx={{ '& .MuiChip-icon': { fontSize: 16 } }}
                             />
                           </TableCell>
@@ -878,9 +890,9 @@ const PaymentForm = memo(function PaymentForm({
                       </Typography>
                       <Chip
                         icon={payment.status === 'PAID' ? <CheckCircle /> : <Schedule />}
-                        label={payment.status === 'PAID' ? t('paid') : t('pending')}
+                        label={paymentStatusLabel(payment)}
                         size="small"
-                        color={payment.status === 'PAID' ? 'success' : 'warning'}
+                        color={paymentStatusColor(payment)}
                         sx={{ '& .MuiChip-icon': { fontSize: 14 }, ml: 1, flexShrink: 0 }}
                       />
                     </Box>
@@ -944,8 +956,8 @@ const PaymentForm = memo(function PaymentForm({
                 <Box sx={{ mb: 3 }}>
                   <Chip
                     icon={selectedPayment.status === 'PAID' ? <CheckCircle /> : <Schedule />}
-                    label={selectedPayment.status === 'PAID' ? (t('paid') || 'Pagado') : (t('pending') || 'Pendiente')}
-                    color={selectedPayment.status === 'PAID' ? 'success' : 'warning'}
+                    label={paymentStatusLabel(selectedPayment)}
+                    color={paymentStatusColor(selectedPayment)}
                     sx={{ fontWeight: 500 }}
                   />
                 </Box>
