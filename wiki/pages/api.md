@@ -1,6 +1,14 @@
+---
+title: API
+type: system
+tags: [backend, rest]
+sources: [controller/*.java]
+updated: 2026-10-22
+---
+
 # API
 
-Base path `/api`. Controllers are in `proppilot-backend/src/main/java/com/prop_pilot/controller/`. Swagger UI at `/swagger-ui.html`. Error body shape: `ErrorResponse` (timestamp, status, error, message, path, validationErrors). See [architecture](architecture.md) for status mapping.
+Base path `/api`. Controllers are in `proppilot-backend/src/main/java/com/prop_pilot/controller/`. Swagger UI at `/swagger-ui.html`. Error body shape: `ErrorResponse` (timestamp, status, error, message, path, validationErrors). See [[architecture]] for status mapping.
 
 | Prefix | Controller | Endpoints |
 | --- | --- | --- |
@@ -14,6 +22,8 @@ Base path `/api`. Controllers are in `proppilot-backend/src/main/java/com/prop_p
 
 `/api/indices/**` is permitted in `SecurityConfig.java:34` but no controller serves it.
 
-Rules behind the 422 responses: [business rules](business-rules.md).
+Rules behind the 422 responses: [[business-rules|business rules]].
 
 Sources: controller files above.
+
+Related: [[architecture]], [[entities]], [[business-rules]]

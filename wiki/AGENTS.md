@@ -1,37 +1,64 @@
+---
+title: Wiki schema and operations
+type: schema
+tags: [schema, wiki]
+sources: []
+updated: 2026-10-22
+---
+
 # Wiki schema and operations
 
-This wiki follows the "LLM wiki" pattern (https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f). It has three layers.
-
-1. `wiki/raw/` holds sources. They are immutable. Never edit a raw file. Add a new dated file instead.
-2. `wiki/pages/` holds the wiki. You write and maintain it.
-3. This file is the schema. Humans and agents refine it over time.
+This wiki is the project's second brain. It follows the LLM wiki pattern (https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) and is an Obsidian vault (open the `wiki/` folder). It holds all project context: domain, system, harness, decisions, lessons, session history.
 
 `CLAUDE.md` exists at the repo root, so this file is not auto-loaded. Read it before any wiki work.
 
+## Layers
+
+1. `raw/`: sources. Immutable. Copy a source in with a dated name `YYYY-MM-DD-title.md`. Never edit one. Strip personal emails and secrets when you copy.
+2. `pages/`: the wiki. You write and maintain it.
+3. This file: the schema. Refine it over time.
+
 ## Files
 
-- `wiki/index.md`: catalog of every page. One line per page: link, one-line summary, source count. Grouped by category. Update it on every ingest. Read it first when you answer a question.
-- `wiki/log.md`: append-only history. One heading per event: `## [YYYY-MM-DD] op | title`. `op` is `ingest`, `query`, or `lint`. Then 1-3 lines of detail. Recent entries: `grep "^## \[" wiki/log.md | tail -5`.
-- `wiki/pages/*.md`: one topic per page, lowercase kebab-case names.
+- `index.md`: catalog of every page and raw source. One line each: wikilink, one-line summary, source count. Grouped by category. Update on every ingest. Read it first to answer a question.
+- `log.md`: append only. One heading per event: `## [YYYY-MM-DD] op | title`, op is `ingest`, `query` or `lint`. Then 1-3 lines. Recent: `grep "^## \[" wiki/log.md | tail -5`.
+- `pages/*.md`: one topic per page, lowercase kebab-case file names, unique across the vault.
 
-## Page format
+## Page format (Obsidian-ready)
 
-- Start with `# Title` and one sentence that says what the page covers.
-- Cite code as `path/File.java:LINE`. Open the file and check the line before you write the cite. Mark anything you could not check as `UNVERIFIED`.
-- Link related pages with relative links, for example `[business rules](business-rules.md)`.
-- End with `Sources:` listing the raw files or code paths used.
-- Plain facts. No marketing words. No em dashes.
+Every page in `pages/`, plus `index.md`, `log.md` and this file, starts with YAML frontmatter:
+
+```
+---
+title: Human title
+type: concept | entity | rules | system | health | decision | harness | log | lessons | index | schema
+tags: [lowercase, words]
+sources: [raw file names without .md, or code paths]
+updated: YYYY-MM-DD
+---
+```
+
+Raw files have no frontmatter requirement (they are copies).
+
+- Link pages with wikilinks: `[[page-name]]` or `[[page-name|text]]`. Use the file name without `.md`. No path, no `.md`.
+- Every page is linked from `index.md` and has at least one inbound link. No orphans.
+- Cite code as `path/File.java:LINE`. Open the file and check the line before you write it. Mark anything unchecked `UNVERIFIED`.
+- Plain facts. No marketing words. No em dashes. No AI attribution.
 
 ## Operations
 
-**Ingest.** A source is a file in `wiki/raw/` or a code area. Read it. Write or update the pages it touches (often 3-10). Update `index.md`. Append a log entry. Skill: `.claude/skills/wiki-ingest`.
+**Ingest.** Skill `.claude/skills/wiki-ingest`, agent `wiki-curator`. Steps:
+1. Copy the source to `raw/` (dated name, secrets stripped). A code area is read in place.
+2. Read `index.md` to find the pages it touches.
+3. Create or update pages (often 3-10). Add frontmatter and wikilinks. Update `updated:`.
+4. Update `index.md`.
+5. Append `## [YYYY-MM-DD] ingest | <title>` to `log.md`.
+6. Run the lint checks. Commit.
 
-**Query.** Read `index.md`. Open the relevant pages. Answer with cites. If the answer is new and durable, file it as a page or add it to one, then update the index and log (`query` entry). Skill: `.claude/skills/wiki-query`.
+**Query.** Skill `wiki-query`. Read `index.md`, open the pages, answer with cites. File durable answers back as page edits and log a `query` entry.
 
-**Lint.** Check for: broken links, pages missing from the index, index entries without a page, cites whose line no longer matches, contradictions between pages, claims marked `UNVERIFIED` that can now be checked, concepts that deserve their own page. Fix small issues. Report big ones. Append a `lint` log entry. Skill: `.claude/skills/wiki-lint`.
+**Lint.** Skill `wiki-lint`. Check: broken wikilinks, orphan pages, missing frontmatter keys, pages missing from the index, stale file:line cites, contradictions, `UNVERIFIED` marks that can now be checked, missing concept pages. Fix small issues, report large ones, log a `lint` entry.
 
-## Page categories (for index.md)
+## Obsidian
 
-- Domain: glossary, entities, business rules, rent adjustment
-- System: architecture, api, testing
-- Health: known issues
+`wiki/.obsidian/` holds the minimal vault config. `workspace*.json` is gitignored. To open: follow the `obsidian-open-vault` skill with the vault folder `wiki/`.

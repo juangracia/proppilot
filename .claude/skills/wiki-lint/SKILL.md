@@ -7,6 +7,8 @@ description: Health-check the PropPilot wiki for broken links, stale file:line c
 
 Read `wiki/AGENTS.md` first.
 
+Run `python3 .claude/skills/wiki-lint/lint.py` first. It checks broken wikilinks, duplicate names, missing frontmatter keys, em dashes, pages missing from the index, and orphans. Then do the checks that need judgment.
+
 Check:
 1. Every file in `wiki/pages/` is listed in `wiki/index.md`, and every index link resolves.
 2. Every relative link in pages resolves.

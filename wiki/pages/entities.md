@@ -1,3 +1,11 @@
+---
+title: Entities and relationships
+type: entity
+tags: [domain, data-model]
+sources: [entity/*.java, 2026-10-22-explorer-findings]
+updated: 2026-10-22
+---
+
 # Entities and relationships
 
 Six JPA entities in `proppilot-backend/src/main/java/com/prop_pilot/entity/`. Controllers return entities directly (no response DTO layer except `AdjustedRentResponse`).
@@ -26,4 +34,6 @@ IndexValue (standalone, looked up by type + country + date)
 - `monthlyRent`: at least 0.01, 8 integer digits, 2 decimals (`:55-57`).
 - `isActive()` is true when status is ACTIVE and today is inside the dates (`:150`).
 
-Sources: entity files above, [explorer findings](../raw/2026-10-22-explorer-findings.md).
+Sources: entity files above, [[2026-10-22-explorer-findings|explorer findings]].
+
+Related: [[glossary]], [[business-rules]], [[api]]

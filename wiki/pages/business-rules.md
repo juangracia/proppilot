@@ -1,6 +1,14 @@
+---
+title: Business rules
+type: rules
+tags: [domain, validation]
+sources: [service/impl/*.java, 2026-10-22-explorer-findings]
+updated: 2026-10-22
+---
+
 # Business rules
 
-Every rule below was checked against the file and line. Errors use `BusinessLogicException`, which returns HTTP 422 (`GlobalExceptionHandler.java:63`). See [api](api.md).
+Every rule below was checked against the file and line. Errors use `BusinessLogicException`, which returns HTTP 422 (`GlobalExceptionHandler.java:63`). See [[api]].
 
 Paths: `S` = `proppilot-backend/src/main/java/com/prop_pilot/service/impl/`.
 
@@ -29,10 +37,12 @@ Paths: `S` = `proppilot-backend/src/main/java/com/prop_pilot/service/impl/`.
 
 - Delete a tenant: blocked when non-deleted leases exist (`S/TenantServiceImpl.java:96-98`). Message is in Spanish.
 - Delete a property: same rule (`S/PropertyUnitServiceImpl.java:74-77`).
-- Create tenant: duplicate national ID or email throws `IllegalArgumentException` (`TenantServiceImpl.java:35-39`). That is not a `BusinessLogicException`, so see [known issues](known-issues.md).
+- Create tenant: duplicate national ID or email throws `IllegalArgumentException` (`TenantServiceImpl.java:35-39`). That is not a `BusinessLogicException`, so see [[known-issues|known issues]].
 
 ## Ownership
 
 All reads and writes take an `ownerId` and use `findByIdAndOwnerId`-style queries (for example `LeaseServiceImpl.java:130`, `PaymentServiceImpl.java:49`).
 
 Sources: files cited inline.
+
+Related: [[entities]], [[glossary]], [[rent-adjustment]], [[testing]]

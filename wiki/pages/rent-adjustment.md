@@ -1,3 +1,11 @@
+---
+title: Rent adjustment
+type: rules
+tags: [domain, icl, ipc]
+sources: [RentAdjustmentServiceImpl.java, 2026-10-22-explorer-findings]
+updated: 2026-10-22
+---
+
 # Rent adjustment
 
 Computed on demand by `RentAdjustmentServiceImpl.computeAdjustedRent` (`service/impl/RentAdjustmentServiceImpl.java:42`). Endpoint: `GET /api/leases/{id}/adjusted-rent` (`controller/LeaseController.java:35`).
@@ -26,4 +34,4 @@ Nothing in the code or the shell scripts inserts into `index_values`. So on a ne
 
 KAN-36: adjusted rent shown in lease detail and payment form. Landed in dc7daa6 (#34), after an earlier revert of #33.
 
-Sources: files cited inline, [explorer findings](../raw/2026-10-22-explorer-findings.md).
+Sources: files cited inline, [[2026-10-22-explorer-findings|explorer findings]].

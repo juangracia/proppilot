@@ -1,3 +1,11 @@
+---
+title: Architecture
+type: system
+tags: [backend, frontend, auth]
+sources: [2026-10-22-explorer-findings]
+updated: 2026-10-22
+---
+
 # Architecture
 
 Two apps in one repo: `proppilot-backend/` (Spring Boot 3.2.0, Java 17) and `proppilot-frontend/` (React 19, Vite 7, MUI 7, JSX).
@@ -34,4 +42,4 @@ DB 5433, backend 8080, frontend 3000 (see `.dev.env`). Backend env: `DATABASE_UR
 
 Railway, one `railway up` per folder. Only on explicit human word. See `.claude/skills/deploy`.
 
-Sources: files cited inline, [explorer findings](../raw/2026-10-22-explorer-findings.md).
+Sources: files cited inline, [[2026-10-22-explorer-findings|explorer findings]].

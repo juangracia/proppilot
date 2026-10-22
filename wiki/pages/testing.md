@@ -1,3 +1,11 @@
+---
+title: Testing
+type: system
+tags: [tests, lint, verify]
+sources: [2026-10-22-explorer-findings]
+updated: 2026-10-22
+---
+
 # Testing
 
 ## Backend
@@ -24,4 +32,4 @@ Build: `npm run build` (about 4 seconds).
 
 `scripts/verify.sh` runs backend tests, frontend build, lint vs baseline, and the Playwright smoke test, then prints a summary.
 
-Sources: [explorer findings](../raw/2026-10-22-explorer-findings.md), test directory listing.
+Sources: [[2026-10-22-explorer-findings|explorer findings]], test directory listing.
