@@ -25,12 +25,14 @@ What each Claude Code file in the repo does. The harness was built on 22 Oct 202
 
 ## Agents: `.claude/agents/`
 
-Eleven roles. See [[agents]].
+Fifteen roles. See [[agents]].
 
 ## Skills: `.claude/skills/`
 
 - `dev-stack`: start, stop, seed, verify the local stack. Troubleshooting for ports and JDK.
 - `wiki-ingest`, `wiki-query`, `wiki-lint`: the three wiki operations ([[AGENTS]]).
+- `feature-worktree`: create and stop an isolated lane (worktree, branch, own ports) with `scripts/wt.sh`; `with-lock.sh` serializes Maven.
+- `feature-lanes`: requirements to stacked PRs, one lane each. Roster planner/plan-reviewer, builder/code-reviewer, browser-tester/test-auditor, a human approval gate after the plans, max 2 rounds per pair. Has `lanes-brief.template.md`. A copy for a global install is kept outside the repo.
 - `deploy`: Railway `railway up` per folder. `disable-model-invocation: true`. Only on the human's word.
 
 ## Scripts (stack worker)

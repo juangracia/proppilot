@@ -108,9 +108,17 @@ One file per role in `.claude/agents/`. Each pins a default `model`. The caller 
 | builder | sonnet | opus for cross-cutting design |
 | tester | sonnet | haiku to re-run existing tests |
 | reviewer | haiku | opus for hard diffs (money, security, concurrency) |
+| plan-reviewer | sonnet | none; reviews a planner (opus) plan |
+| code-reviewer | opus | none; reviews a builder (sonnet) diff in a lane |
+| browser-tester | sonnet | none; Playwright CLI headless on the lane port |
+| test-auditor | haiku | none; audits how the browser-tester tested |
 | deployer | sonnet | haiku to redeploy an unchanged build; only on the human's word |
 | explorer-domain, -architecture, -tests, -build | sonnet | haiku for a narrow lookup |
 | wiki-curator | haiku | sonnet for wide ingests |
+
+## Feature lanes
+
+Several requirements in parallel, one isolated lane each, human approval after the plans, then stacked PRs: follow `.claude/skills/feature-lanes/SKILL.md` (lane commands: `feature-worktree` skill).
 
 ## Knowledge base
 

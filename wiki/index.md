@@ -28,7 +28,7 @@ Read this first. Project instructions: [[CLAUDE]] (symlink to the repo root `CLA
 ## Harness and process
 
 - [[harness]]: what each `.claude` file, hook, skill and script does. Sources: 1
-- [[agents]]: the eleven agent roles, default models, when to override. Sources: 1
+- [[agents]]: the fifteen agent roles, default models, when to override. Sources: 1
 - [[decisions]]: standing decisions (roster, author plus reviewer, no push to main, deploy on word, language, no PR without word). Sources: 3
 - [[lessons]]: lessons from the 20 Oct rehearsal that apply. Sources: 1
 - [[session-log-2026-10-22]]: what happened on 22 Oct 2026. Sources: 3

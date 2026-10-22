@@ -48,3 +48,6 @@ Added `wiki/CLAUDE.md` as a relative symlink to `../CLAUDE.md` so Obsidian shows
 
 ## [2026-10-22] ingest | Lane infra follow-ups
 Added two follow-ups to known-issues (with-lock race window, dev-down --db not run). Lines confirmed in `scripts/with-lock.sh` and `scripts/dev-down.sh` at 88690b6.
+
+## [2026-10-22] ingest | Feature lanes skill and lane agents
+Added `.claude/skills/feature-lanes/` (SKILL.md and brief template) and four agents (plan-reviewer, code-reviewer, browser-tester, test-auditor). Updated `pages/agents.md` and `pages/harness.md`, and the Agents table plus a Feature lanes pointer in `CLAUDE.md`.

@@ -8,7 +8,7 @@ updated: 2026-10-22
 
 # Agents
 
-One file per role in `.claude/agents/`. Each pins a default `model` in its frontmatter. The caller can override the model per call. The reviewer must always run on a different model than the author. See [[decisions]] for why, and [[harness]] for the hook that enforces a `model` on every call.
+One file per role in `.claude/agents/`. Each pins a default `model` in its frontmatter. The caller can override the model per call. The reviewer must always run on a different model than the author. See [[decisions]] for why, and [[harness]] for the hook that enforces a `model` on every call. The four lane roles (plan-reviewer, code-reviewer, browser-tester, test-auditor) are used by the `feature-lanes` skill.
 
 | Agent | Default | Override when | What it does |
 | --- | --- | --- | --- |
@@ -17,6 +17,10 @@ One file per role in `.claude/agents/`. Each pins a default `model` in its front
 | builder | sonnet | opus for cross-cutting design | Implements per plan with TDD, small commits |
 | tester | sonnet | haiku to re-run existing tests | Writes and runs tests, records the SHA, evidence per PASS. Never edits app code |
 | reviewer | haiku | opus for hard diffs (money, security, concurrency) | Independent review with file:line findings. Does not edit |
+| plan-reviewer | sonnet | none | Reviews a lane plan against the requirement. Approval is its own to give |
+| code-reviewer | opus | none | Reviews a lane diff against the plan. Confirms the approved SHA to the tester |
+| browser-tester | sonnet | none | Runs the lane test plan in headless Playwright on the lane port, records the SHA |
+| test-auditor | haiku | none | Checks how the tester tested: evidence, data, SHA, DB port |
 | deployer | sonnet | haiku for an unchanged redeploy | Railway `railway up` per folder, only on the human's word |
 | explorer-domain | sonnet | haiku for a narrow lookup | Entities, rules, history |
 | explorer-architecture | sonnet | haiku for a narrow lookup | Packages, auth, config, frontend structure |
