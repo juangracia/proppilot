@@ -67,7 +67,7 @@ export const DelinquencyCard = ({ state }) => {
             <Chip label={t('delinquencyNew')} size="small" color="warning" sx={{ height: 18, fontSize: '0.625rem' }} />
           </Box>
           {!error && (
-            <Typography variant="h5" sx={{ fontWeight: 700, color: 'error.main' }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: 'error.main', whiteSpace: 'nowrap' }}>
               {money(report?.totalOwed ?? 0)}
             </Typography>
           )}

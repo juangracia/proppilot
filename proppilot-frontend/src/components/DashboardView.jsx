@@ -448,9 +448,9 @@ const DashboardView = memo(({ onNavigate, onNavigateToPayment }) => {
                 }}
               >
                 <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1, mb: 1 }}>
                     {React.cloneElement(stat.icon, { sx: { fontSize: 24, color: stat.color } })}
-                    <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                    <Typography variant="h5" sx={{ fontWeight: 700, fontSize: { md: '1rem', xl: '1.25rem' }, overflowWrap: 'anywhere' }}>
                       {stat.value}
                     </Typography>
                   </Box>
