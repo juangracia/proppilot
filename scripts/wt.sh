@@ -28,6 +28,11 @@ cmd_up() {
   local wt="$WTDIR/$slug" branch="feat/$slug"
   local db=$((5433 + idx)) be=$((8080 + idx)) fe=$((3000 + idx))
   if [ ! -d "$wt" ]; then
+    # Check ports before creating anything, so a refused lane leaves no worktree, branch or env file.
+    local p
+    for p in "$db" "$be" "$fe"; do
+      [ -z "$(listen_pid "$p")" ] || die "port $p is taken by pid $(listen_pid "$p"). Pick another index (see: wt.sh status). Nothing created."
+    done
     if git -C "$REPO" show-ref --verify --quiet "refs/heads/$branch"; then
       git -C "$REPO" worktree add "$wt" "$branch"
     else

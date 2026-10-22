@@ -12,7 +12,7 @@ Ports for lane index N (N >= 1): DB `5433+N`, backend `8080+N`, frontend `3000+N
 | Goal | Command |
 | --- | --- |
 | Create or reuse a lane and start it (seeded) | `scripts/wt.sh up <slug> <index>` |
-| Stop a lane (`--db` also stops its DB) | `scripts/wt.sh down <slug> [--db]` |
+| Stop a lane (`--db` also removes its DB container; the data volume stays) | `scripts/wt.sh down <slug> [--db]` |
 | Ports, pids, health of every lane | `scripts/wt.sh status` |
 | Worktrees and branches | `scripts/wt.sh list` |
 | Run Maven or verify without clashing with other lanes | `scripts/with-lock.sh scripts/verify.sh` |
@@ -21,7 +21,7 @@ Ports for lane index N (N >= 1): DB `5433+N`, backend `8080+N`, frontend `3000+N
 
 1. Pick a free index. Run `scripts/wt.sh status` first. Never reuse an index.
 2. `up` is idempotent. It reuses the worktree, branch and running processes. A new branch starts from `harness/claude-setup` (override with `BASE_BRANCH`).
-3. `up` checks all three ports before it starts the DB. If one is taken it stops and starts nothing.
+3. `up` checks all three ports before it creates the worktree or starts the DB. If one is taken it stops and creates nothing.
 4. Work only inside your lane worktree. Use its scripts (`scripts/dev-up.sh`, `scripts/verify.sh`) from there.
 5. Wrap every `mvn` and `scripts/verify.sh` run in `scripts/with-lock.sh`. The lock is a `mkdir` in `/tmp/proppilot-maven.lock`. A dead holder is detected and the lock is freed. Waits up to `LOCK_TIMEOUT` seconds (default 3600).
 6. Lane deps install on first `up` with `npm ci --legacy-peer-deps`. This takes a few minutes.

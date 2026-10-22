@@ -20,9 +20,9 @@ stop_pidfile frontend
 stop_pidfile backend
 if [ "${1:-}" = "--db" ]; then
   if [ -f "$STATE_DIR/db.started" ]; then
-    docker compose -p "$COMPOSE_PROJECT" -f "$ROOT/proppilot-backend/docker-compose.yml" stop
+    docker compose -p "$COMPOSE_PROJECT" -f "$ROOT/proppilot-backend/docker-compose.yml" down
     rm -f "$STATE_DIR/db.started"
-    echo "db: stopped"
+    echo "db: container removed, data volume kept"
   else
     echo "db: not started by dev-up, leaving it"
   fi
