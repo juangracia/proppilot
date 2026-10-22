@@ -36,3 +36,6 @@ Documented DB_PORT, BACKEND_PORT, FRONTEND_PORT, COMPOSE_PROJECT, PG_CONTAINER a
 
 ## [2026-10-22] ingest | Review round 2 follow-ups
 Added two stack follow-ups to known-issues (dev-up port check order, visual-match hardcoded backend port). Lines confirmed in `scripts/dev-up.sh` and `visual-match.spec.js`.
+
+## [2026-10-22] ingest | Board snapshot after round 2 and push
+Copied the coordinator board to `raw/2026-10-22-board-snapshot-final.md` (new file, the older snapshot stays as it was). No personal emails found. One literal `[[nope]]` (a lint negative control from the wiki review) was written as `nope` so the lint passes. Updated session-log with stack-reviewer round 2 green, push at b1e12a2, Obsidian vault open, overview artifact in progress. Added decisions for language and no PR without word.

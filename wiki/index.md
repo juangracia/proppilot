@@ -28,12 +28,13 @@ Read this first. How to edit: [[AGENTS]]. History: [[log]]. Open this folder as 
 
 - [[harness]]: what each `.claude` file, hook, skill and script does. Sources: 1
 - [[agents]]: the eleven agent roles, default models, when to override. Sources: 1
-- [[decisions]]: standing decisions (roster, author plus reviewer, no push to main, deploy on word). Sources: 2
+- [[decisions]]: standing decisions (roster, author plus reviewer, no push to main, deploy on word, language, no PR without word). Sources: 3
 - [[lessons]]: lessons from the 20 Oct rehearsal that apply. Sources: 1
-- [[session-log-2026-10-22]]: what happened on 22 Oct 2026. Sources: 2
+- [[session-log-2026-10-22]]: what happened on 22 Oct 2026. Sources: 3
 
 ## Raw sources (immutable)
 
 - [[2026-10-22-explorer-findings]]: first exploration of the cold repo.
 - [[2026-10-22-board-snapshot]]: coordinator board at the time of the harness work.
+- [[2026-10-22-board-snapshot-final]]: coordinator board after round 2, stack green, branch pushed at b1e12a2.
 - [[2026-10-20-meetup-rehearsal-lessons]]: lessons from the 20 Oct rehearsal.
