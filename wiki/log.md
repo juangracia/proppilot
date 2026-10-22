@@ -33,3 +33,6 @@ The 4 missing problems are `no-undef` errors for `process` in `playwright.config
 
 ## [2026-10-22] ingest | Second stack variables
 Documented DB_PORT, BACKEND_PORT, FRONTEND_PORT, COMPOSE_PROJECT, PG_CONTAINER and the guards in dev-db, dev-backend, dev-frontend (commit 56c462b). Opened the compose file, `.dev.env`, scripts and `vite.config.js` to confirm.
+
+## [2026-10-22] ingest | Review round 2 follow-ups
+Added two stack follow-ups to known-issues (dev-up port check order, visual-match hardcoded backend port). Lines confirmed in `scripts/dev-up.sh` and `visual-match.spec.js`.
