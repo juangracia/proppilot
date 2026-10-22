@@ -27,3 +27,6 @@ Checked wikilinks, orphans, frontmatter. Ran `.claude/skills/wiki-lint/lint.py`:
 
 ## [2026-10-22] ingest | Stack worker outputs
 Documented the real `scripts/` behavior, verify stages, baselines, compose project name, known failing tests and the Playwright report gotcha in CLAUDE.md, testing, known-issues, rent-adjustment, harness, session-log and the dev-stack skill. Facts opened in `scripts/*.sh`, `.dev.env`, `playwright.config.js`; the 778992 figure was read from the running API.
+
+## [2026-10-22] lint | Lint baseline 36 vs 32 explained
+The 4 missing problems are `no-undef` errors for `process` in `playwright.config.js`, removed by `/* global process */` in 01a51a0. Verified with eslint on the file before and after.

@@ -26,7 +26,7 @@ No unit tests and no `test` script. E2E with Playwright:
 - `visual-match.spec.js` fails on HEAD because it expects `demo@proppilot.ar` data. `verify.sh` does not run it.
 - The default html reporter rewrites the tracked `proppilot-frontend/playwright-report/index.html`. Restore it with `git checkout` before you commit.
 
-Lint: `npm run lint` exits non-zero on HEAD. The explorer counted 36 problems (32 errors, 4 warnings). `verify.sh` counts errors plus warnings from eslint JSON and records 32 in `scripts/baselines/lint-problems.txt`. The two counts differ and the cause is not checked (UNVERIFIED). `verify.sh` fails only if the count grows; `--update-baseline` rewrites it.
+Lint: `npm run lint` exits non-zero on HEAD. The explorer counted 36 problems on HEAD 643d5ba. `verify.sh` counts errors plus warnings from eslint JSON and records 32 in `scripts/baselines/lint-problems.txt`. The difference is 4 `no-undef` errors for `process` in `proppilot-frontend/playwright.config.js`. Commit 01a51a0 added `/* global process */` there. Checked: eslint on the file before 01a51a0 reports exactly those 4 errors, and 0 after. `verify.sh` fails only if the count grows; `--update-baseline` rewrites it.
 
 Build: `npm run build` (about 4 seconds).
 
